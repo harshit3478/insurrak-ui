@@ -58,7 +58,7 @@ export function UserForm({
                   { label: "Manager", value: "COMPANY_ADMIN" },
                   { label: "Admin", value: "SUPER_ADMIN" },
                 ]}
-                defaultValue="COMPANY_USER"
+                defaultValue={defaultValues?.role || "COMPANY_USER"}
                 className="col-span-2 sm:col-span-1"
               />
             </FormSection>

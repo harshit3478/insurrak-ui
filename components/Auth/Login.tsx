@@ -22,7 +22,7 @@ export default function LogIn() {
   // });
 
   const inputClasses =
-    "w-full px-4 py-3.5 bg-gray-100 border-none rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C6F200] focus:bg-white transition-all duration-200 dark:bg-form-input dark:text-white dark:focus:bg-gray-dark";
+    "w-full px-4 py-3.5 bg-gray-100 border-none rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C6F200] focus:bg-white transition-all duration-200 dark:bg-form-input dark:text-gray-900 dark:focus:text-white dark:focus:bg-gray-dark";
 
   return (
     <div className="space-y-8">

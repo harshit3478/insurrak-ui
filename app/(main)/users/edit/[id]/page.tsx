@@ -56,7 +56,7 @@ export default function EditUserPage() {
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 dark:bg-dark-4 min-h-full">
+    <div className="p-8 rounded bg-gray-50/50 dark:bg-dark-2 min-h-full">
       <FormHeader
         title="Edit Employee"
         subtitle={userToEdit ? `Update details for ${userToEdit.name}` : "Loading..."}

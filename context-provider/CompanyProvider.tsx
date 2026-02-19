@@ -32,7 +32,6 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
         adminEmail: String(formData.get("adminEmail")),
         branches: String(formData.get("branches")),
         activePolicies: String(formData.get("activePolicies")),
-        status: 'Active', // Default status
       });
 
       store.dispatch(addCompany(company));
