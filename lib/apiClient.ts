@@ -1,163 +1,157 @@
 import { Company, Role, User } from "@/types";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000/";
+export const API_BASE_URL = 'http://20.244.42.244:8000/api/v1';
+// const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000/";
 
-export type ApiClientOptions = RequestInit & {
-  auth?: boolean;
+export const API_ENDPOINTS = {
+  LOGIN: '/auth/login',
+  SIGNUP: '/auth/register', // Assuming this endpoint, not in user's snippet
+  LOGOUT: '/auth/logout', // Assuming this endpoint
+  ME: '/auth/me', // Assuming this endpoint
+  COMPANIES: '/companies',
+  USERS: '/users/', // Note the trailing slash from user's snippet
 };
 
-class ApiClient {
-  private baseUrl: string;
+const getHeaders = () => {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+  };
+};
 
-  constructor() {
-    this.baseUrl = BASE_URL;
-  }
-
-  private getAuthHeaders(): HeadersInit {
-    if (typeof window === "undefined") return {};
-
-    const token = localStorage.getItem("token");
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  }
-
-  async request<T>(
-    endpoint: string,
-    { auth = true, headers, ...options }: ApiClientOptions = {},
-  ): Promise<T> {
-    const res = await fetch(`${this.baseUrl}${endpoint}`, {
-      credentials: "include", // ✅ cookies support
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        ...(auth ? this.getAuthHeaders() : {}),
-        ...headers,
-      },
-    });
-
-    // Handle 401 (Unauthorized) globally
-    if (res.status === 401) {
-      //   this.handleUnauthorized();
-      //   throw new Error("Unauthorized");
-      return null as T;
+const api = {
+  get: async (endpoint: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+      if (!response.ok) throw new Error(`GET ${endpoint} failed: ${response.statusText}`);
+      return await response.json();
+    } catch (error) {
+      console.error('API Error:', error);
+      throw error;
     }
+  },
 
-    if (!res.ok) {
-      const errorBody = await res
-        .json()
-        .catch(() => ({ error: "Network Error" }));
-      throw new Error(errorBody?.error || "Request failed");
+  post: async (endpoint: string, data: any) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error(`POST ${endpoint} failed: ${response.statusText}`);
+      return await response.json();
+    } catch (error) {
+      console.error('API Error:', error);
+      throw error;
     }
+  },
 
-    return res.json() as Promise<T>;
-  }
-
-  private handleUnauthorized() {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("token");
-      window.location.href = "/auth/login";
+  patch: async (endpoint: string, data: any) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'PATCH',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error(`PATCH ${endpoint} failed: ${response.statusText}`);
+      return await response.json();
+    } catch (error) {
+      console.error('API Error:', error);
+      throw error;
     }
-  }
+  },
 
+  delete: async (endpoint: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'DELETE',
+        headers: getHeaders(),
+      });
+      if (!response.ok) throw new Error(`DELETE ${endpoint} failed: ${response.statusText}`);
+      // Handle 204 No Content
+      return response.status === 204 ? { success: true } : await response.json();
+    } catch (error) {
+      console.error('API Error:', error);
+      throw error;
+    }
+  },
+};
+
+export const apiClient = {
   // Auth Methods
-  async login(email: string, password: string) {
-    return this.request<{
-      token: string;
-      user: { id: string; email: string; name: string };
-    }>("/api/auth/login", {
-      method: "POST",
-      auth: false,
-      body: JSON.stringify({ email, password }),
+  login: async (credentials: { email: string; password: string }) => {
+    // Standard OAuth2 password flow often expects form data, not JSON.
+    // It also typically uses 'username' as the key for the user identifier.
+    const body = new URLSearchParams({
+      username: credentials.email,
+      password: credentials.password,
     });
-  }
 
-  async signup(data: { name: string; email: string; password: string }) {
-    return this.request("/api/auth/signup", {
-      method: "POST",
-      auth: false,
-      body: JSON.stringify(data),
+    const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.LOGIN}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString(),
     });
-  }
 
-  async logout() {
-    return this.request("/api/auth/logout", {
-      method: "POST",
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || 'Login failed');
+    }
+    return await response.json();
+  },
+  signup: (data: { name: string; email: string; password: string }) => {
+    // Unauthenticated post
+    return fetch(`${API_BASE_URL}${API_ENDPOINTS.SIGNUP}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+    }).then(res => {
+        if (!res.ok) throw new Error('Signup failed');
+        return res.json();
     });
-  }
-
-  async getCurrentUser() {
-    return this.request("/api/auth/me");
-  }
+  },
+  logout: () => {
+    return api.post(API_ENDPOINTS.LOGOUT, {});
+  },
+  getCurrentUser: () => {
+    return api.get(API_ENDPOINTS.ME);
+  },
 
   // User Methods
-  async getAll() {
-    return this.request("/api/users");
-  }
-
-  async getById(id: string) {
-    return this.request(`/api/users/${id}`);
-  }
-
-  async createUser(data: {
-    name: string;
-    email: string;
-    password: string;
-    role: Role;
-  }): Promise<User> {
-    return apiClient.request("/api/users/create", {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
-  }
-
-  async updateProfile(
-    userId: string,
-    data: { name: string; email: string; password: string; role: Role },
-  ): Promise<User> {
-    return this.request(`/api/users/${userId}`, {
-      method: "PATCH",
-      body: JSON.stringify(data),
-    });
-  }
-
-  // Admin Methods
-  async updateUserRole(userId: string, role: string) {
-    return this.request(`/admin/users/${userId}/role`, {
-      method: "PATCH",
-      body: JSON.stringify({ role }),
-    });
-  }
-
-  async deleteUser(id: string) {
-    return this.request(`/admin/users/${id}`, {
-      method: "DELETE",
-    });
-  }
+  getAll: () => {
+    return api.get(API_ENDPOINTS.USERS);
+  },
+  getById: (id: string) => {
+    return api.get(`${API_ENDPOINTS.USERS}${id}/`);
+  },
+  createUser: (data: { name: string; email: string; password: string; role: Role }): Promise<User> => {
+    return api.post(API_ENDPOINTS.USERS, data);
+  },
+  updateProfile: (userId: string, data: Partial<User>): Promise<User> => {
+    return api.patch(`${API_ENDPOINTS.USERS}${userId}/`, data);
+  },
+  deleteUser: (id: string) => {
+    return api.delete(`${API_ENDPOINTS.USERS}${id}/`);
+  },
+  updateUserRole: (userId: string, role: string) => {
+    return api.patch(`${API_ENDPOINTS.USERS}${userId}/`, { role });
+  },
 
   // Company Methods
-  async getAllCompanies(): Promise<Company[]> {
-    return this.request<Company[]>("/api/v1/companies");
-  }
-
-  async getCompanyById(companyId: number): Promise<Company> {
-    return this.request<Company>(`/api/v1/companies/${companyId}`);
-  }
-
-  async createCompany(data: Omit<Company, "id">): Promise<Company> {
-    return this.request<Company>("/api/v1/companies", {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
-  }
-
-  async updateCompany(
-    companyId: number,
-    data: Partial<Omit<Company, "id">>,
-  ): Promise<Company> {
-    return this.request<Company>(`/api/v1/companies/${companyId}`, {
-      method: "PATCH",
-      body: JSON.stringify(data),
-    });
-  }
-}
-
-export const apiClient = new ApiClient();
+  getAllCompanies: (): Promise<Company[]> => {
+    return api.get(API_ENDPOINTS.COMPANIES);
+  },
+  getCompanyById: (companyId: number): Promise<Company> => {
+    return api.get(`${API_ENDPOINTS.COMPANIES}/${companyId}/`);
+  },
+  createCompany: (data: Omit<Company, 'id' | 'status'>): Promise<Company> => {
+    return api.post(API_ENDPOINTS.COMPANIES, data);
+  },
+  updateCompany: (companyId: number, data: Partial<Omit<Company, 'id'>>): Promise<Company> => {
+    return api.patch(`${API_ENDPOINTS.COMPANIES}/${companyId}/`, data);
+  },
+};

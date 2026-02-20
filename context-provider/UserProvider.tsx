@@ -58,7 +58,7 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
         const updatedUser = await apiClient.updateProfile(userId, {
           name: String(formData.get("name")),
           email: String(formData.get("email")),
-          password: String(formData.get("password")),
+          // password: String(formData.get("password")),
           role: formData.get("role") as Role,
         });
 

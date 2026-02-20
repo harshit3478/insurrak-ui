@@ -1,8 +1,11 @@
 "use client";
 
 import { apiClient } from "@/lib/apiClient";
-import { store } from "@/lib/store";
-import { loginSuccess, logout as logoutAction } from "../lib/features/auth/authSlice";
+import { RootState, store } from "@/lib/store";
+import {
+  loginSuccess,
+  logout as logoutAction,
+} from "../lib/features/auth/authSlice";
 
 import { AuthContextType, Role, ROLE_HIERARCHY, User } from "@/types";
 import {
@@ -12,6 +15,7 @@ import {
   useActionState,
   useState,
 } from "react";
+import { useSelector } from "react-redux";
 
 type AuthState = {
   success?: boolean;
@@ -26,6 +30,10 @@ const initialState: AuthState = {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const user = useSelector((state: RootState) => state.auth.user);
+  const isAuthenticated = useSelector(
+    (state: RootState) => state.auth.isAuthenticated,
+  );
 
   // Login action
   const loginAction = async (
@@ -37,19 +45,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const password = formData.get("password") as string;
       const rememberMe = Boolean(formData.get("rememberMe"));
 
-      const { user } = await apiClient.login(email, password);
+      // The apiClient.login function expects an object with email and password properties.
+      const loginResponse = await apiClient.login({ email, password });
+
+      const token = loginResponse.access_token;
+      if (!token) {
+        return { error: "Login failed: No token received." };
+      }
+
+      // Store the token so subsequent API calls are authenticated.
+      localStorage.setItem("token", token);
+
+      // After getting the token, fetch the user's details.
+      const user = await apiClient.getCurrentUser();
+
+      if (!user) {
+        return { error: "Login failed: Could not fetch user details." };
+      }
 
       store.dispatch(
         loginSuccess({
           user,
           rememberMe,
-        }),
+        })
       );
       window.location.href = "/dashboard";
 
       return { success: true };
     } catch (error) {
-      return { error: "Invalid credentials" };
+      const errorMessage = error instanceof Error ? error.message : "Invalid credentials";
+      return { error: errorMessage };
     }
   };
 
@@ -68,20 +93,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const email = String(formData.get("email"));
       const password = String(formData.get("password"));
 
-      const data = (await apiClient.signup({ name, email, password })) as {
-        user: User;
-      };
-       store.dispatch(
+      // Assuming signup creates the user, then we log them in to get a token.
+      await apiClient.signup({ name, email, password });
+      const loginResponse = await apiClient.login({ email, password });
+
+      const token = loginResponse.access_token;
+      if (!token) {
+        return { error: "Signup succeeded, but automatic login failed." };
+      }
+
+      localStorage.setItem("token", token);
+      const user = await apiClient.getCurrentUser();
+
+      store.dispatch(
         loginSuccess({
-          user: data.user,
+          user,
           rememberMe: true,
         })
       );
 
       window.location.href = "/dashboard";
       return { success: true };
-    } catch {
-      return { error: "Signup failed" };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Signup failed";
+      return { error: errorMessage };
     }
   };
 
@@ -101,7 +136,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const hasPermission = (requiredRole: Role): boolean => {
-    const user = store.getState().auth.user;
     if (!user) return false;
     return ROLE_HIERARCHY[user.role] >= ROLE_HIERARCHY[requiredRole];
   };
@@ -109,6 +143,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   return (
     <AuthContext.Provider
       value={{
+        user,
+        isAuthenticated,
         login,
         loginState,
         isLoginPending,
