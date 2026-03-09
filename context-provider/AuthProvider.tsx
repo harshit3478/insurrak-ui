@@ -1,6 +1,6 @@
 "use client";
 
-import { apiClient } from "@/lib/apiClient";
+import { api } from "@/lib/api";
 import { RootState, store } from "@/lib/store";
 import {
   loginSuccess,
@@ -45,8 +45,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const password = formData.get("password") as string;
       const rememberMe = Boolean(formData.get("rememberMe"));
 
-      // The apiClient.login function expects an object with email and password properties.
-      const loginResponse = await apiClient.login({ email, password });
+      // The api.login function expects an object with email and password properties.
+      const loginResponse = await api.login({ email, password });
 
       const token = loginResponse.access_token;
       if (!token) {
@@ -57,7 +57,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       localStorage.setItem("token", token);
 
       // After getting the token, fetch the user's details.
-      const user = await apiClient.getCurrentUser();
+      const user = await api.getCurrentUser();
 
       if (!user) {
         return { error: "Login failed: Could not fetch user details." };
@@ -94,8 +94,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const password = String(formData.get("password"));
 
       // Assuming signup creates the user, then we log them in to get a token.
-      await apiClient.signup({ name, email, password });
-      const loginResponse = await apiClient.login({ email, password });
+      await api.signup({ name, email, password });
+      const loginResponse = await api.login({ email, password });
 
       const token = loginResponse.access_token;
       if (!token) {
@@ -103,7 +103,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       localStorage.setItem("token", token);
-      const user = await apiClient.getCurrentUser();
+      const user = await api.getCurrentUser();
 
       store.dispatch(
         loginSuccess({
@@ -127,7 +127,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const logout = async () => {
     try {
-      await apiClient.logout();
+      await api.logout();
       store.dispatch(logoutAction());
       window.location.href = "/auth/login";
     } catch (error) {

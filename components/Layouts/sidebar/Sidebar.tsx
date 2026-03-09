@@ -9,14 +9,16 @@ import { getNavData } from "./data";
 import { ArrowLeftIcon, ChevronUp } from "./icons";
 import { MenuItem } from "./menu-item";
 import { useSidebarContext } from "./sidebar-context";
-
-const isAuthenticated = false; // TEMP — replace with real auth state
-const NAV_DATA = getNavData(isAuthenticated);
+import { useAuth } from "@/context-provider/AuthProvider";
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { user } = useAuth();
   const { setIsOpen, isOpen, isMobile, toggleSidebar } = useSidebarContext();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+
+  // Recompute nav data whenever the auth user changes
+  const NAV_DATA = getNavData(!!user);
 
   const toggleExpanded = (title: string) => {
     setExpandedItems((prev) => (prev.includes(title) ? [] : [title]));

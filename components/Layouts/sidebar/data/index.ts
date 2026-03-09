@@ -36,7 +36,11 @@ export function getNavData(isAuthenticated: boolean): NavSection[] {
         {
           title: "Dashboard",
           icon: Icons.HomeIcon,
-          url: "/dashboard",
+          items: [
+            { title: "Admin Dashboard", url: "/dashboard/admin" },
+            { title: "Company Dashboard", url: "/dashboard/manager" },
+            { title: "User Dashboard", url: "/dashboard/user" },
+          ]
         },
         {
           title: "Policies",

@@ -3,6 +3,10 @@ export const BREADCRUMB_MAP: Record<string, string> = {
   "/dashboard": "Dashboard",
   "/users": "Users",
   "/users/create": "Add User",
+  "/policies": "Policies",
+  "/claims": "Claims",
+  "/renewals": "Renewals",
+  "/repository": "Repository",
   "/profile": "Profile",
   "/settings": "Settings",
   "/auth/login": "Login",
@@ -66,17 +70,20 @@ export interface AuthContextType {
   hasPermission: (requiredRole: Role) => boolean;
 }
 
-type UsersActionState = {
+export type ActionState = {
   error?: string;
   success?: boolean;
 };
+
+/** @deprecated use ActionState */
+export type UsersActionState = ActionState;
 
 export type UsersContextType = {
   createUser: (formData: FormData) => Promise<void>;
   updateUser: (userId: string) => (formData: FormData) => Promise<void>;
 
-  createState: UsersActionState;
-  updateState: UsersActionState;
+  createState: ActionState;
+  updateState: ActionState;
 
   isCreating: boolean;
   isUpdating: boolean;
@@ -86,9 +93,94 @@ export type CompaniesContextType = {
   createCompany: (formData: FormData) => Promise<void>;
   updateCompany: (companyId: number) => (formData: FormData) => Promise<void>;
 
-  createState: UsersActionState;
-  updateState: UsersActionState;
+  createState: ActionState;
+  updateState: ActionState;
 
   isCreating: boolean;
   isUpdating: boolean;
 };
+
+// ─── Insurance Domain Types ───────────────────────────────────────────────────
+
+export type PolicyType =
+  | 'Fire'
+  | 'Marine'
+  | 'Motor'
+  | 'Health'
+  | 'Liability'
+  | 'Engineering'
+  | 'Miscellaneous';
+
+export type PolicyStatus = 'Active' | 'Expiring Soon' | 'Expired' | 'Pending Renewal';
+
+export interface Policy {
+  id: string;
+  policyNumber: string;
+  companyId: string;
+  companyName: string;
+  insurer: string;
+  type: PolicyType;
+  sumInsured: number;
+  premium: number;
+  startDate: string; // ISO date string
+  endDate: string;   // ISO date string
+  status: PolicyStatus;
+  broker?: string;
+  documents?: string[];
+}
+
+export type ClaimStatus = 'Open' | 'Under Review' | 'Approved' | 'Rejected' | 'Settled';
+
+export interface Claim {
+  id: string;
+  claimNumber: string;
+  policyId: string;
+  policyNumber: string;
+  companyId: string;
+  companyName: string;
+  type: PolicyType;
+  dateOfLoss: string;
+  dateReported: string;
+  claimAmount: number;
+  settledAmount?: number;
+  status: ClaimStatus;
+  description: string;
+  slaDeadline: string;
+  assignedTo?: string;
+}
+
+export type RenewalStatus = 'Due' | 'In Progress' | 'Renewed' | 'Lapsed';
+
+export interface Renewal {
+  id: string;
+  policyId: string;
+  policyNumber: string;
+  companyName: string;
+  type: PolicyType;
+  currentPremium: number;
+  renewalDueDate: string;
+  status: RenewalStatus;
+  daysUntilExpiry: number;
+}
+
+export interface DashboardStats {
+  totalPolicies: number;
+  activePolicies: number;
+  claimsThisMonth: number;
+  renewalsDue: number;
+  totalPremium: number;
+  slaCompliance: number; // 0-100
+}
+
+export interface RepositoryDocument {
+  id: string;
+  name: string;
+  fileType: 'PDF' | 'XLS' | 'XLSX' | 'JPG' | 'PNG' | 'DOCX';
+  policyId: string;
+  policyNumber: string;
+  companyName: string;
+  uploadedOn: string;
+  uploadedBy: string;
+  sizeKb: number;
+  url?: string;
+}

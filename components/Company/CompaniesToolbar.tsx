@@ -3,6 +3,7 @@ import { Search, Filter, Download, Plus } from 'lucide-react';
 
 interface CompaniesToolbarProps {
   onAddCompany?: () => void;
+  onSearch?: (query: string) => void;
 }
 
 export const CompaniesToolbar: React.FC<CompaniesToolbarProps> = ({ onAddCompany }) => {
@@ -14,6 +15,7 @@ export const CompaniesToolbar: React.FC<CompaniesToolbarProps> = ({ onAddCompany
         <input
           type="text"
           placeholder="Search Company"
+          onChange={(e) => onSearch && onSearch(e.target.value)}
           className="w-full pl-10 pr-4 py-3 border border-gray-200 dark:border-dark-3 rounded-lg text-sm text-gray-600 dark:text-gray-300 placeholder-gray-300 bg-white dark:bg-gray-dark focus:outline-none focus:ring-1 focus:ring-gray-300 dark:focus:ring-gray-500 focus:border-gray-300 dark:focus:border-gray-500 transition-all"
         />
       </div>
