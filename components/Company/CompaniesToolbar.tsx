@@ -1,12 +1,15 @@
-import React from 'react';
-import { Search, Filter, Download, Plus } from 'lucide-react';
+import React from "react";
+import { Search, Filter, Download, Plus } from "lucide-react";
 
 interface CompaniesToolbarProps {
   onAddCompany?: () => void;
   onSearch?: (query: string) => void;
 }
 
-export const CompaniesToolbar: React.FC<CompaniesToolbarProps> = ({ onAddCompany }) => {
+export const CompaniesToolbar: React.FC<CompaniesToolbarProps> = ({
+  onAddCompany,
+  onSearch,
+}) => {
   return (
     <div className="flex flex-col md:flex-row justify-between items-center gap-4">
       {/* Search */}
