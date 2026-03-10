@@ -56,12 +56,10 @@ export function Sidebar() {
       <aside
         className={cn(
           "overflow-hidden border-r border-gray-200 bg-white transition-all duration-300 ease-linear dark:border-gray-800 dark:bg-gray-dark",
-          isMobile
-            ? "fixed bottom-0 top-0 z-50 max-w-[290px]"
-            : "sticky top-0 h-screen",
+          "fixed top-0 bottom-0 left-0 z-50 h-screen",
           isMobile
             ? isOpen
-              ? "w-full"
+              ? "w-full max-w-[290px]"
               : "w-0"
             : isOpen
               ? "w-[290px]"
@@ -71,7 +69,10 @@ export function Sidebar() {
         aria-hidden={isMobile ? !isOpen : false}
         inert={isMobile ? !isOpen : undefined}
       >
-        <div className="flex h-full flex-col py-10 pl-[25px] pr-[7px]">
+        <div className={cn(
+          "flex h-full flex-col py-10 pr-[7px]",
+          !isOpen && !isMobile ? "items-center px-0" : "pl-[25px]",
+        )}>
           <div className="relative pr-4.5">
             <div
               onClick={() => !isMobile && toggleSidebar()}
@@ -101,7 +102,7 @@ export function Sidebar() {
           </div>
 
           {/* Navigation */}
-          <div className="custom-scrollbar mt-6 flex-1 overflow-y-auto pr-3 min-[850px]:mt-10">
+          <div className="custom-scrollbar mt-6 flex-1 overflow-y-auto overflow-x-hidden pr-3 min-[850px]:mt-10">
             {NAV_DATA.map((section) => (
               <div key={section.label} className="mb-6">
                 {(isOpen || isMobile) && (

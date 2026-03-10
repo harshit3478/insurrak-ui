@@ -168,7 +168,7 @@ export default function Home() {
               Start Free Trial
             </Link>
             <Link
-              href="/dashboard"
+              href="/dashboard/admin"
               className="w-full sm:w-auto bg-white text-black px-8 py-3.5 rounded-full text-sm font-semibold hover:bg-gray-100 transition-colors">
               Try Demo
             </Link>
