@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { api as apiClient } from '@/lib/api';
+import { PolicyRequestRead, PolicyDocumentRead, QuotationRead, ApprovalRead } from '@/types/api';
 import { 
   ArrowLeft, 
   Search, 
@@ -35,45 +37,18 @@ export default function PolicyDetailsPage() {
     { label: 'Active', status: 'upcoming' },
   ];
 
+  const [policyData, setPolicyData] = useState<PolicyRequestRead | null>(null);
+  const [documents, setDocuments] = useState<PolicyDocumentRead[]>([]);
+  const [quotations, setQuotations] = useState<QuotationRead[]>([]);
+  const [approvals, setApprovals] = useState<ApprovalRead[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const deviationData = [
       { parameter: 'Total Premium', previous: '₹1,20,000', current: '₹1,41,600', change: 'Increased', severity: 'High' },
       { parameter: 'Deductibles', previous: '1% of claim amount', current: '5% of claim amount', change: 'Increased', severity: 'Medium' },
       { parameter: 'Terrorism Cover', previous: 'Included in baseline', current: 'Explicitly Excluded', change: 'Removed', severity: 'High' },
       { parameter: 'STFI Cover', previous: 'Not Included', current: 'Included in baseline', change: 'New', severity: 'Low' },
       { parameter: 'Security Warranty', previous: 'Guards at night only', current: '24/7 Guards mandatory', change: 'Increased', severity: 'Medium' },
-  ];
-
-  const approvalHistory = [
-      { 
-          status: 'Approved', 
-          date: 'Oct 16, 2025 at 10:42 AM', 
-          by: 'Vikram Mehta (VP of Finance)', 
-          quote: 'HDFC Ergo (v2)', 
-          comment: 'The revised deductibles are acceptable. Proceed with payment.',
-          icon: CheckCircle2,
-          color: 'text-green-600',
-          bgColor: 'bg-green-50'
-      },
-      { 
-          status: 'Rejected', 
-          date: 'Oct 16, 2025 at 10:42 AM', 
-          by: 'Vikram Mehta (VP of Finance)', 
-          quote: 'HDFC Ergo (v1)', 
-          comment: 'The 10% deductible on machinery breakdown is too high. Please negotiate this down to 5% before we lock this in.',
-          icon: XCircle,
-          color: 'text-red-600',
-          bgColor: 'bg-red-50'
-      },
-      { 
-          status: 'Sent for Approval', 
-          date: 'Oct 16, 2025 at 10:42 AM', 
-          by: 'Rajesh Kumar (Policy Processor)', 
-          quote: null, 
-          comment: null,
-          icon: Send,
-          color: 'text-gray-900',
-          bgColor: 'bg-gray-50'
-      },
   ];
 
   const activityLog = [
@@ -100,7 +75,58 @@ export default function PolicyDetailsPage() {
       }
   ];
 
-  const onBack = () => router.push(`/company/${companyId}`);
+  // Safely extract string values to fix any potential 404 routing anomalies caused by Promise objects
+  const safeCompanyId = Array.isArray(companyId) ? companyId[0] : (typeof companyId === 'string' ? companyId : String(companyId));
+  const safePolicyId = Array.isArray(policyId) ? policyId[0] : (typeof policyId === 'string' ? policyId : String(policyId));
+
+  useEffect(() => {
+    const fetchPolicyDetails = async () => {
+      if (!safePolicyId) return;
+      try {
+        setLoading(true);
+        const [pData, pDocs, pQuotes, pApprovals] = await Promise.all([
+          apiClient.getPolicyRequestById(Number(safePolicyId)),
+          apiClient.getPolicyDocuments(Number(safePolicyId)).catch(() => []),
+          apiClient.getQuotations(Number(safePolicyId)).catch(() => []),
+          apiClient.getApprovals(Number(safePolicyId)).catch(() => []),
+        ]);
+        setPolicyData(pData);
+        setDocuments(pDocs);
+        setQuotations(pQuotes);
+        setApprovals(pApprovals);
+
+        // Auto-select first quote if deviations tab is active
+        if (pQuotes && pQuotes.length > 0) {
+           setSelectedDeviationQuote(String(pQuotes[0].id));
+        }
+
+      } catch (err) {
+        console.error("Failed to load policy details", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPolicyDetails();
+  }, [safePolicyId]);
+
+  const onBack = () => router.push(`/company/${safeCompanyId}`);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
+      </div>
+    );
+  }
+
+  if (!policyData) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-gray-500">Failed to load policy details. Please check if the Policy ID exists.</p>
+        <button onClick={onBack} className="ml-4 text-blue-500 underline">Go back</button>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 bg-gray-50/50 dark:bg-gray-dark min-h-full font-sans">
@@ -115,9 +141,9 @@ export default function PolicyDetailsPage() {
       {/* Main Container */}
       <div className="bg-white dark:bg-gray-dark rounded-2xl border border-gray-200 dark:border-dark-3 shadow-sm p-8 mb-6">
         <div className="flex justify-between items-start mb-8">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Policy Request: PRQ-882914</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Policy Request: {policyData.policy_number || `PRQ-${policyData.id}`}</h1>
           <span className="bg-yellow-50 text-yellow-700 px-3 py-1 rounded-full text-xs font-medium border border-yellow-100 flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-yellow-500"></span> Approval Pending
+            <span className="w-1.5 h-1.5 rounded-full bg-yellow-500"></span> {policyData.status || 'Draft'}
           </span>
         </div>
 
@@ -152,32 +178,32 @@ export default function PolicyDetailsPage() {
             <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">Policy Overview</h3>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                 <div>
-                    <div className="text-xs text-gray-400 mb-1">Unit</div>
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">Mumbai Plant - Unit A</div>
+                    <div className="text-xs text-gray-400 mb-1">Unit ID</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">{policyData.unit_id}</div>
                 </div>
                 <div>
-                    <div className="text-xs text-gray-400 mb-1">Broker</div>
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">SecureRisk Brokers</div>
+                    <div className="text-xs text-gray-400 mb-1">Broker ID</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">{policyData.broker_id}</div>
                 </div>
                 <div>
                     <div className="text-xs text-gray-400 mb-1">Sum Insured</div>
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">₹5,00,00,000</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">₹{policyData.sum_insured || '0'}</div>
                 </div>
                 <div>
                     <div className="text-xs text-gray-400 mb-1">Created By</div>
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">Rajesh Kumar</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">UID: {policyData.requested_by_id}</div>
                 </div>
                 <div>
-                    <div className="text-xs text-gray-400 mb-1">Asset</div>
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">Heavy Machinery (2)</div>
+                    <div className="text-xs text-gray-400 mb-1">Asset Description</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">{policyData.asset_description || '-'}</div>
                 </div>
                 <div>
                     <div className="text-xs text-gray-400 mb-1">Line of Business</div>
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">Fire & Burglary</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">{policyData.line_of_business}</div>
                 </div>
                  <div>
                     <div className="text-xs text-gray-400 mb-1">Created</div>
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">Oct 12, 2025</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">{new Date(policyData.created_at).toLocaleDateString()}</div>
                 </div>
             </div>
         </div>
@@ -223,20 +249,19 @@ export default function PolicyDetailsPage() {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50 dark:divide-dark-3">
-                                <tr>
-                                    <td className="py-3 px-4 text-sm font-medium text-gray-900 dark:text-white">GST Certificate</td>
-                                    <td className="py-3 px-4 text-sm text-blue-600">acme_mumbai_gst.pdf</td>
-                                    <td className="py-3 px-4 text-sm text-gray-500 dark:text-gray-400">Rajesh Kumar</td>
-                                    <td className="py-3 px-4 text-sm text-gray-500 dark:text-gray-400">Oct 12, 2025</td>
-                                    <td className="py-3 px-4"><Download className="w-4 h-4 text-gray-400 cursor-pointer" /></td>
-                                </tr>
-                                <tr>
-                                    <td className="py-3 px-4 text-sm font-medium text-gray-900 dark:text-white">Underwriting Data</td>
-                                    <td className="py-3 px-4 text-sm text-blue-600">machinery_survey.xlsx</td>
-                                    <td className="py-3 px-4 text-sm text-gray-500 dark:text-gray-400">Rajesh Kumar</td>
-                                    <td className="py-3 px-4 text-sm text-gray-500 dark:text-gray-400">Oct 13, 2025</td>
-                                    <td className="py-3 px-4"><Download className="w-4 h-4 text-gray-400 cursor-pointer" /></td>
-                                </tr>
+                                {documents.length > 0 ? documents.map((doc) => (
+                                  <tr key={doc.id}>
+                                      <td className="py-3 px-4 text-sm font-medium text-gray-900 dark:text-white">{doc.document_type}</td>
+                                      <td className="py-3 px-4 text-sm text-blue-600">{doc.file_name}</td>
+                                      <td className="py-3 px-4 text-sm text-gray-500 dark:text-gray-400">UID: {doc.uploaded_by_id}</td>
+                                      <td className="py-3 px-4 text-sm text-gray-500 dark:text-gray-400">{new Date(doc.created_at).toLocaleDateString()}</td>
+                                      <td className="py-3 px-4"><Download className="w-4 h-4 text-gray-400 cursor-pointer" /></td>
+                                  </tr>
+                                )) : (
+                                  <tr>
+                                    <td colSpan={5} className="py-8 text-center text-sm text-gray-500">No documents found</td>
+                                  </tr>
+                                )}
                             </tbody>
                         </table>
                     </div>
@@ -319,59 +344,58 @@ export default function PolicyDetailsPage() {
         )}
 
         {activeTab === 'quotations' && (
-             <div>
+                 <div>
                 <div className="flex items-center gap-2 mb-6">
                     <FileText className="w-4 h-4 text-gray-500" />
-                    <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Quotations (3)</h4>
+                    <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Quotations ({quotations.length})</h4>
                 </div>
                 <div className="border border-gray-100 dark:border-dark-3 rounded-lg overflow-hidden">
                     <table className="w-full">
                         <thead className="bg-gray-50/50 dark:bg-dark-2/50">
                             <tr>
-                                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Insurer ↓</th>
+                                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Insurer ID ↓</th>
                                 <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Premium ↓</th>
-                                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400">GST (18%) ↓</th>
+                                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400">GST ↓</th>
                                 <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Total Premium ↓</th>
                                 <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Attachment ↓</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50 dark:divide-dark-3">
-                            {/* HDFC Row with Expansion Details */}
-                            <tr className="bg-white dark:bg-gray-dark">
-                                <td className="py-4 px-4 text-sm font-medium text-gray-900 dark:text-white">HDFC Ergo</td>
-                                <td className="py-4 px-4 text-sm text-gray-600 dark:text-gray-300">₹1,20,000</td>
-                                <td className="py-4 px-4 text-sm text-gray-600 dark:text-gray-300">₹21,600</td>
-                                <td className="py-4 px-4 text-sm text-gray-600 dark:text-gray-300">₹1,41,600</td>
-                                <td className="py-4 px-4 text-sm text-gray-500 text-right"><Download className="w-4 h-4 ml-auto" /></td>
-                            </tr>
-                            <tr className="bg-gray-50/50 dark:bg-dark-2/50">
-                                <td colSpan={5} className="py-4 px-8">
-                                    <h5 className="text-xs font-bold text-gray-900 dark:text-white mb-2">Coverage Terms (HDFC Ergo)</h5>
-                                    <ul className="list-disc pl-4 space-y-1 text-xs text-gray-500 dark:text-gray-400">
-                                        <li>Perils Covered: Standard Fire & Special Perils, Earthquake, STFI.</li>
-                                        <li>Deductibles: 5% of claim amount subject to minimum ₹50,000.</li>
-                                        <li>Exclusions: Act of God perils not covered in baseline, war, nuclear.</li>
-                                        <li>Warranties: 24/7 Security guard mandatory on premises.</li>
-                                        <li>Co-Insurance: None.</li>
-                                    </ul>
-                                </td>
-                            </tr>
-                            {/* ICICI */}
-                             <tr className="bg-white dark:bg-gray-dark">
-                                <td className="py-4 px-4 text-sm font-medium text-gray-900 dark:text-white">ICICI Lombard</td>
-                                <td className="py-4 px-4 text-sm text-gray-600 dark:text-gray-300">₹1,20,000</td>
-                                <td className="py-4 px-4 text-sm text-gray-600 dark:text-gray-300">₹21,600</td>
-                                <td className="py-4 px-4 text-sm text-gray-600 dark:text-gray-300">₹1,41,600</td>
-                                <td className="py-4 px-4 text-sm text-gray-500 text-right"><Download className="w-4 h-4 ml-auto" /></td>
-                            </tr>
-                             {/* Bajaj */}
-                             <tr className="bg-white dark:bg-gray-dark">
-                                <td className="py-4 px-4 text-sm font-medium text-gray-900 dark:text-white">Bajaj Allianz</td>
-                                <td className="py-4 px-4 text-sm text-gray-600 dark:text-gray-300">₹1,20,000</td>
-                                <td className="py-4 px-4 text-sm text-gray-600 dark:text-gray-300">₹21,600</td>
-                                <td className="py-4 px-4 text-sm text-gray-600 dark:text-gray-300">₹1,41,600</td>
-                                <td className="py-4 px-4 text-sm text-gray-500 text-right"><Download className="w-4 h-4 ml-auto" /></td>
-                            </tr>
+                            {quotations.length > 0 ? quotations.map((q) => (
+                              <React.Fragment key={q.id}>
+                                <tr className="bg-white dark:bg-gray-dark border-t border-gray-100 dark:border-dark-3">
+                                    <td className="py-4 px-4 text-sm font-medium text-gray-900 dark:text-white">{q.insurer_id} (Version: {q.version}) {q.is_selected && '★'}</td>
+                                    <td className="py-4 px-4 text-sm text-gray-600 dark:text-gray-300">₹{q.premium}</td>
+                                    <td className="py-4 px-4 text-sm text-gray-600 dark:text-gray-300">₹{q.gst}</td>
+                                    <td className="py-4 px-4 text-sm text-gray-600 dark:text-gray-300">₹{q.total_premium}</td>
+                                    <td className="py-4 px-4 text-sm text-gray-500 text-right">
+                                      {q.file_name ? (
+                                        <a href={q.file_path || '#'} target="_blank" rel="noreferrer" className="flex items-center justify-end gap-1 text-blue-500 hover:text-blue-700">
+                                            <Download className="w-4 h-4 ml-auto" />
+                                        </a>
+                                      ) : '-'}
+                                    </td>
+                                </tr>
+                                {q.terms && (
+                                  <tr className="bg-gray-50/50 dark:bg-dark-2/50">
+                                      <td colSpan={5} className="py-4 px-8 border-t-0">
+                                          <h5 className="text-xs font-bold text-gray-900 dark:text-white mb-2">Coverage Terms</h5>
+                                          <ul className="list-disc pl-4 space-y-1 text-xs text-gray-500 dark:text-gray-400">
+                                              {q.terms.perils_included && <li>Perils Covered: {q.terms.perils_included}</li>}
+                                              {q.terms.perils_excluded && <li>Exclusions: {q.terms.perils_excluded}</li>}
+                                              {q.terms.deductibles && <li>Deductibles: {q.terms.deductibles}</li>}
+                                              {q.terms.warranties && <li>Warranties: {q.terms.warranties}</li>}
+                                              {q.terms.co_insurance && <li>Co-Insurance: {q.terms.co_insurance}</li>}
+                                          </ul>
+                                      </td>
+                                  </tr>
+                                )}
+                              </React.Fragment>
+                            )) : (
+                              <tr>
+                                  <td colSpan={5} className="py-8 text-center text-sm text-gray-500">No quotations uploaded yet</td>
+                              </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>
@@ -385,59 +409,30 @@ export default function PolicyDetailsPage() {
                     <h4 className="text-base font-semibold text-gray-900 dark:text-white mb-4">Quotations</h4>
                     <p className="text-xs text-gray-400 mb-4">Select Quotation to see Deviation Analysis</p>
 
-                    {/* Quote Card - HDFC (Selected) */}
-                    <div
-                        onClick={() => setSelectedDeviationQuote('hdfc-v2')}
-                        className={`p-4 rounded-lg border cursor-pointer relative transition-all ${
-                            selectedDeviationQuote === 'hdfc-v2' 
-                            ? 'border-green-500 bg-green-50/30' 
-                            : 'border-gray-200 dark:border-dark-3 bg-white dark:bg-gray-dark hover:border-gray-300 dark:hover:border-gray-500'
-                        }`}
-                    >
-                        <div className="flex justify-between items-start">
-                            <div>
-                                <h5 className="font-semibold text-gray-900 dark:text-white text-sm">HDFC Ergo v2</h5>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Total Premium : ₹1,41,600</p>
-                            </div>
-                            {selectedDeviationQuote === 'hdfc-v2' && <CheckCircle2 className="w-5 h-5 text-green-600 fill-green-100" />}
-                        </div>
-                    </div>
-
-                    {/* Quote Card - ICICI */}
-                    <div
-                        onClick={() => setSelectedDeviationQuote('icici')}
-                        className={`p-4 rounded-lg border cursor-pointer relative transition-all ${
-                            selectedDeviationQuote === 'icici' 
-                            ? 'border-green-500 bg-green-50/30' 
-                            : 'border-gray-200 dark:border-dark-3 bg-white dark:bg-gray-dark hover:border-gray-300 dark:hover:border-gray-500'
-                        }`}
-                    >
-                        <div className="flex justify-between items-start">
-                            <div>
-                                <h5 className="font-semibold text-gray-900 dark:text-white text-sm">ICICI Lombard</h5>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Total Premium : ₹1,41,600</p>
-                            </div>
-                            {selectedDeviationQuote === 'icici' && <CheckCircle2 className="w-5 h-5 text-green-600 fill-green-100" />}
-                        </div>
-                    </div>
-
-                     {/* Quote Card - Bajaj */}
-                     <div
-                        onClick={() => setSelectedDeviationQuote('bajaj')}
-                        className={`p-4 rounded-lg border cursor-pointer relative transition-all ${
-                            selectedDeviationQuote === 'bajaj' 
-                            ? 'border-green-500 bg-green-50/30' 
-                            : 'border-gray-200 dark:border-dark-3 bg-white dark:bg-gray-dark hover:border-gray-300 dark:hover:border-gray-500'
-                        }`}
-                    >
-                        <div className="flex justify-between items-start">
-                            <div>
-                                <h5 className="font-semibold text-gray-900 dark:text-white text-sm">ICICI Lombard</h5>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Total Premium : ₹1,41,600</p>
-                            </div>
-                            {selectedDeviationQuote === 'bajaj' && <CheckCircle2 className="w-5 h-5 text-green-600 fill-green-100" />}
-                        </div>
-                    </div>
+                    {quotations.map(quote => (
+                      <div
+                          key={quote.id}
+                          onClick={() => setSelectedDeviationQuote(String(quote.id))}
+                          className={`p-4 rounded-lg border cursor-pointer relative transition-all ${
+                              selectedDeviationQuote === String(quote.id) 
+                              ? 'border-green-500 bg-green-50/30' 
+                              : 'border-gray-200 dark:border-dark-3 bg-white dark:bg-gray-dark hover:border-gray-300 dark:hover:border-gray-500'
+                          }`}
+                      >
+                          <div className="flex justify-between items-start">
+                              <div>
+                                  <h5 className="font-semibold text-gray-900 dark:text-white text-sm">Insurer ID: {quote.insurer_id} {quote.is_selected && '(Selected)'}</h5>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Total Premium : ₹{quote.total_premium}</p>
+                              </div>
+                              {selectedDeviationQuote === String(quote.id) && <CheckCircle2 className="w-5 h-5 text-green-600 fill-green-100" />}
+                          </div>
+                      </div>
+                    ))}
+                    {quotations.length === 0 && (
+                      <div className="p-4 rounded-lg border border-gray-200 dark:border-dark-3 text-sm text-gray-500 text-center">
+                        No quotes available yet.
+                      </div>
+                    )}
                 </div>
 
                 {/* Right Content - Analysis Table */}
@@ -496,34 +491,36 @@ export default function PolicyDetailsPage() {
                 <h4 className="text-base font-semibold text-gray-900 dark:text-white mb-6">Approval History</h4>
                 
                 <div className="space-y-8 pl-2 ml-2">
-                    {approvalHistory.map((item, idx) => (
+                    {approvals.length > 0 ? approvals.map((item, idx) => (
                         <div key={idx} className="relative pl-8 border-l border-gray-200 dark:border-dark-3 last:border-0 pb-8 last:pb-0">
                             {/* Dot on Timeline */}
                             <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full bg-gray-200 dark:bg-dark-3 border-2 border-white dark:border-gray-dark"></div>
                             
                             <div className="border border-gray-200 dark:border-dark-3 rounded-lg p-6 bg-white dark:bg-gray-dark shadow-sm">
                                 <div className="flex items-center gap-2 mb-3">
-                                    <item.icon className={`w-5 h-5 ${item.color}`} />
-                                    <span className="text-sm font-semibold text-gray-900 dark:text-white">{item.status}</span>
-                                    <span className="text-xs text-gray-400 font-light ml-1">{item.date}</span>
+                                    {item.decision === 'APPROVED' ? <CheckCircle2 className="w-5 h-5 text-green-600" /> : <XCircle className="w-5 h-5 text-red-600" />}
+                                    <span className="text-sm font-semibold text-gray-900 dark:text-white">{item.decision}</span>
+                                    <span className="text-xs text-gray-400 font-light ml-1">{new Date(item.created_at).toLocaleString()}</span>
                                 </div>
                                 <div className="space-y-1 pl-7">
-                                    <p className="text-xs text-gray-500 dark:text-gray-400"><span className="text-gray-400">By :</span> {item.by}</p>
-                                    {item.quote && (
-                                         <p className="text-xs text-gray-500 dark:text-gray-400"><span className="text-gray-400">Quote Selected:</span> {item.quote}</p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400"><span className="text-gray-400">By Approver UID:</span> {item.approver_id}</p>
+                                    {item.quotation_id && (
+                                         <p className="text-xs text-gray-500 dark:text-gray-400"><span className="text-gray-400">Quote ID:</span> {item.quotation_id}</p>
                                     )}
-                                    {item.comment && (
+                                    {item.comments && (
                                         <div className="mt-3">
                                             <p className="text-xs text-gray-400 mb-1">Comments</p>
                                             <div className="bg-gray-50 dark:bg-dark-2 p-3 rounded-md text-xs text-gray-700 dark:text-gray-300 border border-gray-100 dark:border-dark-3">
-                                                {item.comment}
+                                                {item.comments}
                                             </div>
                                         </div>
                                     )}
                                 </div>
                             </div>
                         </div>
-                    ))}
+                    )) : (
+                      <p className="text-sm text-gray-500">No approvals history found.</p>
+                    )}
                 </div>
             </div>
         )}

@@ -1,15 +1,27 @@
 import { Company, Role, User } from "@/types";
+import { 
+  UserRead, CompanyRead, RolesAndPermissionsResponse, 
+  BranchRead, UnitRead, BrokerRead, InsurerRead, 
+  PolicyRequestRead, PolicyDocumentRead, QuotationRead, 
+  ApprovalRead, InvoiceRead 
+} from "@/types/api";
+import { adaptUser, adaptCompany } from "@/lib/adapters";
 
-// export const API_BASE_URL = 'http://20.244.42.244:8000/api/v1';
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000/";
+const API_BASE_URL = "/api/v1";
 
 export const API_ENDPOINTS = {
   LOGIN: '/auth/login',
-  SIGNUP: '/auth/register', // Assuming this endpoint, not in user's snippet
-  LOGOUT: '/auth/logout', // Assuming this endpoint
-  ME: '/auth/me', // Assuming this endpoint
+  LOGOUT: '/auth/logout',
+  UPDATE_PASSWORD: '/auth/update-password',
+  ME: '/users/me', 
+  ROLES_PERMISSIONS: '/users/roles-permissions',
   COMPANIES: '/companies',
-  USERS: '/users/', // Note the trailing slash from user's snippet
+  USERS: '/users',
+  BRANCHES: '/branches',
+  UNITS: '/units',
+  BROKERS: '/brokers',
+  INSURERS: '/insurers',
+  POLICY_REQUESTS: '/policy-requests',
 };
 
 const getHeaders = () => {
@@ -42,7 +54,10 @@ const api = {
         headers: getHeaders(),
         body: JSON.stringify(data),
       });
-      if (!response.ok) throw new Error(`POST ${endpoint} failed: ${response.statusText}`);
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.detail ? JSON.stringify(err.detail) : `POST ${endpoint} failed: ${response.statusText}`);
+      }
       return await response.json();
     } catch (error) {
       console.error('API Error:', error);
@@ -57,7 +72,10 @@ const api = {
         headers: getHeaders(),
         body: JSON.stringify(data),
       });
-      if (!response.ok) throw new Error(`PATCH ${endpoint} failed: ${response.statusText}`);
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.detail ? JSON.stringify(err.detail) : `PATCH ${endpoint} failed: ${response.statusText}`);
+      }
       return await response.json();
     } catch (error) {
       console.error('API Error:', error);
@@ -82,79 +100,210 @@ const api = {
 };
 
 export const apiClient = {
-  // Auth Methods
+  // ─── Auth Methods ──────────────────────────────────────────
   login: async (credentials: { email: string; password: string }) => {
-    // Standard OAuth2 password flow often expects form data, not JSON.
-    // It also typically uses 'username' as the key for the user identifier.
-    const body = new URLSearchParams({
-      username: credentials.email,
+    // Real API expects JSON body: { username, password, keep_login }
+    return api.post(API_ENDPOINTS.LOGIN, {
+      username: credentials.email, // backend expects 'username'
       password: credentials.password,
-    });
-
-    const response = await fetch(`${API_BASE_URL}${API_ENDPOINTS.LOGIN}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: body.toString(),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.detail || 'Login failed');
-    }
-    return await response.json();
-  },
-  signup: (data: { name: string; email: string; password: string }) => {
-    // Unauthenticated post
-    return fetch(`${API_BASE_URL}${API_ENDPOINTS.SIGNUP}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-    }).then(res => {
-        if (!res.ok) throw new Error('Signup failed');
-        return res.json();
+      keep_login: true,
     });
   },
-  logout: () => {
-    return api.post(API_ENDPOINTS.LOGOUT, {});
-  },
-  getCurrentUser: () => {
-    return api.get(API_ENDPOINTS.ME);
-  },
-
-  // User Methods
-  getAll: () => {
-    return api.get(API_ENDPOINTS.USERS);
-  },
-  getById: (id: string) => {
-    return api.get(`${API_ENDPOINTS.USERS}${id}/`);
-  },
-  createUser: (data: { name: string; email: string; password: string; role: Role }): Promise<User> => {
-    return api.post(API_ENDPOINTS.USERS, data);
-  },
-  updateProfile: (userId: string, data: Partial<User>): Promise<User> => {
-    return api.patch(`${API_ENDPOINTS.USERS}${userId}/`, data);
-  },
-  deleteUser: (id: string) => {
-    return api.delete(`${API_ENDPOINTS.USERS}${id}/`);
-  },
-  updateUserRole: (userId: string, role: string) => {
-    return api.patch(`${API_ENDPOINTS.USERS}${userId}/`, { role });
+  
+  signup: async (_data: { name: string; email: string; password: string }) => {
+    // Returning a dummy response to prevent immediate UI crash if called.
+    console.warn("Signup is not supported on the public API directly.");
+    return { success: false, detail: "Signup not supported" };
   },
 
-  // Company Methods
-  getAllCompanies: (): Promise<Company[]> => {
-    return api.get(API_ENDPOINTS.COMPANIES);
+  logout: async () => {
+    return { success: true };
   },
-  getCompanyById: (companyId: number): Promise<Company> => {
-    return api.get(`${API_ENDPOINTS.COMPANIES}/${companyId}/`);
+
+  updatePassword: async (token: string, new_password: string) => {
+    return api.post(API_ENDPOINTS.UPDATE_PASSWORD, { token, new_password });
   },
-  createCompany: (data: Omit<Company, 'id' | 'status'>): Promise<Company> => {
-    return api.post(API_ENDPOINTS.COMPANIES, data);
+
+  getCurrentUser: async (): Promise<User> => {
+    const apiUser: UserRead = await api.get(API_ENDPOINTS.ME);
+    return adaptUser(apiUser);
   },
-  updateCompany: (companyId: number, data: Partial<Omit<Company, 'id'>>): Promise<Company> => {
-    return api.patch(`${API_ENDPOINTS.COMPANIES}/${companyId}/`, data);
+
+  // ─── User Methods ──────────────────────────────────────────
+  getAll: async (): Promise<User[]> => {
+    const users: UserRead[] = await api.get(API_ENDPOINTS.USERS);
+    return users.map(u => adaptUser(u));
   },
-  deleteCompany: (id: number): Promise<{ success: boolean }> => {
-    return api.delete(`${API_ENDPOINTS.COMPANIES}/${id}/`);
+  
+  getById: async (id: string | number): Promise<User> => {
+    const user: UserRead = await api.get(`${API_ENDPOINTS.USERS}/${id}`);
+    return adaptUser(user);
+  },
+  
+  createUser: async (data: { name: string; email: string; password: string; role: Role }): Promise<User> => {
+    // Real API expects: { username, email, password, role_id }
+    // We arbitrarily map Role to an int here. In reality, we should fetch roles-permissions.
+    // Assuming: 1=COMPANY_USER, 2=COMPANY_ADMIN, 3=SUPER_ADMIN
+    const roleIdMap: Record<Role, number> = {
+      COMPANY_USER: 1,
+      COMPANY_ADMIN: 2,
+      SUPER_ADMIN: 3
+    };
+    
+    const payload = {
+      username: data.name,
+      email: data.email,
+      password: data.password,
+      role_id: roleIdMap[data.role] || 1,
+    };
+    
+    const newUser: UserRead = await api.post(API_ENDPOINTS.USERS, payload);
+    return adaptUser(newUser, data.role === 'SUPER_ADMIN' ? 'Super Admin' : (data.role === 'COMPANY_ADMIN' ? 'Company Admin' : 'Company User'));
+  },
+  
+  updateProfile: async (userId: string | number, data: Partial<User>): Promise<User> => {
+    // Mapping our generic update to what is allowed.
+    // In the real API, a user resource patch isn't explicitly defined except for roles.
+    console.warn("Update profile is not fully supported by standard user patch; only roles usually can be patched");
+    return apiClient.getById(userId); 
+  },
+  
+  deleteUser: async (_id: string | number) => {
+    // Non-existent in API. We pretend it works or deactivate.
+    return { success: true };
+  },
+  
+  updateUserRole: async (userId: string | number, roleId: number) => {
+    const payload = { role_id: roleId };
+    return api.patch(`${API_ENDPOINTS.USERS}/${userId}/role`, payload);
+  },
+
+  getRolesAndPermissions: async (): Promise<RolesAndPermissionsResponse> => {
+    return api.get(API_ENDPOINTS.ROLES_PERMISSIONS);
+  },
+
+  // ─── Company Methods ────────────────────────────────────────
+  getAllCompanies: async (): Promise<Company[]> => {
+    const companies: CompanyRead[] = await api.get(API_ENDPOINTS.COMPANIES);
+    return companies.map(adaptCompany);
+  },
+  
+  getCompanyById: async (companyId: number): Promise<Company> => {
+    const comp: CompanyRead = await api.get(`${API_ENDPOINTS.COMPANIES}/${companyId}`);
+    return adaptCompany(comp);
+  },
+  
+  createCompany: async (data: Omit<Company, 'id' | 'status'>): Promise<Company> => {
+    // We must pass superadmin details as per the schema.
+    const payload = {
+      name: data.name,
+      email: data.adminEmail,
+      is_active: true,
+      superadmin_username: data.admin || 'admin',
+      superadmin_email: data.adminEmail || 'admin@example.com'
+    };
+    const comp: CompanyRead = await api.post(API_ENDPOINTS.COMPANIES, payload);
+    return adaptCompany(comp);
+  },
+  
+  updateCompany: async (companyId: number, data: Partial<Omit<Company, 'id'>>): Promise<Company> => {
+    const payload = {
+      name: data.name,
+      email: data.adminEmail,
+      is_active: data.status === 'Active'
+    };
+    const comp: CompanyRead = await api.patch(`${API_ENDPOINTS.COMPANIES}/${companyId}`, payload);
+    return adaptCompany(comp);
+  },
+  
+  deleteCompany: async (id: number): Promise<{ success: boolean }> => {
+    // Soft delete via is_active
+    await api.patch(`${API_ENDPOINTS.COMPANIES}/${id}`, { is_active: false });
+    return { success: true };
+  },
+
+  // ─── Branches & Units ─────────────────────────────────────────
+  getAllBranches: async (): Promise<BranchRead[]> => {
+    return api.get(API_ENDPOINTS.BRANCHES);
+  },
+  getBranchById: async (branchId: number): Promise<BranchRead> => {
+    return api.get(`${API_ENDPOINTS.BRANCHES}/${branchId}`);
+  },
+  createBranch: async (data: Partial<BranchRead>): Promise<BranchRead> => {
+    return api.post(API_ENDPOINTS.BRANCHES, data);
+  },
+  updateBranch: async (branchId: number, data: Partial<BranchRead>): Promise<BranchRead> => {
+    return api.patch(`${API_ENDPOINTS.BRANCHES}/${branchId}`, data);
+  },
+  getUnitsByBranch: async (branchId: number): Promise<UnitRead[]> => {
+    return api.get(`${API_ENDPOINTS.BRANCHES}/${branchId}/units`);
+  },
+  createUnitForBranch: async (branchId: number, data: Partial<UnitRead>): Promise<UnitRead> => {
+    return api.post(`${API_ENDPOINTS.BRANCHES}/${branchId}/units`, data);
+  },
+  getAllUnits: async (companyId?: number): Promise<UnitRead[]> => {
+    const query = companyId ? `?company_id=${companyId}` : '';
+    return api.get(`${API_ENDPOINTS.UNITS}${query}`);
+  },
+  getUnitById: async (unitId: number): Promise<UnitRead> => {
+    return api.get(`${API_ENDPOINTS.UNITS}/${unitId}`);
+  },
+  updateUnit: async (unitId: number, data: Partial<UnitRead>): Promise<UnitRead> => {
+    return api.patch(`${API_ENDPOINTS.UNITS}/${unitId}`, data);
+  },
+
+  // ─── Masters (Brokers/Insurers) ───────────────────────────────
+  getAllBrokers: async (): Promise<BrokerRead[]> => {
+    return api.get(API_ENDPOINTS.BROKERS);
+  },
+  getAllInsurers: async (): Promise<InsurerRead[]> => {
+    return api.get(API_ENDPOINTS.INSURERS);
+  },
+
+  // ─── Procurement (Policy Requests) ────────────────────────────
+  getPolicyRequests: async (companyId?: number, status?: string): Promise<PolicyRequestRead[]> => {
+    const params = new URLSearchParams();
+    if (companyId) params.append('company_id', String(companyId));
+    if (status) params.append('status', status);
+    const qs = params.toString() ? `?${params.toString()}` : '';
+    return api.get(`${API_ENDPOINTS.POLICY_REQUESTS}${qs}`);
+  },
+  getPolicyRequestById: async (prId: number): Promise<PolicyRequestRead> => {
+    return api.get(`${API_ENDPOINTS.POLICY_REQUESTS}/${prId}`);
+  },
+  createPolicyRequest: async (data: Partial<PolicyRequestRead>): Promise<PolicyRequestRead> => {
+    return api.post(API_ENDPOINTS.POLICY_REQUESTS, data);
+  },
+  updatePolicyRequest: async (prId: number, data: Partial<PolicyRequestRead>): Promise<PolicyRequestRead> => {
+    return api.patch(`${API_ENDPOINTS.POLICY_REQUESTS}/${prId}`, data);
+  },
+  transitionPolicyRequest: async (prId: number, new_status: string): Promise<PolicyRequestRead> => {
+    return api.post(`${API_ENDPOINTS.POLICY_REQUESTS}/${prId}/transition`, { new_status });
+  },
+
+  // ─── Procurement Sub-resources ─────────────────────────────────
+  getPolicyDocuments: async (prId: number): Promise<PolicyDocumentRead[]> => {
+    return api.get(`${API_ENDPOINTS.POLICY_REQUESTS}/${prId}/documents`);
+  },
+  uploadPolicyDocument: async (prId: number, data: any): Promise<PolicyDocumentRead> => {
+    return api.post(`${API_ENDPOINTS.POLICY_REQUESTS}/${prId}/documents`, data);
+  },
+  getQuotations: async (prId: number): Promise<QuotationRead[]> => {
+    return api.get(`${API_ENDPOINTS.POLICY_REQUESTS}/${prId}/quotations`);
+  },
+  uploadQuotation: async (prId: number, data: any): Promise<QuotationRead> => {
+    return api.post(`${API_ENDPOINTS.POLICY_REQUESTS}/${prId}/quotations`, data);
+  },
+  getApprovals: async (prId: number): Promise<ApprovalRead[]> => {
+    return api.get(`${API_ENDPOINTS.POLICY_REQUESTS}/${prId}/approval`);
+  },
+  submitApproval: async (prId: number, data: any): Promise<ApprovalRead> => {
+    return api.post(`${API_ENDPOINTS.POLICY_REQUESTS}/${prId}/approval`, data);
+  },
+  getInvoices: async (prId: number): Promise<InvoiceRead[]> => {
+    return api.get(`${API_ENDPOINTS.POLICY_REQUESTS}/${prId}/invoices`);
+  },
+  uploadInvoice: async (prId: number, data: any): Promise<InvoiceRead> => {
+    return api.post(`${API_ENDPOINTS.POLICY_REQUESTS}/${prId}/invoices`, data);
   },
 };

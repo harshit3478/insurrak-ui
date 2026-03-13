@@ -99,36 +99,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     prevState: AuthState,
     formData: FormData,
   ): Promise<AuthState> => {
-    try {
-      const name = String(formData.get("name"));
-      const email = String(formData.get("email"));
-      const password = String(formData.get("password"));
-
-      await api.signup({ name, email, password });
-      const loginResponse = await api.login({ email, password });
-
-      const token = loginResponse.access_token;
-      if (!token) {
-        return { error: "Signup succeeded, but automatic login failed." };
-      }
-
-      localStorage.setItem("token", token);
-      const user = await api.getCurrentUser();
-
-      // Always persist so state survives the page navigation
-      store.dispatch(
-        loginSuccess({
-          user,
-          rememberMe: true,
-        })
-      );
-
-      window.location.href = getDashboardRoute(user.role as Role);
-      return { success: true };
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Signup failed";
-      return { error: errorMessage };
-    }
+    // Real API does not support public signup. User must be created by Admin.
+    return { error: "Signup is not supported. Please contact your administrator." };
   };
 
   const [signupState, signup, isSignupPending] = useActionState(
