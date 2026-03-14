@@ -1,7 +1,7 @@
 import { Company, Role, User } from "@/types";
 
-export const API_BASE_URL = 'http://20.244.42.244:8000/api/v1';
-// const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000/";
+// export const API_BASE_URL = 'http://20.244.42.244:8000/api/v1';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000/";
 
 export const API_ENDPOINTS = {
   LOGIN: '/auth/login',
@@ -35,7 +35,7 @@ const api = {
     }
   },
 
-  post: async (endpoint: string, data: any) => {
+  post: async <T = unknown>(endpoint: string, data: T) => {
     try {
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
@@ -50,7 +50,7 @@ const api = {
     }
   },
 
-  patch: async (endpoint: string, data: any) => {
+  patch: async <T = unknown>(endpoint: string, data: T) => {
     try {
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'PATCH',
@@ -153,5 +153,8 @@ export const apiClient = {
   },
   updateCompany: (companyId: number, data: Partial<Omit<Company, 'id'>>): Promise<Company> => {
     return api.patch(`${API_ENDPOINTS.COMPANIES}/${companyId}/`, data);
+  },
+  deleteCompany: (id: number): Promise<{ success: boolean }> => {
+    return api.delete(`${API_ENDPOINTS.COMPANIES}/${id}/`);
   },
 };

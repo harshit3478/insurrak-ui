@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { FormSection, FormInput, Stepper } from '@/components/ui/FormCommon';
 import { Company } from '@/types';
@@ -28,6 +28,7 @@ export function CompanyForm({
 }: CompanyFormProps) {
   const router = useRouter();
   const [step, setStep] = useState(1);
+  const [isSubmitting, startTransition] = useTransition();
 
   // Company Data State
   const [formData, setFormData] = useState({
@@ -97,7 +98,9 @@ export function CompanyForm({
     finalFormData.append('admin', primaryAdmin ? primaryAdmin.name : formData.admin);
     finalFormData.append('adminEmail', primaryAdmin ? primaryAdmin.email : formData.adminEmail);
 
-    action(finalFormData);
+    startTransition(() => {
+      action(finalFormData);
+    });
   };
 
   const handleNext = () => {
@@ -108,6 +111,7 @@ export function CompanyForm({
       handleSubmit();
     }
   };
+
 
   return (
     <div className="bg-white dark:bg-gray-dark p-8 rounded-2xl border border-gray-100 dark:border-dark-3 shadow-sm">
@@ -244,10 +248,10 @@ export function CompanyForm({
         <button
           type="button"
           onClick={handleNext}
-          disabled={pending}
+          disabled={pending || isSubmitting}
           className="px-8 py-3 bg-[#0B1727] text-white rounded-lg font-medium hover:bg-[#1a2639] transition-colors"
         >
-          {pending ? 'Saving...' : (step === 1 ? 'Next' : (isEdit ? 'Update Company' : 'Finish'))}
+          {pending || isSubmitting ? 'Saving...' : (step === 1 ? 'Next' : (isEdit ? 'Update Company' : 'Finish'))}
         </button>
         <button
           type="button"

@@ -32,10 +32,10 @@ type UsersTableProps = {
   canDelete: boolean;
   canToggle: boolean;
 
-  // Props for selection
-  selectedUsers: string[];
-  onSelectUser: (id: string) => void;
-  onSelectAllUsers: () => void;
+  // Optional — for future bulk selection support
+  selectedUsers?: string[];
+  onSelectUser?: (id: string) => void;
+  onSelectAllUsers?: () => void;
 };
 
 export function UsersTable({

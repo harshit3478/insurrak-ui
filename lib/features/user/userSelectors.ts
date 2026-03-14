@@ -7,6 +7,4 @@ export const selectUsersMeta = (state: RootState) => ({
   total: state.user.total,
   page: state.user.page,
   limit: state.user.limit,
-  loading: state.user.loading,
-  error: state.user.error,
 });

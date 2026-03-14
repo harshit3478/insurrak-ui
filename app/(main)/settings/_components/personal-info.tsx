@@ -21,7 +21,6 @@ export function PersonalInfoForm() {
             placeholder="David Jhon"
             defaultValue="David Jhon"
             icon={<UserIcon />}
-            iconPosition="left"
             height="sm"
           />
 
@@ -33,7 +32,6 @@ export function PersonalInfoForm() {
             placeholder="+990 3343 7865"
             defaultValue={"+990 3343 7865"}
             icon={<CallIcon />}
-            iconPosition="left"
             height="sm"
           />
         </div>
@@ -46,7 +44,6 @@ export function PersonalInfoForm() {
           placeholder="devidjond45@gmail.com"
           defaultValue="devidjond45@gmail.com"
           icon={<EmailIcon />}
-          iconPosition="left"
           height="sm"
         />
 
@@ -58,7 +55,6 @@ export function PersonalInfoForm() {
           placeholder="devidjhon24"
           defaultValue="devidjhon24"
           icon={<UserIcon />}
-          iconPosition="left"
           height="sm"
         />
 

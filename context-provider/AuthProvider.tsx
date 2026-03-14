@@ -1,6 +1,6 @@
 "use client";
 
-import { apiClient } from "@/lib/apiClient";
+import { api } from "@/lib/api";
 import { RootState, store } from "@/lib/store";
 import {
   loginSuccess,
@@ -27,6 +27,18 @@ const initialState: AuthState = {
   error: undefined,
 };
 
+/** Map user role to the correct dashboard route */
+function getDashboardRoute(role: Role): string {
+  switch (role) {
+    case "SUPER_ADMIN":
+      return "/dashboard/admin";
+    case "COMPANY_ADMIN":
+      return "/dashboard/manager";
+    default:
+      return "/dashboard/user";
+  }
+}
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -43,33 +55,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const email = formData.get("email") as string;
       const password = formData.get("password") as string;
-      const rememberMe = Boolean(formData.get("rememberMe"));
 
-      // The apiClient.login function expects an object with email and password properties.
-      const loginResponse = await apiClient.login({ email, password });
+      const loginResponse = await api.login({ email, password });
 
       const token = loginResponse.access_token;
       if (!token) {
         return { error: "Login failed: No token received." };
       }
 
-      // Store the token so subsequent API calls are authenticated.
       localStorage.setItem("token", token);
 
-      // After getting the token, fetch the user's details.
-      const user = await apiClient.getCurrentUser();
+      const user = await api.getCurrentUser();
 
       if (!user) {
         return { error: "Login failed: Could not fetch user details." };
       }
 
+      // Always persist so state survives the page navigation
       store.dispatch(
         loginSuccess({
           user,
-          rememberMe,
+          rememberMe: true,
         })
       );
-      window.location.href = "/dashboard";
+
+      // Redirect to the role-specific dashboard
+      window.location.href = getDashboardRoute(user.role as Role);
 
       return { success: true };
     } catch (error) {
@@ -93,9 +104,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const email = String(formData.get("email"));
       const password = String(formData.get("password"));
 
-      // Assuming signup creates the user, then we log them in to get a token.
-      await apiClient.signup({ name, email, password });
-      const loginResponse = await apiClient.login({ email, password });
+      await api.signup({ name, email, password });
+      const loginResponse = await api.login({ email, password });
 
       const token = loginResponse.access_token;
       if (!token) {
@@ -103,8 +113,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       localStorage.setItem("token", token);
-      const user = await apiClient.getCurrentUser();
+      const user = await api.getCurrentUser();
 
+      // Always persist so state survives the page navigation
       store.dispatch(
         loginSuccess({
           user,
@@ -112,7 +123,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         })
       );
 
-      window.location.href = "/dashboard";
+      window.location.href = getDashboardRoute(user.role as Role);
       return { success: true };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Signup failed";
@@ -127,8 +138,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const logout = async () => {
     try {
-      await apiClient.logout();
+      await api.logout();
       store.dispatch(logoutAction());
+      localStorage.removeItem("token");
       window.location.href = "/auth/login";
     } catch (error) {
       console.error("Logout error: ", error);
@@ -167,3 +179,4 @@ export function useAuth() {
   }
   return context;
 }
+
