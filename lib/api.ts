@@ -16,4 +16,4 @@ import { apiClient } from './apiClient';
 import { mockApi } from './mockData/mockApi';
 
 export const api =
-  process.env.NEXT_PUBLIC_USE_MOCK === 'true' ? mockApi : apiClient;
+  (process.env.NEXT_PUBLIC_USE_MOCK === 'true' ? mockApi : apiClient) as unknown as typeof apiClient;

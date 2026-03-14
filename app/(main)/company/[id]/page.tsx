@@ -1,7 +1,9 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { api as apiClient } from '@/lib/api';
+import { BranchRead, PolicyRequestRead } from '@/types/api';
 import { 
   ArrowLeft, 
   Edit, 
@@ -20,32 +22,31 @@ export default function CompanyDetailsPage() {
 
   const [activeTab, setActiveTab] = useState<'branches' | 'policies'>('branches');
 
-  // Mock Data mimicking the screenshot
-  const branches = Array(8).fill(null).map((_, i) => ({
-    id: i + 1,
-    name: 'Bold text column',
-    state: 'Regular text column',
-    gst: 'Regular text column',
-    manager: 'Regular text column',
-    email: 'Regular text column',
-    status: i % 2 === 0 ? 'Active' : 'Inactive'
-  }));
+  const [branches, setBranches] = useState<BranchRead[]>([]);
+  const [policies, setPolicies] = useState<PolicyRequestRead[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const policies = Array(8).fill(null).map((_, i) => ({
-    id: 100 + i,
-    policyNo: 'Bold text column',
-    unit: 'Regular text column',
-    asset: 'Regular text column',
-    lob: 'Regular text column',
-    broker: 'Regular text column',
-    createdDate: 'Regular text column',
-    status: i === 0 ? 'Approval Pending' : 
-            i === 1 ? 'Quoting' : 
-            i === 2 ? 'Draft' : 
-            i === 3 ? 'Approved' :
-            i === 4 ? 'Data Collection' :
-            i === 5 ? 'Payment Pending' : 'Active'
-  }));
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [bData, pData] = await Promise.all([
+          apiClient.getAllBranches(), // Fetching all branches, we will filter below
+          apiClient.getPolicyRequests(Number(companyId))
+        ]);
+        
+        // Ensure we only show branches for this company
+        const companyBranches = bData.filter(b => b.company_id === Number(companyId));
+        setBranches(companyBranches);
+        setPolicies(pData);
+      } catch (err) {
+        console.error("Failed to fetch company details data", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (companyId) fetchData();
+  }, [companyId]);
 
   const getStatusBadge = (status: string) => {
     let bg = 'bg-gray-100 text-gray-600';
@@ -248,13 +249,13 @@ export default function CompanyDetailsPage() {
                     <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-dark-2 group">
                       <td className="py-4 px-4"><CheckCircle2 className="w-4 h-4 text-gray-900 dark:text-gray-300" /></td>
                       <td className="py-4 px-4 text-sm font-semibold text-gray-900 dark:text-white">{item.name}</td>
-                      <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">{item.state}</td>
-                      <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">{item.gst}</td>
-                      <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">{item.manager}</td>
-                      <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">{item.email}</td>
-                      <td className="py-4 px-4">{getStatusBadge(item.status)}</td>
+                      <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">{item.state || '-'}</td>
+                      <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">{item.gst_number || '-'}</td>
+                      <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">-</td> {/* Manager not in BranchRead */}
+                      <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">-</td> {/* Email not in BranchRead */}
+                      <td className="py-4 px-4">{getStatusBadge(item.is_active ? 'Active' : 'Inactive')}</td>
                       <td className="py-4 px-4 text-right">
-                        <button className="text-gray-400 hover:text-gray-600"><MoreVertical className="w-4 h-4" /></button>
+                         <button className="text-gray-400 hover:text-gray-600"><MoreVertical className="w-4 h-4" /></button>
                       </td>
                     </tr>
                   ))
@@ -266,15 +267,15 @@ export default function CompanyDetailsPage() {
                       onClick={() => onViewPolicy(item.id)}
                     >
                       <td className="py-4 px-4"><CheckCircle2 className="w-4 h-4 text-gray-900 dark:text-gray-300" /></td>
-                      <td className="py-4 px-4 text-sm font-semibold text-gray-900 dark:text-white">{item.policyNo}</td>
-                      <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">{item.unit}</td>
-                      <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">{item.asset}</td>
-                      <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">{item.lob}</td>
-                      <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">{item.broker}</td>
-                      <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">{item.createdDate}</td>
-                      <td className="py-4 px-4">{getStatusBadge(item.status)}</td>
+                      <td className="py-4 px-4 text-sm font-semibold text-gray-900 dark:text-white">{item.policy_number || 'N/A'}</td>
+                      <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">Unit ID: {item.unit_id}</td>
+                      <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400 truncate max-w-[150px]" title={item.asset_description || ''}>{item.asset_description || '-'}</td>
+                      <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">{item.line_of_business}</td>
+                      <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">Broker ID: {item.broker_id}</td>
+                      <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">{new Date(item.created_at).toLocaleDateString()}</td>
+                      <td className="py-4 px-4">{getStatusBadge(item.status || 'Draft')}</td>
                       <td className="py-4 px-4 text-right">
-                        <button className="text-gray-400 hover:text-gray-600"><MoreVertical className="w-4 h-4" /></button>
+                        <button className="text-gray-400 hover:text-gray-600" onClick={(e) => { e.stopPropagation(); }}><MoreVertical className="w-4 h-4" /></button>
                       </td>
                     </tr>
                   ))
