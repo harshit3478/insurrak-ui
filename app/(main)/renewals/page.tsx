@@ -4,7 +4,8 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
 import { useAppDispatch } from "@/lib/hooks";
 import { useEffect } from "react";
-import { setMockRenewals } from "@/lib/features/renewal/renewalSlice";
+import { setRenewals } from "@/lib/features/renewal/renewalSlice";
+import { api } from "@/lib/api";
 import { Renewal, RenewalStatus } from "@/types";
 import { Bell } from "lucide-react";
 
@@ -40,7 +41,15 @@ export default function RenewalsPage() {
   const renewals = useSelector((s: RootState) => s.renewal.items);
 
   useEffect(() => {
-    dispatch(setMockRenewals());
+    const fetchRenewals = async () => {
+      try {
+        const data = await api.getAllRenewals();
+        dispatch(setRenewals(data));
+      } catch (err) {
+        console.error("Failed to fetch renewals:", err);
+      }
+    };
+    fetchRenewals();
   }, [dispatch]);
 
   const dueCount = renewals.filter((r) => r.status === "Due").length;

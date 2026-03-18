@@ -14,13 +14,9 @@ import { Company } from '@/types';
 import { CompaniesTable } from '@/components/Company/CompaniesTable';
 import { CompaniesToolbar } from '@/components/Company/CompaniesToolbar';
 
-const mockCompanies: Company[] = [
-  { id: 1, name: 'Acme Manufacturing Ltd', companyId: 'COM123456', admin: 'Rajesh Kumar', adminEmail: 'acme.sol@google.com', branches: 'Kolkata', activePolicies: '5', status: 'Active' },
-  { id: 2, name: 'TechFlow Systems', companyId: 'COM987654', admin: 'Sarah Connor', adminEmail: 'contact@techflow.com', branches: 'Bangalore', activePolicies: '8', status: 'Active' },
-  { id: 3, name: 'Global Logistics', companyId: 'COM456789', admin: 'Mike Ross', adminEmail: 'ops@globallog.com', branches: 'Mumbai', activePolicies: '2', status: 'Inactive' },
-  { id: 4, name: 'FinServe India', companyId: 'COM112233', admin: 'Priya Mehta', adminEmail: 'p.mehta@finserve.in', branches: 'Gurgaon', activePolicies: '12', status: 'Active' },
-  { id: 5, name: 'Green Energy Corp', companyId: 'COM445566', admin: 'David Green', adminEmail: 'info@greencorp.com', branches: 'Pune', activePolicies: '3', status: 'Active' },
-];
+import { api } from '@/lib/api';
+
+import { Loading } from '@/components/ui/Loading';
 
 export default function CompanyManagementPage() {
   const router = useRouter();
@@ -29,12 +25,17 @@ export default function CompanyManagementPage() {
   const [error, setError] = useState('');
 
   const fetchCompanies = async () => {
-    setLoading(true);
-    // Simulate API delay and use mock data for testing
-    await new Promise(resolve => setTimeout(resolve, 500));
-    setCompanies(mockCompanies);
-    setError(''); // Clear any previous errors
-    setLoading(false);
+    try {
+      setLoading(true);
+      const data = await api.getAllCompanies();
+      setCompanies(data);
+      setError('');
+    } catch (err) {
+      console.error('Failed to fetch companies:', err);
+      setError('Failed to fetch companies');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -52,7 +53,7 @@ export default function CompanyManagementPage() {
     }
   };
 
-  if (loading) return <div className="p-8 flex justify-center"><Loader2 className="animate-spin text-gray-500" /></div>;
+  if (loading) return <Loading />;
 
   return (
     <div className="space-y-8 bg-white dark:bg-gray-dark p-10 rounded-2xl">

@@ -1,154 +1,115 @@
 "use client";
 
-// import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
-import Image from "next/image";
+import { useEffect, useState } from "react";
+import { User as UserIcon, Briefcase, Mail, Building, Users, CircleUser } from "lucide-react";
+import { apiClient } from "@/lib/apiClient";
+import { Loading } from "@/components/ui/Loading";
+import type { User as UserType } from "@/types";
 
-import { useState } from "react";
-import { CameraIcon } from "./_components/icons";
-import { SocialAccounts } from "./_components/social-accounts";
+export default function ProfilePage() {
+  const [user, setUser] = useState<UserType | null>(null);
+  const [loading, setLoading] = useState(true);
 
-export default function Page() {
-  const [data, setData] = useState({
-    name: "Danish Heilium",
-    profilePhoto: "/images/user/user-03.png",
-    coverPhoto: "/images/cover/cover-01.png",
-  });
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.name === "profilePhoto" ) {
-      const file = e.target?.files?.[0];
-
-      setData({
-        ...data,
-        profilePhoto: file ? URL.createObjectURL(file): data.profilePhoto,
-      });
-    } else if (e.target.name === "coverPhoto") {
-      const file = e.target?.files?.[0];
-
-      setData({
-        ...data,
-        coverPhoto: file ? URL.createObjectURL(file): data.coverPhoto,
-      });
-    } else {
-      setData({
-        ...data,
-        [e.target.name]: e.target.value,
-      });
+  useEffect(() => {
+    async function loadUser() {
+      try {
+        const u = await apiClient.getCurrentUser();
+        setUser(u);
+      } catch (err) {
+        console.error("Failed to fetch user", err);
+      } finally {
+        setLoading(false);
+      }
     }
-  };
+    loadUser();
+  }, []);
+
+  if (loading) {
+    return <Loading />;
+  }
+
+  if (!user) {
+    return (
+      <div className="p-8 text-center text-gray-500">
+        Failed to load profile. Please make sure you are logged in.
+      </div>
+    );
+  }
 
   return (
-    <div className="mx-auto w-full max-w-[970px]">
-      {/* <Breadcrumb pageName="Profile" /> */}
-
-      <div className="overflow-hidden rounded-[10px] bg-white shadow-1 dark:bg-gray-dark dark:shadow-card">
-        <div className="relative z-20 h-35 md:h-65">
-          <Image
-            src={data?.coverPhoto}
-            alt="profile cover"
-            className="h-full w-full rounded-tl-[10px] rounded-tr-[10px] object-cover object-center"
-            width={970}
-            height={260}
-            style={{
-              width: "auto",
-              height: "auto",
-            }}
-          />
-          <div className="absolute bottom-1 right-1 z-10 xsm:bottom-4 xsm:right-4">
-            <label
-              htmlFor="cover"
-              className="flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-primary px-[15px] py-[5px] text-body-sm font-medium text-white hover:bg-opacity-90"
-            >
-              <input
-                type="file"
-                name="coverPhoto"
-                id="coverPhoto"
-                className="sr-only"
-                onChange={handleChange}
-                accept="image/png, image/jpg, image/jpeg"
-              />
-
-              <CameraIcon />
-
-              <span>Edit</span>
-            </label>
+    <div className="mx-auto w-full max-w-4xl space-y-8 p-6 lg:p-10">
+      {/* Header Banner */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#0B1727] to-[#1a2b44] p-8 shadow-xl">
+        <div className="absolute top-0 right-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-white opacity-5 mix-blend-overlay blur-3xl" />
+        <div className="absolute bottom-0 left-0 -mb-16 -ml-16 h-48 w-48 rounded-full bg-[#C6F200] opacity-10 mix-blend-overlay blur-2xl" />
+        
+        <div className="relative z-10 flex flex-col items-center gap-6 sm:flex-row sm:items-end sm:gap-8 text-center sm:text-left">
+          <div className="flex h-32 w-32 items-center justify-center rounded-full border-4 border-white/10 bg-white/5 backdrop-blur-md shadow-inner">
+             <CircleUser className="h-16 w-16 text-white/50" />
           </div>
-        </div>
-        <div className="px-4 pb-6 text-center lg:pb-8 xl:pb-11.5">
-          <div className="relative z-30 mx-auto -mt-22 h-30 w-full max-w-30 rounded-full bg-white/20 p-1 backdrop-blur sm:h-44 sm:max-w-[176px] sm:p-3">
-            <div className="relative drop-shadow-2">
-              {data?.profilePhoto && (
-                <>
-                  <Image
-                    src={data?.profilePhoto}
-                    width={160}
-                    height={160}
-                    className="overflow-hidden rounded-full"
-                    alt="profile"
-                  />
-
-                  <label
-                    htmlFor="profilePhoto"
-                    className="absolute bottom-0 right-0 flex size-8.5 cursor-pointer items-center justify-center rounded-full bg-primary text-white hover:bg-opacity-90 sm:bottom-2 sm:right-2"
-                  >
-                    <CameraIcon />
-
-                    <input
-                      type="file"
-                      name="profilePhoto"
-                      id="profilePhoto"
-                      className="sr-only"
-                      onChange={handleChange}
-                      accept="image/png, image/jpg, image/jpeg"
-                    />
-                  </label>
-                </>
-              )}
-            </div>
-          </div>
-          <div className="mt-4">
-            <h3 className="mb-1 text-heading-6 font-bold text-dark dark:text-white">
-              {data?.name}
-            </h3>
-            <p className="font-medium">Ui/Ux Designer</p>
-            <div className="mx-auto mb-5.5 mt-5 grid max-w-[370px] grid-cols-3 rounded-[5px] border border-stroke py-[9px] shadow-1 dark:border-dark-3 dark:bg-dark-2 dark:shadow-card">
-              <div className="flex flex-col items-center justify-center gap-1 border-r border-stroke px-4 dark:border-dark-3 xsm:flex-row">
-                <span className="font-medium text-dark dark:text-white">
-                  259
-                </span>
-                <span className="text-body-sm">Posts</span>
-              </div>
-              <div className="flex flex-col items-center justify-center gap-1 border-r border-stroke px-4 dark:border-dark-3 xsm:flex-row">
-                <span className="font-medium text-dark dark:text-white">
-                  129K
-                </span>
-                <span className="text-body-sm">Followers</span>
-              </div>
-              <div className="flex flex-col items-center justify-center gap-1 px-4 xsm:flex-row">
-                <span className="font-medium text-dark dark:text-white">
-                  2K
-                </span>
-                <span className="text-body-sm-sm">Following</span>
-              </div>
-            </div>
-
-            <div className="mx-auto max-w-[720px]">
-              <h4 className="font-medium text-dark dark:text-white">
-                About Me
-              </h4>
-              <p className="mt-4">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                Pellentesque posuere fermentum urna, eu condimentum mauris
-                tempus ut. Donec fermentum blandit aliquet. Etiam dictum dapibus
-                ultricies. Sed vel aliquet libero. Nunc a augue fermentum,
-                pharetra ligula sed, aliquam lacus.
-              </p>
-            </div>
-
-            <SocialAccounts />
+          <div className="pb-2">
+            <h1 className="text-3xl font-bold tracking-tight text-white mb-2">{user.name}</h1>
+            <p className="flex items-center justify-center sm:justify-start gap-2 text-[#C6F200] font-medium tracking-wide text-sm">
+               <Briefcase className="h-4 w-4" />
+               {user.designation || user.role}
+            </p>
           </div>
         </div>
       </div>
+
+      {/* Details Grid */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+        {/* Identity Card */}
+        <div className="flex flex-col gap-6 rounded-2xl bg-white p-6 shadow-sm border border-gray-100 dark:bg-dark-2 dark:border-dark-3">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white border-b border-gray-100 dark:border-dark-3 pb-3">Identity Detalis</h2>
+          
+          <div className="flex items-start gap-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
+              <UserIcon className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Username</p>
+              <p className="mt-1 font-medium text-gray-900 dark:text-white">{user.name}</p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-rose-600 dark:bg-rose-900/20 dark:text-rose-400">
+              <Mail className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Email Address</p>
+              <p className="mt-1 font-medium text-gray-900 dark:text-white">{user.email}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Corporate Info Card */}
+        <div className="flex flex-col gap-6 rounded-2xl bg-white p-6 shadow-sm border border-gray-100 dark:bg-dark-2 dark:border-dark-3">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white border-b border-gray-100 dark:border-dark-3 pb-3">Corporate Position</h2>
+
+          <div className="flex items-start gap-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400">
+              <Building className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Company ID</p>
+              <p className="mt-1 font-medium text-gray-900 dark:text-white">{user.companyId || 'Independent / Root'}</p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400">
+              <Users className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Reports To</p>
+              <p className="mt-1 font-medium text-gray-900 dark:text-white">{user.reportsTo ? `Manager ID: ${user.reportsTo}` : 'No Manager (Top Level)'}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
     </div>
   );
 }

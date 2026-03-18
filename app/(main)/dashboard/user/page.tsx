@@ -4,7 +4,8 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
 import { useAppDispatch } from "@/lib/hooks";
 import { useEffect } from "react";
-import { setMockPolicies } from "@/lib/features/policy/policySlice";
+import { setPolicies } from "@/lib/features/policy/policySlice";
+import { api } from "@/lib/api";
 import { FileText, CheckCircle, Clock } from "lucide-react";
 import { PolicyStatus } from "@/types";
 
@@ -21,7 +22,15 @@ export default function UserDashboard() {
   const policies = useSelector((s: RootState) => s.policy.items);
 
   useEffect(() => {
-    dispatch(setMockPolicies());
+    const fetchData = async () => {
+      try {
+        const pol = await api.getAllPolicies().catch(() => []);
+        dispatch(setPolicies(pol));
+      } catch (err) {
+        console.error("Dashboard fetch error:", err);
+      }
+    };
+    fetchData();
   }, [dispatch]);
 
   // Show a read-only subset of policies for a standard user

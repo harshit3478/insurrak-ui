@@ -4,10 +4,11 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
 import { useAppDispatch } from "@/lib/hooks";
 import { useEffect } from "react";
-import { setMockCompanies } from "@/lib/features/company/companySlice";
-import { setMockPolicies } from "@/lib/features/policy/policySlice";
-import { setMockClaims } from "@/lib/features/claim/claimSlice";
-import { setMockRenewals } from "@/lib/features/renewal/renewalSlice";
+import { setCompanies } from "@/lib/features/company/companySlice";
+import { setPolicies } from "@/lib/features/policy/policySlice";
+import { setClaims } from "@/lib/features/claim/claimSlice";
+import { setRenewals } from "@/lib/features/renewal/renewalSlice";
+import { api } from "@/lib/api";
 import { Building2, FileText, ShieldCheck, RefreshCw } from "lucide-react";
 
 function StatCard({
@@ -46,10 +47,23 @@ export default function AdminDashboard() {
   const renewals = useSelector((s: RootState) => s.renewal.items);
 
   useEffect(() => {
-    dispatch(setMockCompanies());
-    dispatch(setMockPolicies());
-    dispatch(setMockClaims());
-    dispatch(setMockRenewals());
+    const fetchData = async () => {
+      try {
+        const [comp, pol, cla, ren] = await Promise.all([
+          api.getAllCompanies().catch(() => []),
+          api.getAllPolicies().catch(() => []),
+          api.getAllClaims().catch(() => []),
+          api.getAllRenewals().catch(() => []),
+        ]);
+        dispatch(setCompanies(comp));
+        dispatch(setPolicies(pol));
+        dispatch(setClaims(cla));
+        dispatch(setRenewals(ren));
+      } catch (err) {
+        console.error("Dashboard fetch error:", err);
+      }
+    };
+    fetchData();
   }, [dispatch]);
 
   const activeCompanies = companies.filter(c => c.status === "Active").length;

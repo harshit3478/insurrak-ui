@@ -88,7 +88,7 @@ export function UsersTable({
         </TableHeader>
 
         <TableBody className="divide-y divide-gray-300 dark:divide-dark-3">
-          {data.map((user) => (
+          {data.map((user, index) => (
             <TableRow
               key={user.id}
               className="hover:bg-gray-50 transition-colors group"
@@ -137,7 +137,7 @@ export function UsersTable({
                   <MoreVertical className="w-4 h-4" />
                 </button>
                 {openActionId === user.id && (
-                  <div className="absolute right-8 top-0 mt-0 w-48 bg-gray-1 dark:bg-gray-dark rounded-lg divide-y shadow-xl z-60 border border-dark-3 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                  <div className={`absolute right-8 ${index >= data.length - 2 && data.length > 2 ? 'bottom-0' : 'top-0'} mt-0 w-48 bg-gray-1 dark:bg-gray-dark rounded-lg divide-y shadow-xl z-60 border border-dark-3 overflow-hidden animate-in fade-in zoom-in-95 duration-100`}>
                     {canEdit && onEditUser && (
                       <button
                         onClick={() => onEditUser(user)}

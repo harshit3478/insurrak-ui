@@ -1,14 +1,17 @@
 "use client";
 
+import Link from "next/link";
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
 import { useAppDispatch } from "@/lib/hooks";
 import { useEffect, useState } from "react";
-import { setMockClaims } from "@/lib/features/claim/claimSlice";
-import { ClaimStatus, PolicyType } from "@/types";
-import { Search, ChevronDown } from "lucide-react";
+import { setClaims } from "@/lib/features/claim/claimSlice";
+import { apiClient } from "@/lib/apiClient";
+import { Search, ChevronDown, Plus } from "lucide-react";
+import { Loading } from "@/components/ui/Loading";
+import type { ClaimRead } from "@/types/api";
 
-const STATUS_STYLES: Record<ClaimStatus, string> = {
+const STATUS_STYLES: Record<string, string> = {
   Open: "bg-blue-50 text-blue-700",
   "Under Review": "bg-amber-50 text-amber-700",
   Approved: "bg-emerald-50 text-emerald-700",
@@ -16,7 +19,7 @@ const STATUS_STYLES: Record<ClaimStatus, string> = {
   Settled: "bg-gray-100 text-gray-600 dark:bg-dark-3 dark:text-gray-400",
 };
 
-const TYPE_STYLES: Record<PolicyType, string> = {
+const TYPE_STYLES: Record<string, string> = {
   Fire: "bg-orange-50 text-orange-700",
   Marine: "bg-blue-50 text-blue-700",
   Motor: "bg-cyan-50 text-cyan-700",
@@ -49,18 +52,34 @@ function SLABadge({ deadline }: { deadline: string }) {
 
 export default function ClaimsPage() {
   const dispatch = useAppDispatch();
-  const claims = useSelector((s: RootState) => s.claim.items);
+  const claims = useSelector((s: RootState) => s.claim.items) as unknown as ClaimRead[];
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    dispatch(setMockClaims());
+    const fetchClaims = async () => {
+      try {
+        setLoading(true);
+        const data = await apiClient.claims.getAll();
+        dispatch(setClaims(data as any));
+      } catch (err) {
+        console.error("Failed to fetch claims:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchClaims();
   }, [dispatch]);
+
+  if (loading) {
+    return <Loading />;
+  }
 
   const filtered = claims.filter(
     c =>
-      c.claimNumber.toLowerCase().includes(search.toLowerCase()) ||
-      c.companyName.toLowerCase().includes(search.toLowerCase()) ||
-      c.policyNumber.toLowerCase().includes(search.toLowerCase())
+      (c.insurer_claim_number || "").toLowerCase().includes(search.toLowerCase()) ||
+      c.claim_type.toLowerCase().includes(search.toLowerCase()) ||
+      c.status.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -71,6 +90,13 @@ export default function ClaimsPage() {
           <h1 className="text-xl font-bold text-gray-900 dark:text-white">Claims</h1>
           <p className="text-sm text-gray-500 dark:text-dark-6 mt-0.5">{claims.length} claims registered</p>
         </div>
+        <Link
+          href="/claims/add"
+          className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#C6F200] text-[#0B1727] font-semibold rounded-lg hover:bg-[#b3da00] transition-colors"
+        >
+          <Plus className="w-5 h-5" />
+          Add Claim
+        </Link>
       </div>
 
       {/* Search */}
@@ -91,7 +117,7 @@ export default function ClaimsPage() {
           <table className="w-full min-w-[1100px]">
             <thead className="bg-gray-50 dark:bg-dark-2 border-b border-gray-100 dark:border-dark-3">
               <tr>
-                {["Claim No.", "Policy No.", "Company", "Type", "Date of Loss", "Claim Amount", "SLA Deadline", "Status"].map(h => (
+                {["Claim ID (Insurer)", "Policy Request ID", "Company ID", "Type", "Date of Loss", "Est. Loss", "Status"].map(h => (
                   <th key={h} className="py-3.5 px-4 text-left text-xs font-medium text-gray-500 dark:text-dark-6">
                     <div className="flex items-center gap-1">{h} <ChevronDown className="w-3 h-3" /></div>
                   </th>
@@ -101,24 +127,29 @@ export default function ClaimsPage() {
             <tbody className="divide-y divide-gray-50 dark:divide-dark-3">
               {filtered.map(c => (
                 <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-dark-2 transition-colors">
-                  <td className="py-4 px-4 text-sm font-semibold text-blue-600 dark:text-blue-400">{c.claimNumber}</td>
-                  <td className="py-4 px-4 text-sm text-gray-500 dark:text-dark-6">{c.policyNumber}</td>
-                  <td className="py-4 px-4 text-sm text-gray-700 dark:text-gray-300">{c.companyName}</td>
-                  <td className="py-4 px-4">
-                    <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-medium ${TYPE_STYLES[c.type]}`}>{c.type}</span>
+                  <td className="py-4 px-4 text-sm font-semibold text-blue-600 dark:text-blue-400">
+                    <Link href={`/claims/${c.id}`} className="hover:underline">{c.insurer_claim_number || `CLM-${c.id}`}</Link>
                   </td>
-                  <td className="py-4 px-4 text-sm text-gray-500 dark:text-dark-6">{c.dateOfLoss}</td>
-                  <td className="py-4 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">{formatCurrency(c.claimAmount)}</td>
-                  <td className="py-4 px-4"><SLABadge deadline={c.slaDeadline} /></td>
+                  <td className="py-4 px-4 text-sm text-gray-500 dark:text-dark-6">PR-{c.policy_request_id}</td>
+                  <td className="py-4 px-4 text-sm text-gray-700 dark:text-gray-300">CMP-{c.company_id}</td>
                   <td className="py-4 px-4">
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_STYLES[c.status]}`}>
+                    <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-medium ${TYPE_STYLES[c.claim_type] || "bg-gray-100 text-gray-600"}`}>
+                      {c.claim_type}
+                    </span>
+                  </td>
+                  <td className="py-4 px-4 text-sm text-gray-500 dark:text-dark-6">{new Date(c.incident_date).toLocaleDateString()}</td>
+                  <td className="py-4 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {c.estimated_loss ? formatCurrency(c.estimated_loss) : "-"}
+                  </td>
+                  <td className="py-4 px-4">
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_STYLES[c.status] || "bg-gray-100 text-gray-600"}`}>
                       {c.status}
                     </span>
                   </td>
                 </tr>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan={8} className="py-8 text-center text-sm text-gray-400">No claims found</td></tr>
+                <tr><td colSpan={7} className="py-8 text-center text-sm text-gray-400">No claims found</td></tr>
               )}
             </tbody>
           </table>

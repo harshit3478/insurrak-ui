@@ -38,9 +38,12 @@ export interface UnitRead {
   occupancy?: string | null;
   hazard_details?: string | null;
   gstin?: string | null;
+  gst_certificate_path?: string | null;  // present in UnitUpdate schema
   contact_person_name?: string | null;
   contact_person_email?: string | null;
   contact_person_phone?: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface BrokerRead {
@@ -184,4 +187,295 @@ export interface PermissionRead {
 export interface RolesAndPermissionsResponse {
   roles: RoleRead[];
   permissions: PermissionRead[];
+}
+
+// ─── Create / Update Payloads ───────────────────────────────────────
+
+export interface BranchCreate {
+  name: string;
+  is_active?: boolean;
+  address?: string | null;
+  state?: string | null;
+  gst_number?: string | null;
+}
+
+export interface BranchUpdate {
+  name?: string;
+  is_active?: boolean;
+  address?: string | null;
+  state?: string | null;
+  gst_number?: string | null;
+}
+
+export interface UnitCreate {
+  branch_id: number;
+  name: string;
+  address?: string | null;
+  occupancy?: string | null;
+  hazard_details?: string | null;
+  gstin?: string | null;
+  gst_certificate_path?: string | null;
+  contact_person_name?: string | null;
+  contact_person_email?: string | null;
+  contact_person_phone?: string | null;
+}
+
+export interface UnitUpdate {
+  name?: string | null;
+  address?: string | null;
+  occupancy?: string | null;
+  hazard_details?: string | null;
+  gstin?: string | null;
+  gst_certificate_path?: string | null;
+  contact_person_name?: string | null;
+  contact_person_email?: string | null;
+  contact_person_phone?: string | null;
+  is_active?: boolean | null;
+}
+
+export interface PolicyRequestCreate {
+  company_id: number;
+  unit_id: number;
+  broker_id: number;
+  line_of_business: string;
+  asset_description?: string | null;
+  notes?: string | null;
+}
+
+export interface PolicyRequestUpdate {
+  line_of_business?: string;
+  asset_description?: string | null;
+  notes?: string | null;
+  policy_number?: string | null;
+  sum_insured?: number | null;
+  policy_start_date?: string | null;
+  policy_end_date?: string | null;
+}
+
+export interface DeviationRead {
+  id: number;
+  quotation_id: number;
+  field_name: string;
+  prior_value: string | null;
+  current_value: string | null;
+  deviation_type: string;
+  severity: string;
+  created_at: string;
+}
+
+export interface PaymentCreate {
+  utr_number: string;
+  payment_date: string;  // ISO date string
+  amount: number;
+}
+
+export interface QuotationTermsCreate {
+  coverage_scope?: string | null;
+  perils_included?: string | null;
+  perils_excluded?: string | null;
+  sum_insured_basis?: string | null;
+  deductibles?: string | null;
+  excess?: string | null;
+  sub_limits?: string | null;
+  add_ons?: string | null;
+  warranties?: string | null;
+  exclusions?: string | null;
+  reinstatement?: string | null;
+  co_insurance?: string | null;
+  contribution_clause?: string | null;
+  retroactive_date?: string | null;
+  waiting_periods?: string | null;
+  territorial_limits?: string | null;
+  jurisdictional_limits?: string | null;
+  cancellation_terms?: string | null;
+  special_conditions?: string | null;
+}
+
+export interface Token {
+  access_token: string;
+  token_type: string;
+}
+
+export interface LoginRequest {
+  username: string;
+  password: string;
+  keep_login?: boolean;
+}
+
+export interface UserCreateIn {
+  username: string;
+  email: string;
+  password: string;
+  designation?: string | null;
+  role_id: number;
+  reports_to?: number | null;
+}
+
+export interface CompanyCreate {
+  name: string;
+  is_active?: boolean;
+  email?: string | null;
+  mobile_number?: string | null;
+  address?: string | null;
+  gst_number?: string | null;
+  superadmin_username: string;
+  superadmin_email: string;
+  superadmin_designation?: string | null;
+}
+
+export interface CompanySuperAdminOnboard {
+  company_name: string;
+  username: string;
+  email: string;
+  password: string;
+}
+
+export interface CompanyUpdate {
+  name?: string | null;
+  is_active?: boolean | null;
+  email?: string | null;
+  mobile_number?: string | null;
+  address?: string | null;
+  gst_number?: string | null;
+}
+
+export interface BrokerCreate {
+  name: string;
+  contact_email?: string | null;
+  contact_phone?: string | null;
+  sla_days?: number;
+  service_scope?: string | null;
+}
+
+export interface BrokerUpdate {
+  name?: string | null;
+  contact_email?: string | null;
+  contact_phone?: string | null;
+  sla_days?: number | null;
+  service_scope?: string | null;
+  is_active?: boolean | null;
+}
+
+export interface InsurerCreate {
+  name: string;
+  branch?: string | null;
+  contact_email?: string | null;
+  contact_phone?: string | null;
+}
+
+export interface InsurerUpdate {
+  name?: string | null;
+  branch?: string | null;
+  contact_email?: string | null;
+  contact_phone?: string | null;
+  is_active?: boolean | null;
+}
+
+export interface InvoiceCreate {
+  invoice_type: string;
+  amount: number;
+  gst: number;
+  total: number;
+  bank_name?: string | null;
+  bank_account_number?: string | null;
+  bank_ifsc?: string | null;
+  file_name?: string | null;
+  file_path?: string | null;
+}
+
+export interface ApprovalCreate {
+  quotation_id?: number | null;
+  decision: string;
+  comments?: string | null;
+}
+
+export interface QuotationCreate {
+  insurer_id: number;
+  premium: number;
+  gst: number;
+  total_premium: number;
+  file_name?: string | null;
+  file_path?: string | null;
+  terms?: QuotationTermsCreate | null;
+}
+
+export interface PolicyDocumentCreate {
+  document_type: string;
+  file_name: string;
+  file_path: string;
+}
+
+export interface StatusTransitionRequest {
+  new_status: string;
+}
+
+// ─── Claims Schemas ─────────────────────────────────────────
+
+export interface ClaimCreate {
+  policy_request_id: number;
+  claim_type: string;
+  incident_date: string;
+  incident_description: string;
+  estimated_loss?: number | null;
+  notes?: string | null;
+}
+
+export interface ClaimRead {
+  id: number;
+  policy_request_id: number;
+  company_id: number;
+  initiated_by_id: number;
+  assigned_to_id: number | null;
+  status: string;
+  claim_type: string;
+  incident_date: string;
+  incident_description: string;
+  estimated_loss: number | null;
+  approved_amount: number | null;
+  settled_amount: number | null;
+  insurer_claim_number: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ClaimUpdate {
+  claim_type?: string | null;
+  incident_date?: string | null;
+  incident_description?: string | null;
+  estimated_loss?: number | null;
+  notes?: string | null;
+  assigned_to_id?: number | null;
+}
+
+export interface ClaimStatusTransitionRequest {
+  new_status: string;
+}
+
+export interface ClaimDocumentCreate {
+  document_type: string;
+  file_name: string;
+  file_path: string;
+}
+
+export interface ClaimDocumentRead {
+  id: number;
+  claim_id: number;
+  document_type: string;
+  file_name: string;
+  file_path: string;
+  uploaded_by_id: number;
+  created_at: string;
+}
+
+export interface ClaimApprovalCreate {
+  decision: string;
+  approved_amount?: number | null;
+  insurer_claim_number?: string | null;
+  notes?: string | null;
+}
+
+export interface ClaimSettlementCreate {
+  settled_amount: number;
+  notes?: string | null;
 }

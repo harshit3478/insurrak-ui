@@ -4,7 +4,8 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
 import { useAppDispatch } from "@/lib/hooks";
 import { useEffect, useState } from "react";
-import { setMockPolicies, selectPolicy } from "@/lib/features/policy/policySlice";
+import { setPolicies, selectPolicy } from "@/lib/features/policy/policySlice";
+import { api } from "@/lib/api";
 import { Policy, PolicyStatus, PolicyType } from "@/types";
 import { FileText, Search, Plus, ChevronDown } from "lucide-react";
 import Link from "next/link";
@@ -40,7 +41,15 @@ export default function PoliciesPage() {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    dispatch(setMockPolicies());
+    const loadPolicies = async () => {
+      try {
+        const data = await api.getAllPolicies();
+        dispatch(setPolicies(data));
+      } catch (err) {
+        console.error("Failed to load policies:", err);
+      }
+    };
+    loadPolicies();
   }, [dispatch]);
 
   const filtered = policies.filter(

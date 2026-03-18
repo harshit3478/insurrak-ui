@@ -10,7 +10,11 @@ const mockCompanies: Company[] = Array(12).fill(null).map((_, i) => ({
   adminEmail: 'Regular text column',
   branches: 'Regular text column',
   activePolicies: 'Regular text column',
-  status: [1, 3, 6, 8, 10].includes(i) ? 'Inactive' : 'Active'
+  status: [1, 3, 6, 8, 10].includes(i) ? 'Inactive' as const : 'Active' as const,
+  email: '',
+  mobile_number: '',
+  address: '',
+  gst_number: '',
 }));
 
 interface CompaniesState {
@@ -39,6 +43,10 @@ const companySlice = createSlice({
       state.companies = mockCompanies;
       state.meta.total = mockCompanies.length;
     },
+    setCompanies(state, action: PayloadAction<Company[]>) {
+      state.companies = action.payload;
+      state.meta.total = action.payload.length;
+    },
     deleteCompany(state, action: PayloadAction<number>) {
       state.companies = state.companies.filter(c => c.id !== action.payload);
       state.meta.total = state.companies.length;
@@ -56,5 +64,5 @@ const companySlice = createSlice({
   },
 });
 
-export const { setMockCompanies, deleteCompany, addCompany, updateCompany } = companySlice.actions;
+export const { setMockCompanies, setCompanies, deleteCompany, addCompany, updateCompany } = companySlice.actions;
 export default companySlice.reducer;

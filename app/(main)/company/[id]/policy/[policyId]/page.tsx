@@ -86,9 +86,18 @@ export default function PolicyDetailsPage() {
         setLoading(true);
         const [pData, pDocs, pQuotes, pApprovals] = await Promise.all([
           apiClient.getPolicyRequestById(Number(safePolicyId)),
-          apiClient.getPolicyDocuments(Number(safePolicyId)).catch(() => []),
-          apiClient.getQuotations(Number(safePolicyId)).catch(() => []),
-          apiClient.getApprovals(Number(safePolicyId)).catch(() => []),
+          apiClient.getPolicyDocuments(Number(safePolicyId)).catch(e => {
+            console.error('Documents fetch error:', e);
+            return [] as PolicyDocumentRead[];
+          }),
+          apiClient.getQuotations(Number(safePolicyId)).catch(e => {
+            console.error('Quotations fetch error:', e);
+            return [] as QuotationRead[];
+          }),
+          apiClient.getApprovals(Number(safePolicyId)).catch(e => {
+            console.error('Approvals fetch error:', e);
+            return [] as ApprovalRead[];
+          }),
         ]);
         setPolicyData(pData);
         setDocuments(pDocs);

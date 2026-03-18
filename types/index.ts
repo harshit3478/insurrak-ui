@@ -21,6 +21,8 @@ export interface User {
   role: Role;
   active: boolean;
   companyId: string | null;
+  designation?: string | null;
+  reportsTo?: string | null;
 };
 
 export interface Company {
@@ -32,6 +34,10 @@ export interface Company {
   branches: string;
   activePolicies: string;
   status: 'Active' | 'Inactive';
+  email: string;
+  mobile_number: string;
+  address: string;
+  gst_number: string;
 }
 
 
@@ -73,20 +79,15 @@ export interface AuthContextType {
 export type ActionState = {
   error?: string;
   success?: boolean;
+  data?: Record<string, any>;
 };
 
 /** @deprecated use ActionState */
-export type UsersActionState = ActionState;
+export const initialState: ActionState = {};
 
 export type UsersContextType = {
-  createUser: (formData: FormData) => Promise<void>;
-  updateUser: (userId: string) => (formData: FormData) => Promise<void>;
-
-  createState: ActionState;
-  updateState: ActionState;
-
-  isCreating: boolean;
-  isUpdating: boolean;
+  createUserAction: (prevState: ActionState, formData: FormData) => Promise<ActionState>;
+  updateUserAction: (prevState: ActionState, formData: FormData) => Promise<ActionState>;
 };
 
 export type CompaniesContextType = {

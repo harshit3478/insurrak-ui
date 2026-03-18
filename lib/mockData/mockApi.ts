@@ -26,7 +26,7 @@ let _renewals = [...MOCK_RENEWALS];
 
 export const mockApi = {
   // ─── Auth ────────────────────────────────────────────────────────────────────
-  login: async (_credentials: { email: string; password: string }) => {
+  login: async (_credentials: { username: string; password: string }) => {
     await delay(600);
     // Accept any credentials in mock mode
     return { access_token: 'mock-jwt-token-insurrack' };
