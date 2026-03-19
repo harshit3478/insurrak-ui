@@ -53,10 +53,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     formData: FormData,
   ): Promise<AuthState> => {
     try {
-      const email = formData.get("email") as string;
+      const username = formData.get("username") as string;
       const password = formData.get("password") as string;
 
-      const loginResponse = await api.login({ email, password });
+      const loginResponse = await api.login({ username, password });
 
       const token = loginResponse.access_token;
       if (!token) {

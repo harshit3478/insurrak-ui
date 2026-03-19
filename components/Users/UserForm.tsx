@@ -25,6 +25,9 @@ export function UserForm({
   return (
     <form action={action}>
       <div className="bg-white dark:bg-gray-dark p-8 rounded-2xl border border-gray-100 dark:border-dark-3 shadow-sm">
+        {isEdit && defaultValues?.id && (
+          <input type="hidden" name="id" value={defaultValues.id} />
+        )}
         <div className="flex flex-col lg:flex-row gap-12">
           {/* Left Column - Basic Details */}
           <div className="flex-1">
@@ -36,6 +39,7 @@ export function UserForm({
                   defaultValue={defaultValues?.name}
                   required
                   className="flex-1"
+                  disabled={isEdit}
                 />
               </div>
               <FormInput
@@ -44,6 +48,7 @@ export function UserForm({
                 type="email"
                 defaultValue={defaultValues?.email}
                 required
+                disabled={isEdit}
               />
               {/* These fields are from the user's example but not in the User type */}
               {/* <FormInput label="Phone Number" name="phone" /> */}
@@ -53,6 +58,7 @@ export function UserForm({
             <FormSection title="Role Assignment" className="mt-8">
               <Select
                 label=""
+                name="role"
                 items={[
                   { label: "User", value: "COMPANY_USER" },
                   { label: "Manager", value: "COMPANY_ADMIN" },
@@ -71,9 +77,22 @@ export function UserForm({
           <div className="flex-1">
             <FormSection title="Organizational Context">
               <FormInput
+                label="Designation"
+                name="designation"
+                defaultValue={defaultValues?.designation || ""}
+                disabled={isEdit}
+              />
+              <FormInput
+                label="Reports To (User ID)"
+                name="reportsTo"
+                defaultValue={defaultValues?.reportsTo || ""}
+                disabled={isEdit}
+              />
+              <FormInput
                 label="Assigned Company ID"
                 name="companyId"
                 defaultValue={defaultValues?.companyId || ""}
+                disabled={isEdit}
               />
             </FormSection>
             {!isEdit && (

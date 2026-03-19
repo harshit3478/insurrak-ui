@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useActionState } from "react";
+import { createContext, useContext, useState, useActionState } from "react";
 import { Company, CompaniesContextType } from "@/types";
 import { apiClient } from "@/lib/apiClient";
 import { store } from "@/lib/store";
@@ -12,6 +12,7 @@ import {
 type CompanyActionState = {
   error?: string;
   success?: boolean;
+  data?: Record<string, any>;
 };
 
 const initialState: CompanyActionState = {};
@@ -20,67 +21,92 @@ const CompanyContext = createContext<CompaniesContextType | null>(null);
 
 export function CompanyProvider({ children }: { children: React.ReactNode }) {
   /* ================= CREATE COMPANY ================= */
-  const createCompanyAction = async (
-    prevState: CompanyActionState,
-    formData: FormData,
-  ): Promise<CompanyActionState> => {
+  const [createState, setCreateState] = useState<CompanyActionState>(initialState);
+  const [isCreating, setIsCreating] = useState(false);
+
+  const createCompany = async (formData: FormData) => {
+    setIsCreating(true);
+    setCreateState({});
     try {
-      const company = await apiClient.createCompany({
+      // 1. Onboard Company Super Admin
+      const superAdminUser = await apiClient.onboardCompanySuperAdmin({
+        company_name: String(formData.get("name")),
+        username: String(formData.get("admin") || 'admin'),
+        email: String(formData.get("adminEmail")),
+        password: String(formData.get("adminPassword")),
+      });
+      
+      const companyId = superAdminUser.company_id;
+
+      // 2. Update remaining fields
+      let company = await apiClient.updateCompany(companyId, {
         name: String(formData.get("name")),
+        email: String(formData.get("email") || ''),
+        mobile_number: String(formData.get("mobile_number") || ''),
+        address: String(formData.get("address") || ''),
+        gst_number: String(formData.get("gst_number") || ''),
+        status: 'Active', 
+      });
+
+      // 3. Keep frontend properties
+      company = {
+        ...company,
         companyId: String(formData.get("companyId")),
         admin: String(formData.get("admin")),
         adminEmail: String(formData.get("adminEmail")),
         branches: String(formData.get("branches")),
         activePolicies: String(formData.get("activePolicies")),
-      });
+      };
 
       store.dispatch(addCompany(company));
-      return { success: true };
-    } catch {
-      return { error: "Failed to create company" };
+      setCreateState({ 
+        success: true, 
+        data: { 
+          ...Object.fromEntries(formData.entries()), 
+          assignedCompanyId: `COM${String(companyId).padStart(8, '0')}`
+        } 
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to create company';
+      setCreateState({ error: msg });
+    } finally {
+      setIsCreating(false);
     }
   };
 
-  const [createState, createCompanyBase, isCreating] = useActionState(
-    createCompanyAction,
-    initialState,
-  );
-  const createCompany = async (formData: FormData) => {
-    await createCompanyBase(formData);
-  };
-
   /* ================= UPDATE COMPANY ================= */
-  const updateCompanyAction =
-    (companyId: number) =>
-    async (
-      prevState: CompanyActionState,
-      formData: FormData,
-    ): Promise<CompanyActionState> => {
-      try {
-        const updatedCompany = await apiClient.updateCompany(companyId, {
-          name: String(formData.get("name")),
-          companyId: String(formData.get("companyId")),
-          admin: String(formData.get("admin")),
-          adminEmail: String(formData.get("adminEmail")),
-          branches: String(formData.get("branches")),
-          activePolicies: String(formData.get("activePolicies")),
-        });
-
-        store.dispatch(updateCompanyInStore(updatedCompany));
-        return { success: true };
-      } catch {
-        return { error: "Failed to update company" };
-      }
-    };
-
-  const [updateState, , isUpdating] = useActionState(
-    updateCompanyAction(0),
-    initialState,
-  );
+  const [updateState, setUpdateState] = useState<CompanyActionState>(initialState);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const updateCompany = (companyId: number) => async (formData: FormData) => {
-    const action = updateCompanyAction(companyId);
-    await action(updateState, formData);
+    setIsUpdating(true);
+    setUpdateState({});
+    try {
+      let updatedCompany = await apiClient.updateCompany(companyId, {
+        name: String(formData.get("name")),
+        email: String(formData.get("email") || ''),
+        mobile_number: String(formData.get("mobile_number") || ''),
+        address: String(formData.get("address") || ''),
+        gst_number: String(formData.get("gst_number") || ''),
+      });
+      
+      updatedCompany = {
+        ...updatedCompany,
+        companyId: String(formData.get("companyId")),
+        admin: String(formData.get("admin")),
+        adminEmail: String(formData.get("adminEmail")),
+        branches: String(formData.get("branches")),
+        activePolicies: String(formData.get("activePolicies")),
+      };
+
+      store.dispatch(updateCompanyInStore(updatedCompany));
+      setUpdateState({ success: true });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to update company';
+      setUpdateState({ error: msg });
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   return (

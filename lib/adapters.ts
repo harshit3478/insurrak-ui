@@ -16,16 +16,31 @@ const ROLE_MAP: Record<string, Role> = {
  * if we don't have the context of the explicit role name, we guess or default.
  * In a real app we'd fetch the Role list and cache it to lookup role_id -> role string.
  */
-export function adaptUser(apiUser: UserRead, userRoleName: string = 'Company User'): User {
-  const mappedRole = ROLE_MAP[userRoleName] || 'COMPANY_USER';
+export function adaptUser(apiUser: UserRead, userRoleName?: string): User {
+  // Map based on explicit name if provided, otherwise fallback to role_id mapping
+  let mappedRole: Role = 'COMPANY_USER';
+  
+  if (userRoleName && ROLE_MAP[userRoleName]) {
+    mappedRole = ROLE_MAP[userRoleName];
+  } else {
+    // Fallback to role_id mapping
+    const idToRoleMap: Record<number, Role> = {
+      1: 'COMPANY_USER',
+      2: 'COMPANY_ADMIN',
+      3: 'SUPER_ADMIN'
+    };
+    mappedRole = idToRoleMap[apiUser.role_id] || 'COMPANY_USER';
+  }
 
   return {
     id: String(apiUser.id),
     name: apiUser.username,
     email: apiUser.email,
-    role: mappedRole as Role,
+    role: mappedRole,
     active: apiUser.is_active,
-    companyId: String(apiUser.company_id),
+    companyId: apiUser.company_id ? String(apiUser.company_id) : null,
+    designation: apiUser.designation,
+    reportsTo: apiUser.reports_to ? String(apiUser.reports_to) : null,
   };
 }
 
@@ -39,5 +54,27 @@ export function adaptCompany(apiCompany: CompanyRead): Company {
     branches: '0',                  // Would be fetched via branch endpoints manually later
     activePolicies: '0',            // Would be fetched via policy endpoints manually later
     status: apiCompany.is_active ? 'Active' : 'Inactive',
+    email: apiCompany.email ?? '',
+    mobile_number: apiCompany.mobile_number ?? '',
+    address: apiCompany.address ?? '',
+    gst_number: apiCompany.gst_number ?? '',
+  };
+}
+
+export function adaptPolicy(apiPolicy: import('@/types/api').PolicyRequestRead): import('@/types').Policy {
+  return {
+    id: String(apiPolicy.id),
+    policyNumber: apiPolicy.policy_number || 'TBD',
+    companyId: String(apiPolicy.company_id),
+    companyName: `Company ID: ${apiPolicy.company_id}`,
+    insurer: 'Pending Assignment', // Not natively joined in backend fetch
+    type: (apiPolicy.line_of_business as import('@/types').PolicyType) || 'Miscellaneous',
+    sumInsured: 0,
+    premium: 0,
+    startDate: apiPolicy.created_at || new Date().toISOString(),
+    endDate: apiPolicy.created_at || new Date().toISOString(),
+    status: (apiPolicy.status as import('@/types').PolicyStatus) || 'Pending Renewal',
+    broker: String(apiPolicy.broker_id),
+    documents: [],
   };
 }

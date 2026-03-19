@@ -61,7 +61,7 @@ export const CompaniesTable: React.FC<CompaniesTableProps> = ({
   return (
     <div className="border border-gray-100 dark:border-dark-3 rounded-lg overflow-hidden">
       <div className="overflow-x-auto min-h-[500px]">
-        <table className="w-full min-w-[1400px]">
+        <table className="w-full whitespace-nowrap xl:whitespace-normal">
           <thead className="bg-white dark:bg-gray-dark border-b border-gray-100 dark:border-dark-3">
             <tr>
               <th className="py-4 px-6 text-left w-14">
@@ -80,7 +80,7 @@ export const CompaniesTable: React.FC<CompaniesTableProps> = ({
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50 dark:divide-dark-3">
-            {companies.map((company) => (
+            {companies.map((company, index) => (
               <tr key={company.id} className="hover:bg-gray-50 dark:hover:bg-dark-2 transition-colors group">
                 <td className="py-4 px-6">
                   <button onClick={() => toggleSelect(company.id)} className="flex items-center justify-center">
@@ -115,7 +115,7 @@ export const CompaniesTable: React.FC<CompaniesTableProps> = ({
                     <MoreVertical className="w-4 h-4" />
                   </button>
                   {openActionId === company.id && (
-                    <div className="absolute right-8 top-0 mt-0 w-36 bg-gray-dark rounded-lg shadow-xl z-[60] border border-dark-3 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                    <div className={`absolute right-8 ${index >= companies.length - 2 && companies.length > 2 ? 'bottom-0' : 'top-0'} mt-0 w-36 bg-gray-dark rounded-lg shadow-xl z-[60] border border-dark-3 overflow-hidden animate-in fade-in zoom-in-95 duration-100`}>
                       <button onClick={() => onEditCompany(company.id)} className="w-full px-4 py-3 text-left text-sm text-gray-300 hover:bg-dark-2 hover:text-white flex items-center gap-3 transition-colors"><Edit className="w-4 h-4" /> Edit</button>
                       <div className="h-px bg-dark-3/50 mx-2"></div>
                       <button onClick={() => onDeleteCompany(company.id)} className="w-full px-4 py-3 text-left text-sm text-red-400 hover:bg-dark-2 hover:text-red-300 flex items-center gap-3 transition-colors"><Trash2 className="w-4 h-4" /> Delete</button>

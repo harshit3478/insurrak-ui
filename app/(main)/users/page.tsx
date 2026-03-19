@@ -10,7 +10,7 @@ import {
   selectUsers,
   selectUsersMeta,
 } from "@/lib/features/user/userSelectors";
-import { deleteUser, setMockUsers, toggleUserActive } from "@/lib/features/user/userSlice";
+import { deleteUser, setUsers, toggleUserActive } from "@/lib/features/user/userSlice";
 import { useAppDispatch } from "@/lib/hooks";
 import { useRouter } from "next/navigation";
 
@@ -33,14 +33,29 @@ import { useRouter } from "next/navigation";
 //   );
 // }
 
+import { api } from "@/lib/api";
+import { Loading } from "@/components/ui/Loading";
+import { useState } from "react";
+
 export default function UsersPage() {
   const authUser = useSelector((state: any) => state.auth.user);
   const dispatch = useAppDispatch();
   const router = useRouter();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    dispatch(setMockUsers());
-    // dispatch(fetchUsers({ page, search }));
+    const loadUsers = async () => {
+      try {
+        setLoading(true);
+        const data = await api.getAll();
+        dispatch(setUsers(data));
+      } catch (err) {
+        console.error("Failed to fetch users", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadUsers();
   }, [dispatch]);
 
   //  Redux users
@@ -71,6 +86,10 @@ export default function UsersPage() {
   // Hard stop: no access at all
   if (!hasPermission(authUser, Permission.MANAGE_USERS)) {
     return <p className="text-red-500">Access denied</p>;
+  }
+
+  if (loading) {
+    return <Loading />;
   }
 
   return (

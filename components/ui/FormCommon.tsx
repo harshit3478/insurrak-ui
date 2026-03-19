@@ -71,3 +71,34 @@ export const Stepper: React.FC<{ steps: number; currentStep: number }> = ({ step
     </div>
   );
 };
+
+export const FormTextarea: React.FC<React.TextareaHTMLAttributes<HTMLTextAreaElement> & { label: string; fullWidth?: boolean }> = ({ label, fullWidth, className, ...props }) => (
+  <div className={`space-y-2 ${fullWidth ? 'w-full' : ''} ${className || ''}`}>
+    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">
+      {label}
+    </label>
+    <textarea
+      className="w-full px-4 py-3 bg-white dark:bg-gray-dark border border-gray-200 dark:border-dark-3 rounded-lg text-gray-900 dark:text-white placeholder-gray-300 focus:outline-none focus:ring-1 focus:ring-[#0E3B5E] focus:border-[#0E3B5E] transition-all disabled:bg-gray-50 disabled:text-gray-400"
+      {...props}
+    />
+  </div>
+);
+
+export const FormSelect: React.FC<React.SelectHTMLAttributes<HTMLSelectElement> & { label: string; options: string[]; fullWidth?: boolean }> = ({ label, options, fullWidth, className, ...props }) => (
+  <div className={`space-y-2 ${fullWidth ? 'w-full' : ''} ${className || ''}`}>
+    <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">
+      {label}
+    </label>
+    <select
+      className="w-full px-4 py-3 bg-white dark:bg-gray-dark border border-gray-200 dark:border-dark-3 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#0E3B5E] focus:border-[#0E3B5E] transition-all disabled:bg-gray-50 disabled:text-gray-400"
+      {...props}
+    >
+      <option value="" disabled>Select an option</option>
+      {options.map((opt) => (
+        <option key={opt} value={opt}>
+          {opt}
+        </option>
+      ))}
+    </select>
+  </div>
+);

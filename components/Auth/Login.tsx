@@ -43,12 +43,12 @@ export default function LogIn() {
         )}
         <div className="space-y-4">
           <InputGroup
-            id="email"
-            name="email"
-            type="email"
-            autoComplete="email"
+            id="username"
+            name="username"
+            type="text"
+            autoComplete="username"
             required
-            placeholder="Email"
+            placeholder="Username"
             inputClassName={inputClasses}
             className="mt-0! mb-0!"
           />

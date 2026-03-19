@@ -24,6 +24,10 @@ const userSlice = createSlice({
       state.items = MOCK_USERS;
       state.total = MOCK_USERS.length;
     },
+    setUsers(state, action: PayloadAction<User[]>) {
+      state.items = action.payload;
+      state.total = action.payload.length;
+    },
 
     addUser(state, action: PayloadAction<User>) {
       state.items.unshift(action.payload);
@@ -81,6 +85,6 @@ const userSlice = createSlice({
 // });
 
 
-export const { setMockUsers, addUser, updateUser, toggleUserActive, deleteUser } =
+export const { setMockUsers, setUsers, addUser, updateUser, toggleUserActive, deleteUser } =
   userSlice.actions;
 export default userSlice.reducer;

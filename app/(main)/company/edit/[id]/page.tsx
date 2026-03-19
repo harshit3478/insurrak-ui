@@ -1,28 +1,37 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { useSelector } from "react-redux";
 import { useCompanies } from "@/context-provider/CompanyProvider";
 import { CompanyForm } from "@/components/Company/CompanyForm";
 import { FormHeader, SuccessHeader } from "@/components/ui/FormCommon";
-import { selectCompanies } from "@/lib/features/company/companySelectors";
 import { Company } from "@/types";
+import { apiClient } from "@/lib/apiClient";
+import { Loading } from "@/components/ui/Loading";
 
 export default function EditCompanyPage() {
   const { updateCompany, updateState, isUpdating } = useCompanies();
   const router = useRouter();
-  const companies = useSelector(selectCompanies);
   const params = useParams();
-
-  // The `params` object can be undefined on initial render in some Next.js versions/setups.
-  // Accessing it safely prevents runtime errors.
   const companyId = params.id as string;
 
-  // Find the company to edit from the Redux store.
-  const companyToEdit = companyId
-    ? companies.find((c: Company) => String(c.id) === companyId)
-    : undefined;
+  const [companyToEdit, setCompanyToEdit] = useState<Company | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchCompany() {
+      if (!companyId) return;
+      try {
+        const data = await apiClient.getCompanyById(Number(companyId));
+        setCompanyToEdit(data);
+      } catch (error) {
+        console.error("Failed to fetch company", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchCompany();
+  }, [companyId]);
 
   if (updateState.success) {
     return (
@@ -43,7 +52,10 @@ export default function EditCompanyPage() {
     );
   }
 
-  // Handle case where company is not found or params are not yet available.
+  if (loading) {
+    return <Loading />;
+  }
+
   if (!companyToEdit && companyId) {
     return (
       <div className="p-8">

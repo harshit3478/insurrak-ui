@@ -14,10 +14,12 @@ type CompanyFormProps = {
 };
 
 interface AdminData {
+  username: string;
   name: string;
   email: string;
   designation: string;
   phone: string;
+  password?: string;
 }
 
 export function CompanyForm({
@@ -43,6 +45,9 @@ export function CompanyForm({
     state: '',
     city: '',
     pincode: '',
+    email: defaultValues?.email || '',
+    mobile_number: defaultValues?.mobile_number || '',
+    gst_number: defaultValues?.gst_number || '',
     // Fields that ARE in the company type
     admin: defaultValues?.admin || '',
     adminEmail: defaultValues?.adminEmail || '',
@@ -53,10 +58,12 @@ export function CompanyForm({
   // Admin Data State
   const [admins, setAdmins] = useState<AdminData[]>([]);
   const [currentAdmin, setCurrentAdmin] = useState<AdminData>({
+    username: '',
     name: '',
     email: '',
     designation: '',
-    phone: ''
+    phone: '',
+    password: ''
   });
 
   useEffect(() => {
@@ -64,7 +71,7 @@ export function CompanyForm({
       // If editing, and there's an admin, populate the admins list
       if (defaultValues.admin && defaultValues.adminEmail) {
         setAdmins([
-          { name: defaultValues.admin, email: defaultValues.adminEmail, designation: 'Admin', phone: '' }
+          { username: defaultValues.admin, name: defaultValues.admin, email: defaultValues.adminEmail, designation: 'Admin', phone: '' }
         ]);
       }
     }
@@ -79,9 +86,9 @@ export function CompanyForm({
   };
 
   const handleAddAdmin = () => {
-    if (currentAdmin.name && currentAdmin.email) {
+    if (currentAdmin.username && currentAdmin.email && (isEdit || currentAdmin.password)) {
       setAdmins([...admins, currentAdmin]);
-      setCurrentAdmin({ name: '', email: '', designation: '', phone: '' });
+      setCurrentAdmin({ username: '', name: '', email: '', designation: '', phone: '', password: '' });
     }
   };
 
@@ -90,13 +97,27 @@ export function CompanyForm({
     // Append company details
     finalFormData.append('name', formData.name);
     finalFormData.append('companyId', formData.companyId);
+    finalFormData.append('email', formData.email);
+    finalFormData.append('mobile_number', formData.mobile_number);
+    finalFormData.append('address', formData.address);
+    finalFormData.append('gst_number', formData.gst_number);
     finalFormData.append('branches', formData.branches);
     finalFormData.append('activePolicies', formData.activePolicies);
+    finalFormData.append('website', formData.website || '');
+    finalFormData.append('state', formData.state || '');
+    finalFormData.append('city', formData.city || '');
+    finalFormData.append('pincode', formData.pincode || '');
 
     // The backend expects a single admin. We'll send the first one.
     const primaryAdmin = admins[0];
-    finalFormData.append('admin', primaryAdmin ? primaryAdmin.name : formData.admin);
+    finalFormData.append('admin', primaryAdmin ? primaryAdmin.username || primaryAdmin.name : formData.admin);
+    finalFormData.append('adminName', primaryAdmin ? primaryAdmin.name : formData.admin);
     finalFormData.append('adminEmail', primaryAdmin ? primaryAdmin.email : formData.adminEmail);
+    finalFormData.append('adminDesignation', primaryAdmin ? primaryAdmin.designation : '');
+    finalFormData.append('adminPhone', primaryAdmin ? primaryAdmin.phone : '');
+    if (!isEdit) {
+      finalFormData.append('adminPassword', primaryAdmin?.password || '');
+    }
 
     startTransition(() => {
       action(finalFormData);
@@ -141,6 +162,28 @@ export function CompanyForm({
                 name="website"
                 value={formData.website}
                 onChange={handleChange}
+              />
+              <FormInput
+                label="Company Email*"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+              />
+              <FormInput
+                label="Mobile Number"
+                name="mobile_number"
+                value={formData.mobile_number}
+                onChange={handleChange}
+                placeholder="e.g. 9876543210"
+              />
+              <FormInput
+                label="GST Number"
+                name="gst_number"
+                value={formData.gst_number}
+                onChange={handleChange}
+                placeholder="e.g. 27AADCB2230M1Z2"
               />
               <FormInput
                 label="Company Logo"
@@ -205,18 +248,34 @@ export function CompanyForm({
           <div className="flex-1">
             <FormSection title="Add Admin Details">
               <FormInput
-                label="Full Name*"
+                label="Username* (login handle)"
+                name="username"
+                value={currentAdmin.username}
+                onChange={handleAdminChange}
+                placeholder="e.g. john.doe"
+              />
+              <FormInput
+                label="Full Name"
                 name="name"
                 value={currentAdmin.name}
                 onChange={handleAdminChange}
               />
               <FormInput
-                label="Email Address"
+                label="Email Address*"
                 name="email"
                 type="email"
                 value={currentAdmin.email}
                 onChange={handleAdminChange}
               />
+              {!isEdit && (
+                <FormInput
+                  label="Password*"
+                  name="password"
+                  type="password"
+                  value={currentAdmin.password}
+                  onChange={handleAdminChange}
+                />
+              )}
               <FormInput
                 label="Designation"
                 name="designation"

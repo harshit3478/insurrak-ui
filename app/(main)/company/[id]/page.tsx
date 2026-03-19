@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { api as apiClient } from '@/lib/api';
 import { BranchRead, PolicyRequestRead } from '@/types/api';
+import { Company } from '@/types';
 import { 
   ArrowLeft, 
   Edit, 
@@ -12,40 +13,62 @@ import {
   Download, 
   MoreVertical, 
   CheckCircle2,
-  MinusCircle
+  MinusCircle,
+  Loader2
 } from 'lucide-react';
 
 export default function CompanyDetailsPage() {
   const router = useRouter();
   const params = useParams();
-  const companyId = params.id;
+  const companyId = params.id as string;
 
   const [activeTab, setActiveTab] = useState<'branches' | 'policies'>('branches');
 
+  const [company, setCompany] = useState<Company | null>(null);
   const [branches, setBranches] = useState<BranchRead[]>([]);
   const [policies, setPolicies] = useState<PolicyRequestRead[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchData = async () => {
+    async function fetchCompany() {
+      if (!companyId) return;
       try {
         setLoading(true);
-        const [bData, pData] = await Promise.all([
-          apiClient.getAllBranches(), // Fetching all branches, we will filter below
-          apiClient.getPolicyRequests(Number(companyId))
-        ]);
-        
-        // Ensure we only show branches for this company
-        const companyBranches = bData.filter(b => b.company_id === Number(companyId));
-        setBranches(companyBranches);
-        setPolicies(pData);
+        const data = await apiClient.getCompanyById(Number(companyId));
+        setCompany(data);
       } catch (err) {
-        console.error("Failed to fetch company details data", err);
+        console.error("Failed to fetch company", err);
+        setError("Failed to load company details");
       } finally {
         setLoading(false);
       }
+    }
+    fetchCompany();
+  }, [companyId]);
+
+  // Separate useEffect for branches and policies
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!companyId) return;
+      try {
+        const [bData, pData] = await Promise.all([
+          apiClient.getAllBranches(Number(companyId)).catch(e => {
+            console.error('Branches fetch error:', e);
+            return [] as BranchRead[];
+          }),
+          apiClient.getPolicyRequests(Number(companyId)).catch(e => {
+            console.error('Policies fetch error:', e);
+            return [] as PolicyRequestRead[];
+          })
+        ]);
+        setBranches(bData);
+        setPolicies(pData);
+      } catch (err) {
+        console.error("Related data fetch error:", err);
+      }
     };
-    if (companyId) fetchData();
+    fetchData();
   }, [companyId]);
 
   const getStatusBadge = (status: string) => {
@@ -109,6 +132,17 @@ export default function CompanyDetailsPage() {
     router.push(`/company/${companyId}/policy/${policyId}`);
   };
 
+  if (loading) {
+    return (
+      <div className="p-8 flex justify-center items-center min-h-[400px]">
+        <Loader2 className="animate-spin text-gray-500 w-8 h-8" />
+      </div>
+    );
+  }
+
+  const companyName = company?.name || 'Unknown Company';
+  const companyInitial = companyName.charAt(0).toUpperCase();
+
   return (
     <div className="p-8 bg-gray-50/50 dark:bg-gray-dark min-h-full font-sans">
       {/* Back Button */}
@@ -124,14 +158,12 @@ export default function CompanyDetailsPage() {
         <div className="flex justify-between items-start mb-8">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-full bg-[#C6F200] flex items-center justify-center text-xl font-bold text-black">
-              A
+              {companyInitial}
             </div>
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Acme Manufacturing Ltd</h1>
-                <span className="px-2.5 py-0.5 rounded-full bg-green-50 text-green-700 text-xs font-medium flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span> Active
-                </span>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{companyName}</h1>
+                {getStatusBadge(company?.status || 'Active')}
               </div>
             </div>
           </div>
@@ -143,31 +175,31 @@ export default function CompanyDetailsPage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-y-6 gap-x-8">
           <div>
             <div className="text-xs text-gray-400 mb-1">Email</div>
-            <div className="text-sm font-medium text-gray-900 dark:text-white">acme.sol@google.com</div>
+            <div className="text-sm font-medium text-gray-900 dark:text-white">{company?.email || '-'}</div>
           </div>
           <div>
             <div className="text-xs text-gray-400 mb-1">Company ID</div>
-            <div className="text-sm font-medium text-gray-900 dark:text-white">COM1234fe453</div>
-          </div>
-          <div>
-            <div className="text-xs text-gray-400 mb-1">Admin</div>
-            <div className="text-sm font-medium text-gray-900 dark:text-white">Rajesh Kumar</div>
-          </div>
-          <div>
-            <div className="text-xs text-gray-400 mb-1">Admin Phone Number</div>
-            <div className="text-sm font-medium text-gray-900 dark:text-white">+91 872345902</div>
+            <div className="text-sm font-medium text-gray-900 dark:text-white">{company?.companyId || '-'}</div>
           </div>
           <div>
             <div className="text-xs text-gray-400 mb-1">Phone Number</div>
-            <div className="text-sm font-medium text-gray-900 dark:text-white">98368228973</div>
+            <div className="text-sm font-medium text-gray-900 dark:text-white">{company?.mobile_number || '-'}</div>
           </div>
           <div>
             <div className="text-xs text-gray-400 mb-1">GST Number</div>
-            <div className="text-sm font-medium text-gray-900 dark:text-white">27AADCB2230M1Z2</div>
+            <div className="text-sm font-medium text-gray-900 dark:text-white">{company?.gst_number || '-'}</div>
           </div>
           <div className="col-span-2">
+            <div className="text-xs text-gray-400 mb-1">Address</div>
+            <div className="text-sm font-medium text-gray-900 dark:text-white">{company?.address || '-'}</div>
+          </div>
+          <div>
+            <div className="text-xs text-gray-400 mb-1">Admin</div>
+            <div className="text-sm font-medium text-gray-900 dark:text-white">{company?.admin || '-'}</div>
+          </div>
+          <div>
             <div className="text-xs text-gray-400 mb-1">Admin Email</div>
-            <div className="text-sm font-medium text-gray-900 dark:text-white">rajesh@acme.com</div>
+            <div className="text-sm font-medium text-gray-900 dark:text-white">{company?.adminEmail || '-'}</div>
           </div>
         </div>
       </div>

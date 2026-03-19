@@ -24,7 +24,6 @@ const policySlice = createSlice({
     },
     setPolicies(state, action: PayloadAction<Policy[]>) {
       state.items = action.payload;
-      state.total = action.payload.length;
     },
     addPolicy(state, action: PayloadAction<Policy>) {
       state.items.unshift(action.payload);
@@ -44,12 +43,6 @@ const policySlice = createSlice({
   },
 });
 
-export const {
-  setMockPolicies,
-  setPolicies,
-  addPolicy,
-  updatePolicy,
-  deletePolicy,
-  selectPolicy,
-} = policySlice.actions;
+export const { setMockPolicies, setPolicies, addPolicy, updatePolicy, deletePolicy, selectPolicy } =
+  policySlice.actions;
 export default policySlice.reducer;
