@@ -1,5 +1,6 @@
 "use client";
 
+import { cn } from "@/lib/utils";
 import type { User } from "@/types";
 import {
   Table,
@@ -16,10 +17,13 @@ import {
   User as UserIcon,
   CheckCircle,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import { Portal } from "@/components/ui/portal";
+import { SkeletonRows } from "@/components/ui/SkeletonRows";
 
 type UsersTableProps = {
   data: User[];
+  loading?: boolean;
   total: number;
   page: number;
   limit: number;
@@ -38,8 +42,20 @@ type UsersTableProps = {
   onSelectAllUsers?: () => void;
 };
 
+const ROLE_LABELS: Record<string, string> = {
+  SUPER_ADMIN: "Master Admin",
+  COMPANY_ADMIN: "Admin",
+  BRANCH_ADMIN: "Manager",
+  COMPANY_USER: "User",
+};
+
+/**
+ * UsersTable displays a tabular view of platform users with support for 
+ * role visualization, status toggling, and administrative actions.
+ */
 export function UsersTable({
   data,
+  loading,
   total,
   page,
   limit,
@@ -57,6 +73,7 @@ export function UsersTable({
   onSelectAllUsers,
 }: UsersTableProps) {
   const [openActionId, setOpenActionId] = useState<string | null>(null);
+  const [menuRect, setMenuRect] = useState<DOMRect | null>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -71,11 +88,28 @@ export function UsersTable({
     };
   }, [openActionId]);
 
-  const handleActionClick = (id: string) => {
-    setOpenActionId(openActionId === id ? null : id);
+  useEffect(() => {
+    const handleScroll = () => {
+      if (openActionId) {
+        setOpenActionId(null);
+        setMenuRect(null);
+      }
+    };
+    window.addEventListener('scroll', handleScroll, true);
+    return () => window.removeEventListener('scroll', handleScroll, true);
+  }, [openActionId]);
+
+  const handleActionClick = (e: React.MouseEvent, id: string) => {
+    if (openActionId === id) {
+      setOpenActionId(null);
+      setMenuRect(null);
+    } else {
+      setOpenActionId(id);
+      setMenuRect(e.currentTarget.getBoundingClientRect());
+    }
   };
   return (
-    <div className="rounded-lg border border-gray-300 overflow-hidden dark:border-dark-3">
+    <div className="rounded-lg border border-gray-300 dark:border-dark-3">
       <Table>
         <TableHeader>
           <TableRow>
@@ -88,7 +122,16 @@ export function UsersTable({
         </TableHeader>
 
         <TableBody className="divide-y divide-gray-300 dark:divide-dark-3">
-          {data.map((user, index) => (
+          {loading ? (
+            <SkeletonRows columns={5} rows={5} />
+          ) : data.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={5} className="py-8 text-center text-neutral-500">
+                No users found
+              </TableCell>
+            </TableRow>
+          ) : (
+            data.map((user, index) => (
             <TableRow
               key={user.id}
               className="hover:bg-gray-50 transition-colors group"
@@ -101,7 +144,9 @@ export function UsersTable({
                 {user.email}
               </TableCell>
 
-              <TableCell className="capitalize">{user.role}</TableCell>
+              <TableCell>
+                {ROLE_LABELS[user.role] || user.role}
+              </TableCell>
               <TableCell className="py-4 px-4">
                 {canToggle && onToggleUser && (
                   <span
@@ -126,7 +171,7 @@ export function UsersTable({
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleActionClick(user.id);
+                    handleActionClick(e, user.id);
                   }}
                   className={`p-1 rounded transition-colors ${
                     openActionId === user.id
@@ -136,49 +181,55 @@ export function UsersTable({
                 >
                   <MoreVertical className="w-4 h-4" />
                 </button>
-                {openActionId === user.id && (
-                  <div className={`absolute right-8 ${index >= data.length - 2 && data.length > 2 ? 'bottom-0' : 'top-0'} mt-0 w-48 bg-gray-1 dark:bg-gray-dark rounded-lg divide-y shadow-xl z-60 border border-dark-3 overflow-hidden animate-in fade-in zoom-in-95 duration-100`}>
-                    {canEdit && onEditUser && (
-                      <button
-                        onClick={() => onEditUser(user)}
-                        className="w-full px-4 py-3 text-left text-sm dark:text-gray-300 hover:bg-[#253344] hover:text-white flex items-center gap-3 transition-colors"
-                      >
-                        <Edit className="w-4 h-4" /> Edit Details
+                {openActionId === user.id && menuRect && (
+                  <Portal>
+                    <div 
+                      onMouseDown={(e) => e.stopPropagation()}
+                      style={{ 
+                        position: 'fixed', 
+                        top: menuRect.bottom + 8 + 200 > window.innerHeight ? menuRect.top - 180 : menuRect.bottom + 4, 
+                        left: menuRect.left - 160,
+                        zIndex: 9999 
+                      }}
+                      className="w-48 bg-gray-1 dark:bg-gray-dark rounded-lg divide-y shadow-2xl border border-dark-3 overflow-hidden animate-in fade-in zoom-in-95 duration-100"
+                    >
+                      {canEdit && onEditUser && (
+                        <button
+                          onClick={() => {
+                            setOpenActionId(null);
+                            onEditUser(user);
+                          }}
+                          className="w-full px-4 py-3 text-left text-sm dark:text-gray-300 hover:bg-[#253344] hover:text-white flex items-center gap-3 transition-colors"
+                        >
+                          <Edit className="w-4 h-4" /> Edit Details
+                        </button>
+                      )}
+                      <button className="w-full px-4 py-3 text-left text-sm dark:text-gray-300 hover:bg-[#253344] hover:text-white flex items-center gap-3 transition-colors">
+                        <UserIcon className="w-4 h-4" /> Manage Admin
                       </button>
-                    )}
-                    <button className="w-full px-4 py-3 text-left text-sm dark:text-gray-300 hover:bg-[#253344] hover:text-white flex items-center gap-3 transition-colors">
-                      <UserIcon className="w-4 h-4" /> Manage Admin
-                    </button>
-                    <div className="h-px bg-gray-700/50 mx-2"></div>
-                    {canToggle && onToggleUser && (
-                      <button
-                        onClick={() => onToggleUser(user)}
-                        className="w-full px-4 py-3 text-left text-sm text-red-400 hover:bg-dark-2 hover:text-red-300 flex items-center gap-3 transition-colors"
-                      >
-                        {user.active ? (
-                          <CircleX className="w-4 h-4" />
-                        ) : (
-                          <CheckCircle className="w-4 h-4" />
-                        )}
-                        {user.active ? "Deactivate" : "Activate"} Account
-                      </button>
-                    )}
-                  </div>
+                      <div className="h-px bg-gray-700/50 mx-2"></div>
+                      {canToggle && onToggleUser && (
+                        <button
+                          onClick={() => {
+                            setOpenActionId(null);
+                            onToggleUser(user);
+                          }}
+                          className="w-full px-4 py-3 text-left text-sm text-red-400 hover:bg-dark-2 hover:text-red-300 flex items-center gap-3 transition-colors"
+                        >
+                          {user.active ? (
+                            <CircleX className="w-4 h-4" />
+                          ) : (
+                            <CheckCircle className="w-4 h-4" />
+                          )}
+                          {user.active ? "Deactivate" : "Activate"} Account
+                        </button>
+                      )}
+                    </div>
+                  </Portal>
                 )}
               </TableCell>
             </TableRow>
-          ))}
-
-          {data.length === 0 && (
-            <TableRow>
-              <TableCell
-                colSpan={5}
-                className="py-8 text-center text-neutral-500"
-              >
-                No users found
-              </TableCell>
-            </TableRow>
-          )}
+          )))}
         </TableBody>
       </Table>
 

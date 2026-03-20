@@ -12,6 +12,11 @@ import { User } from "@/types";
 import Breadcrumb from "@/components/ui-elements/Breadcrumbs/Breadcrumb";
 
 
+/**
+ * Header component provides the top-level navigation bar for the dashboard.
+ * It includes breadcrumbs, a global search input, theme toggling, 
+ * notifications, and user profile information.
+ */
 export function Header() {
   const { toggleSidebar, isMobile } = useSidebarContext();
 

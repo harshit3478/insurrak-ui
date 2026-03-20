@@ -1,3 +1,8 @@
+/**
+ * api.ts defines the data contracts (D/TOs) for interaction with the 
+ * FastAPI backend. It provides type-safe schemas for request payloads 
+ * and response models across all functional modules.
+ */
 export interface UserRead {
   id: number;
   username: string;

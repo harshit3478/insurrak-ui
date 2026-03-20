@@ -4,11 +4,13 @@ import { Search, Filter, Download, Plus } from "lucide-react";
 interface CompaniesToolbarProps {
   onAddCompany?: () => void;
   onSearch?: (query: string) => void;
+  canCreate?: boolean;
 }
 
 export const CompaniesToolbar: React.FC<CompaniesToolbarProps> = ({
   onAddCompany,
   onSearch,
+  canCreate = false,
 }) => {
   return (
     <div className="flex flex-col md:flex-row justify-between items-center gap-4">
@@ -31,7 +33,7 @@ export const CompaniesToolbar: React.FC<CompaniesToolbarProps> = ({
         <button className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 dark:border-dark-3 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-2 transition-colors">
           <Download className="w-4 h-4" /> Export
         </button>
-        {onAddCompany && (
+        {canCreate && onAddCompany && (
           <button
             onClick={onAddCompany}
             className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors shadow-sm"

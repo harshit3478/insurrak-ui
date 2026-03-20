@@ -1,3 +1,8 @@
+/**
+ * index.ts defines the core domain models and shared UI constants 
+ * for the application. It establishes the central vocabulary for 
+ * authentication, organizational structures, and insurance-specific entities.
+ */
 export const BREADCRUMB_MAP: Record<string, string> = {
   "/": "Home",
   "/dashboard": "Dashboard",
@@ -8,6 +13,7 @@ export const BREADCRUMB_MAP: Record<string, string> = {
   "/renewals": "Renewals",
   "/repository": "Repository",
   "/profile": "Profile",
+  "/company-profile": "Company Profile",
   "/settings": "Settings",
   "/auth/login": "Login",
   "/auth/signup": "Sign Up",
@@ -41,11 +47,12 @@ export interface Company {
 }
 
 
-export type Role = "SUPER_ADMIN" | "COMPANY_ADMIN" | "COMPANY_USER";
+export type Role = "SUPER_ADMIN" | "COMPANY_ADMIN" | "BRANCH_ADMIN" | "COMPANY_USER";
 
 export const ROLE_HIERARCHY: Record<Role, number> = {
   SUPER_ADMIN: 3,
   COMPANY_ADMIN: 2,
+  BRANCH_ADMIN: 2,
   COMPANY_USER: 1,
 } as const;
 
@@ -74,6 +81,7 @@ export interface AuthContextType {
   };
   logout: () => void;
   hasPermission: (requiredRole: Role) => boolean;
+  isBypassActive: () => boolean;
 }
 
 export type ActionState = {
@@ -99,6 +107,21 @@ export type CompaniesContextType = {
 
   isCreating: boolean;
   isUpdating: boolean;
+};
+
+export type PoliciesContextType = {
+  createPolicyAction: (prevState: ActionState, formData: FormData) => Promise<ActionState>;
+  updatePolicyAction: (prevState: ActionState, formData: FormData) => Promise<ActionState>;
+};
+
+export type BranchesContextType = {
+  createBranchAction: (prevState: ActionState, formData: FormData) => Promise<ActionState>;
+  updateBranchAction: (prevState: ActionState, formData: FormData) => Promise<ActionState>;
+};
+
+export type ClaimsContextType = {
+  createClaimAction: (prevState: ActionState, formData: FormData) => Promise<ActionState>;
+  updateClaimAction: (prevState: ActionState, formData: FormData) => Promise<ActionState>;
 };
 
 // ─── Insurance Domain Types ───────────────────────────────────────────────────

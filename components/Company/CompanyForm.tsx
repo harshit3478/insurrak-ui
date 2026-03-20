@@ -22,6 +22,11 @@ interface AdminData {
   password?: string;
 }
 
+/**
+ * CompanyForm is a multi-step component for onboarding or updating corporate 
+ * entities. It captures extensive company metadata (Step 1) and administrative 
+ * user details (Step 2) to establish a firm's operational presence on the platform.
+ */
 export function CompanyForm({
   action,
   pending,
@@ -36,7 +41,8 @@ export function CompanyForm({
   const [formData, setFormData] = useState({
     name: defaultValues?.name || '',
     companyId: defaultValues?.companyId || '',
-    // These fields are from the user's example but not in the Company type
+    // Includes extensive field mappings for company metadata, including head office 
+    // and policy detail placeholders for future data parity.
     pan: '',
     website: '',
     logo: '',
@@ -108,7 +114,7 @@ export function CompanyForm({
     finalFormData.append('city', formData.city || '');
     finalFormData.append('pincode', formData.pincode || '');
 
-    // The backend expects a single admin. We'll send the first one.
+    // Maps the primary administrator for the company. The backend currently supports a single administrative entity per firm.
     const primaryAdmin = admins[0];
     finalFormData.append('admin', primaryAdmin ? primaryAdmin.username || primaryAdmin.name : formData.admin);
     finalFormData.append('adminName', primaryAdmin ? primaryAdmin.name : formData.admin);
@@ -135,7 +141,7 @@ export function CompanyForm({
 
 
   return (
-    <div className="bg-white dark:bg-gray-dark p-8 rounded-2xl border border-gray-100 dark:border-dark-3 shadow-sm">
+    <div className="bg-white dark:bg-gray-dark p-8 rounded-2xl border border-gray-200 dark:border-dark-3 shadow-sm">
       <Stepper steps={2} currentStep={step} />
 
       {step === 1 ? (

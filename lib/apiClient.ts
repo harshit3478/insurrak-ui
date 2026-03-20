@@ -10,6 +10,12 @@ import {
 } from "@/types/api";
 import { adaptUser, adaptCompany, adaptPolicy } from "@/lib/adapters";
 
+/**
+ * apiClient is the core engine for all backend interactions. 
+ * it provides a type-safe wrapper around the FastAPI endpoints, handling 
+ * authentication headers, error orchestration, and data transformation 
+ * between the wire and the application's domain models.
+ */
 const API_BASE_URL = "/api/v1";
 
 export const API_ENDPOINTS = {
@@ -121,8 +127,8 @@ export const apiClient = {
   },
   
   signup: async (_data: { name: string; email: string; password: string }) => {
-    // Returning a dummy response to prevent immediate UI crash if called.
-    console.warn("Signup is not supported on the public API directly.");
+    // Note: Public registration is currently restricted at the API level.
+    console.warn("Direct signup is restricted. Users must be onboarded via administrative tools.");
     return { success: false, detail: "Signup not supported" };
   },
 
@@ -153,9 +159,10 @@ export const apiClient = {
   createUser: async (data: { name: string; email: string; password: string; role: Role; designation?: string | null; reports_to?: number | null }): Promise<User> => {
     // Real API expects: { username, email, password, role_id, designation, reports_to }
     const roleIdMap: Record<Role, number> = {
-      COMPANY_USER: 1,
+      SUPER_ADMIN: 1,
       COMPANY_ADMIN: 2,
-      SUPER_ADMIN: 3
+      COMPANY_USER: 3,
+      BRANCH_ADMIN: 4
     };
     
     const payload = {
@@ -172,13 +179,14 @@ export const apiClient = {
   },
   
   updateProfile: async (userId: string | number, data: Partial<User>): Promise<User> => {
-    // Mapping our generic update to what is allowed.
-    // In the real API, only roles can be patched.
+    // Synchronizes local user model updates with role-specific API endpoints.
+    // User profile updates are primarily driven by role transitions in the current schema.
     if (data.role) {
       const roleIdMap: Record<Role, number> = {
-        COMPANY_USER: 1,
+        SUPER_ADMIN: 1,
         COMPANY_ADMIN: 2,
-        SUPER_ADMIN: 3
+        COMPANY_USER: 3,
+        BRANCH_ADMIN: 4
       };
       const roleId = roleIdMap[data.role];
       if (roleId) {

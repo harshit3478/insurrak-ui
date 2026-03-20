@@ -6,6 +6,11 @@ import { apiClient } from "@/lib/apiClient";
 import { Loading } from "@/components/ui/Loading";
 import type { User as UserType } from "@/types";
 
+/**
+ * ProfilePage displays the authenticated user's account details, 
+ * including identity information and corporate positioning within 
+ * the organization.
+ */
 export default function ProfilePage() {
   const [user, setUser] = useState<UserType | null>(null);
   const [loading, setLoading] = useState(true);
@@ -61,7 +66,7 @@ export default function ProfilePage() {
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {/* Identity Card */}
         <div className="flex flex-col gap-6 rounded-2xl bg-white p-6 shadow-sm border border-gray-100 dark:bg-dark-2 dark:border-dark-3">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white border-b border-gray-100 dark:border-dark-3 pb-3">Identity Detalis</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white border-b border-gray-100 dark:border-dark-3 pb-3">Identity Details</h2>
           
           <div className="flex items-start gap-4">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400">
@@ -80,6 +85,27 @@ export default function ProfilePage() {
             <div>
               <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Email Address</p>
               <p className="mt-1 font-medium text-gray-900 dark:text-white">{user.email}</p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-violet-600 dark:bg-violet-900/20 dark:text-violet-400">
+              <Briefcase className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Role</p>
+              <span className={`mt-1 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
+                user.role === 'SUPER_ADMIN'
+                  ? 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400'
+                  : user.role === 'COMPANY_ADMIN'
+                  ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400'
+                  : 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400'
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${
+                  user.role === 'SUPER_ADMIN' ? 'bg-red-500' : user.role === 'COMPANY_ADMIN' ? 'bg-blue-500' : user.role === 'BRANCH_ADMIN' ? 'bg-orange-500' : 'bg-green-500'
+                }`} />
+                {user.role === 'SUPER_ADMIN' ? 'Super Admin' : user.role === 'COMPANY_ADMIN' ? 'Company Admin' : user.role === 'BRANCH_ADMIN' ? 'Branch Admin' : 'Company User'}
+              </span>
             </div>
           </div>
         </div>

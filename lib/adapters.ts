@@ -1,13 +1,17 @@
 import { UserRead, CompanyRead, RoleRead, RolesAndPermissionsResponse } from '@/types/api';
 import { User, Company, Role } from '@/types';
 
-// A mapping of our hardcoded UI roles vs what the backend provides.
-// If the backend returns dynamic role names, we might map them to standard types,
-// or fallback to "COMPANY_USER".
+/**
+ * Adapters normalize raw API responses from the backend into the application's 
+ * internal domain types. This layer ensures that UI components interact with 
+ * a consistent data structure regardless of schema variations on the wire.
+ */
+
+// Mapping between human-readable role names and internal system constants.
 const ROLE_MAP: Record<string, Role> = {
   'Super Admin': 'SUPER_ADMIN',
   'Company Admin': 'COMPANY_ADMIN',
-  // Assuming all other names map back to COMPANY_USER
+  'Branch Admin': 'BRANCH_ADMIN',
 };
 
 /**
@@ -25,9 +29,10 @@ export function adaptUser(apiUser: UserRead, userRoleName?: string): User {
   } else {
     // Fallback to role_id mapping
     const idToRoleMap: Record<number, Role> = {
-      1: 'COMPANY_USER',
+      1: 'SUPER_ADMIN',
       2: 'COMPANY_ADMIN',
-      3: 'SUPER_ADMIN'
+      3: 'COMPANY_USER',
+      4: 'BRANCH_ADMIN'
     };
     mappedRole = idToRoleMap[apiUser.role_id] || 'COMPANY_USER';
   }
@@ -49,10 +54,10 @@ export function adaptCompany(apiCompany: CompanyRead): Company {
     id: apiCompany.id,
     name: apiCompany.name,
     companyId: String(apiCompany.id),
-    admin: '',                      // Not provided by this API directly
+    admin: '',                      // placeholder for aggregated admin name
     adminEmail: apiCompany.email ?? '',
-    branches: '0',                  // Would be fetched via branch endpoints manually later
-    activePolicies: '0',            // Would be fetched via policy endpoints manually later
+    branches: '0',                  // placeholder for aggregated branch count
+    activePolicies: '0',            // placeholder for aggregated policy count
     status: apiCompany.is_active ? 'Active' : 'Inactive',
     email: apiCompany.email ?? '',
     mobile_number: apiCompany.mobile_number ?? '',
@@ -67,7 +72,7 @@ export function adaptPolicy(apiPolicy: import('@/types/api').PolicyRequestRead):
     policyNumber: apiPolicy.policy_number || 'TBD',
     companyId: String(apiPolicy.company_id),
     companyName: `Company ID: ${apiPolicy.company_id}`,
-    insurer: 'Pending Assignment', // Not natively joined in backend fetch
+    insurer: 'Pending Assignment', // fallback for unassigned procurement requests
     type: (apiPolicy.line_of_business as import('@/types').PolicyType) || 'Miscellaneous',
     sumInsured: 0,
     premium: 0,

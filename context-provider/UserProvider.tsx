@@ -19,6 +19,12 @@ const initialState: UsersActionState = {};
 
 const UsersContext = createContext<UsersContextType | null>(null);
 
+/**
+ * UsersProvider manages the lifecycle of platform users.
+ * It handles account creation, profile updates, and role assignments, 
+ * orchestrating the synchronization between the UI state and the backend 
+ * administrative user endpoints.
+ */
 export function UsersProvider({ children }: { children: React.ReactNode }) {
   /* ================= CREATE USER ================= */
   const createUserAction = async (

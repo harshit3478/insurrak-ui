@@ -12,6 +12,12 @@ import {
   Users,
   BarChart3,
 } from "lucide-react";
+
+/**
+ * Home component serves as the primary marketing landing page for the Insurance platform.
+ * It includes sections for navigation, hero highlights, partner trust, feature grids,
+ * testimonials, pricing plans, and an FAQ.
+ */
 export default function Home() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
@@ -253,7 +259,7 @@ export default function Home() {
                     </div>
                   </div>
 
-                  {/* Fake Table */}
+                  {/* Interactive Dashboard Table Simulation */}
                   <div className="bg-gray-800/30 rounded-xl border border-gray-700 p-4 space-y-3">
                     <div className="flex justify-between text-xs text-gray-500 pb-2 border-b border-gray-700">
                       <span>Company</span>
@@ -294,7 +300,7 @@ export default function Home() {
             Trusted by over 200+ Partners
           </p>
           <div className="flex flex-wrap justify-center items-center gap-x-12 gap-y-8 grayscale opacity-70">
-            {/* Text-based Logos for simulation */}
+            {/* Partner brand representations */}
             <span className="text-xl font-bold font-serif">ASPEN</span>
             <span className="text-xl font-bold italic">Crop & Highlight</span>
             <span className="text-2xl font-bold">N</span>
@@ -330,7 +336,7 @@ export default function Home() {
                 className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow"
               >
                 <div className="aspect-video bg-gray-200 rounded-xl mb-6 flex items-center justify-center">
-                  {/* Placeholder Graphic */}
+                  {/* Visual feature representation */}
                   <div className="text-gray-400 font-medium">
                     Feature Graphic {item}
                   </div>

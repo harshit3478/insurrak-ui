@@ -8,6 +8,11 @@ export const metadata: Metadata = {
   description: "Login to your Insurrack account.",
 };
 
+/**
+ * LoginPage provides the entry point for user authentication.
+ * It features a split-screen design with brand messaging on the left 
+ * and the interactive login form on the right.
+ */
 export default function LoginPage() {
   return (
     <div className="flex flex-col lg:flex-row min-h-screen w-full font-sans bg-white dark:bg-black">

@@ -38,6 +38,11 @@ function StatCard({
   );
 }
 
+/**
+ * AdminDashboard provides a high-level overview of the entire platform 
+ * for Super Admins. It aggregates data across all companies, including 
+ * policies, claims, and renewals, and lists recent company registrations.
+ */
 export default function AdminDashboard() {
   const dispatch = useAppDispatch();
 

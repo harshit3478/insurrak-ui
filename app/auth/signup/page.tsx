@@ -1,5 +1,4 @@
 import SignUp from '@/components/Auth/Signup';
-// import Breadcrumb from "@/components/Breadcrumbs/Breadcrumb";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -8,10 +7,14 @@ export const metadata: Metadata = {
   title: "Sign up",
 };
 
+/**
+ * Signup component provides the registration interface for new users.
+ * It features a dual-column layout on large screens, with the registration 
+ * form on the left and brand visual elements on the right.
+ */
 export default function Signup() {
   return (
     <>
-      {/* <Breadcrumb pageName="Sign In" /> */}
 
       <div className="rounded-[10px] bg-white shadow-1 dark:bg-gray-dark dark:shadow-card">
         <div className="flex flex-wrap items-center">
@@ -53,13 +56,6 @@ export default function Signup() {
               </p>
 
               <div className="mt-31">
-                {/* <Image
-                  src={"/images/grids/grid-02.svg"}
-                  alt="Logo"
-                  width={405}
-                  height={325}
-                  className="mx-auto dark:opacity-30"
-                /> */}
               </div>
             </div>
           </div>

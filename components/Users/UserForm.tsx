@@ -14,6 +14,11 @@ type UserFormProps = {
   onSuccess?: () => void;
 };
 
+/**
+ * UserForm manages the creation and modification of user accounts.
+ * It handles basic identity details, role assignments (RBAC), and 
+ * organizational context such as reporting lines and company associations.
+ */
 export function UserForm({
   action,
   pending,
@@ -24,7 +29,7 @@ export function UserForm({
 
   return (
     <form action={action}>
-      <div className="bg-white dark:bg-gray-dark p-8 rounded-2xl border border-gray-100 dark:border-dark-3 shadow-sm">
+      <div className="bg-white dark:bg-gray-dark p-8 rounded-2xl border border-gray-200 dark:border-dark-3 shadow-sm">
         {isEdit && defaultValues?.id && (
           <input type="hidden" name="id" value={defaultValues.id} />
         )}
@@ -50,9 +55,7 @@ export function UserForm({
                 required
                 disabled={isEdit}
               />
-              {/* These fields are from the user's example but not in the User type */}
-              {/* <FormInput label="Phone Number" name="phone" /> */}
-              {/* <FormInput label="Designation" name="designation" /> */}
+              {/* Note: Additional fields like phone and designation can be enabled here if required by the User schema. */}
             </FormSection>
 
             <FormSection title="Role Assignment" className="mt-8">
@@ -61,8 +64,8 @@ export function UserForm({
                 name="role"
                 items={[
                   { label: "User", value: "COMPANY_USER" },
-                  { label: "Manager", value: "COMPANY_ADMIN" },
-                  { label: "Admin", value: "SUPER_ADMIN" },
+                  { label: "Manager", value: "BRANCH_ADMIN" },
+                  { label: "Admin", value: "COMPANY_ADMIN" },
                 ]}
                 defaultValue={defaultValues?.role || "COMPANY_USER"}
                 className="col-span-2 sm:col-span-1"
