@@ -1,22 +1,17 @@
 "use client";
 
 import { api } from "@/lib/api";
+import { adaptUser } from "@/lib/adapters";
 import { RootState, store } from "@/lib/store";
 import {
   loginSuccess,
   logout as logoutAction,
 } from "../lib/features/auth/authSlice";
 
-import { AuthContextType, Role, ROLE_HIERARCHY, User } from "@/types";
+import { AuthContextType, Role, ROLE_HIERARCHY } from "@/types";
 import { isBypassActive } from "@/types/permissions";
 import { setAuthCookie, clearAuthCookie } from "@/app/actions/auth";
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useActionState,
-  useState,
-} from "react";
+import { createContext, useContext, useActionState } from "react";
 import { useSelector } from "react-redux";
 
 type AuthState = {
@@ -33,7 +28,7 @@ const initialState: AuthState = {
 function getDashboardRoute(role: Role): string {
   switch (role) {
     case "SUPER_ADMIN":
-      return "/dashboard/admin";
+      return "/system";
     case "COMPANY_ADMIN":
     case "BRANCH_ADMIN":
       return "/dashboard/manager";
@@ -46,7 +41,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 /**
  * AuthProvider manages the global authentication state and user session.
- * It coordinates with Redux for persistence and provides utility methods for 
+ * It coordinates with Redux for persistence and provides utility methods for
  * role-based permission checks and secure navigation.
  */
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -63,8 +58,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const username = formData.get("username") as string;
       const password = formData.get("password") as string;
+      const isSystemLogin = formData.get("system_login") === "true";
 
-      const loginResponse = await api.login({ username, password });
+      const loginResponse = isSystemLogin
+        ? await api.systemLogin({ username, password })
+        : await api.login({ username, password });
 
       const token = loginResponse.access_token;
       if (!token) {
@@ -73,29 +71,40 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       localStorage.setItem("token", token);
 
-      const user = await api.getCurrentUser();
-      
+      const apiUser = loginResponse.user;
+      if (!apiUser) {
+        localStorage.removeItem("token");
+        return { error: "Login failed: No user details received." };
+      }
+
+      const user = adaptUser(apiUser, apiUser.role_name);
+
+      if (isSystemLogin && user.role !== "SUPER_ADMIN") {
+        localStorage.removeItem("token");
+        await clearAuthCookie();
+        return { error: "Only SUPER_ADMIN can use system login." };
+      }
+
       // Sync the cookie to the Next.js server securely for Server Component routing
       await setAuthCookie(token, user.role);
-
-      if (!user) {
-        return { error: "Login failed: Could not fetch user details." };
-      }
 
       // Always persist so state survives the page navigation
       store.dispatch(
         loginSuccess({
           user,
           rememberMe: true,
-        })
+        }),
       );
 
       // Redirect to the role-specific dashboard
-      window.location.href = getDashboardRoute(user.role as Role);
+      window.location.href = isSystemLogin
+        ? "/system"
+        : getDashboardRoute(user.role as Role);
 
       return { success: true };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Invalid credentials";
+      const errorMessage =
+        error instanceof Error ? error.message : "Invalid credentials";
       return { error: errorMessage };
     }
   };
@@ -106,11 +115,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   );
 
   const signupAction = async (
-    prevState: AuthState,
-    formData: FormData,
+    _prevState: AuthState,
+    _formData: FormData,
   ): Promise<AuthState> => {
     // Public user registration is restricted. All new users must be established by a system administrator to maintain organizational hierarchy.
-    return { error: "Signup is not supported. Please contact your administrator." };
+    return {
+      error: "Signup is not supported. Please contact your administrator.",
+    };
   };
 
   const [signupState, signup, isSignupPending] = useActionState(
@@ -163,4 +174,3 @@ export function useAuth() {
   }
   return context;
 }
-

@@ -2,19 +2,23 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useAuth } from "@/context-provider/AuthProvider";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, ShieldCheck } from "lucide-react";
 import InputGroup from "../ui-elements/FormElements/InputGroup";
 
-export default function LogIn() {
+interface LogInProps {
+  systemMode?: boolean;
+}
+
+export default function LogIn({ systemMode = false }: LogInProps) {
   const { loginState, login, isLoginPending } = useAuth();
   // const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
 
-//   useEffect(() => {
-//   if (loginState.success) {
-//     router.replace("/dashboard");
-//   }
-// }, [loginState.success]);
+  //   useEffect(() => {
+  //   if (loginState.success) {
+  //     router.replace("/dashboard");
+  //   }
+  // }, [loginState.success]);
   // const [data, setData] = useState({
   //   email: process.env.NEXT_PUBLIC_DEMO_USER_MAIL || "",
   //   password: process.env.NEXT_PUBLIC_DEMO_USER_PASS || "",
@@ -28,14 +32,21 @@ export default function LogIn() {
     <div className="space-y-8">
       <div className="space-y-2">
         <h2 className="text-3xl font-bold text-gray-900 tracking-tight dark:text-white">
-          Welcome
+          {systemMode ? "System Login" : "Welcome"}
         </h2>
         <p className="text-gray-500 text-sm dark:text-dark-6">
-          Enter your login details to continue
+          {systemMode
+            ? "Sign in with system account credentials"
+            : "Enter your login details to continue"}
         </p>
       </div>
 
       <form action={login} className="space-y-6 mt-8">
+        <input
+          type="hidden"
+          name="system_login"
+          value={systemMode ? "true" : "false"}
+        />
         {loginState.error && (
           <div className="bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded">
             {loginState.error}
@@ -100,15 +111,25 @@ export default function LogIn() {
               "Log In"
             )}
           </button>
-          <p className="text-sm text-gray-500 dark:text-dark-6">
-            Don’t have an account?{" "}
+          {systemMode ? (
+            <p className="text-sm text-gray-500 dark:text-dark-6">
+              Use normal user login?{" "}
+              <Link
+                href="/auth/login"
+                className="font-medium text-primary hover:underline"
+              >
+                Back to Login
+              </Link>
+            </p>
+          ) : (
             <Link
-              href="/auth/signup"
-              className="font-medium text-primary hover:underline"
+              href="/auth/system-login"
+              className="inline-flex items-center gap-2 rounded-full border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:border-dark-3 dark:text-dark-7 dark:hover:bg-dark-2"
             >
-              Sign Up
+              <ShieldCheck className="h-4 w-4" />
+              Login as System
             </Link>
-          </p>
+          )}
         </div>
       </form>
     </div>

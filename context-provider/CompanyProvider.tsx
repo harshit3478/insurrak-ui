@@ -21,53 +21,65 @@ const CompanyContext = createContext<CompaniesContextType | null>(null);
 
 export function CompanyProvider({ children }: { children: React.ReactNode }) {
   /* ================= CREATE COMPANY ================= */
-  const [createState, setCreateState] = useState<CompanyActionState>(initialState);
+  const [createState, setCreateState] =
+    useState<CompanyActionState>(initialState);
   const [isCreating, setIsCreating] = useState(false);
 
   const createCompany = async (formData: FormData) => {
     setIsCreating(true);
     setCreateState({});
     try {
-      // 1. Onboard Company Super Admin
-      const superAdminUser = await apiClient.onboardCompanySuperAdmin({
-        company_name: String(formData.get("name")),
-        username: String(formData.get("admin") || 'admin'),
-        email: String(formData.get("adminEmail")),
-        password: String(formData.get("adminPassword")),
-      });
-      
-      const companyId = superAdminUser.company_id;
+      const name = String(formData.get("name") || "").trim();
+      const email = String(formData.get("email") || "").trim();
+      const adminUsername = String(formData.get("admin") || "").trim();
+      const adminEmail = String(formData.get("adminEmail") || "").trim();
+      const adminPassword = String(formData.get("adminPassword") || "").trim();
 
-      // 2. Update remaining fields
-      let company = await apiClient.updateCompany(companyId, {
-        name: String(formData.get("name")),
-        email: String(formData.get("email") || ''),
-        mobile_number: String(formData.get("mobile_number") || ''),
-        address: String(formData.get("address") || ''),
-        gst_number: String(formData.get("gst_number") || ''),
-        status: 'Active', 
+      if (!name || !email || !adminUsername || !adminEmail || !adminPassword) {
+        setCreateState({
+          error:
+            "Please fill required fields: company name, company email, admin username, admin email, and admin password.",
+        });
+        return;
+      }
+
+      // Use the dedicated backend company onboarding endpoint.
+      let company = await apiClient.createCompany({
+        name,
+        companyId: String(formData.get("companyId") || ""),
+        admin: adminUsername,
+        adminEmail,
+        adminPassword,
+        branches: String(formData.get("branches") || "0"),
+        activePolicies: String(formData.get("activePolicies") || "0"),
+        email,
+        mobile_number: String(formData.get("mobile_number") || ""),
+        address: String(formData.get("address") || ""),
+        gst_number: String(formData.get("gst_number") || ""),
+        adminDesignation: String(formData.get("adminDesignation") || ""),
       });
 
-      // 3. Keep frontend properties
+      // Keep frontend-only fields for table view.
       company = {
         ...company,
         companyId: String(formData.get("companyId")),
-        admin: String(formData.get("admin")),
-        adminEmail: String(formData.get("adminEmail")),
+        admin: adminUsername,
+        adminEmail,
         branches: String(formData.get("branches")),
         activePolicies: String(formData.get("activePolicies")),
       };
 
       store.dispatch(addCompany(company));
-      setCreateState({ 
-        success: true, 
-        data: { 
-          ...Object.fromEntries(formData.entries()), 
-          assignedCompanyId: `COM${String(companyId).padStart(8, '0')}`
-        } 
+      setCreateState({
+        success: true,
+        data: {
+          ...Object.fromEntries(formData.entries()),
+          assignedCompanyId: `COM${String(company.id).padStart(8, "0")}`,
+        },
       });
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to create company';
+      const msg =
+        err instanceof Error ? err.message : "Failed to create company";
       setCreateState({ error: msg });
     } finally {
       setIsCreating(false);
@@ -75,7 +87,8 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
   };
 
   /* ================= UPDATE COMPANY ================= */
-  const [updateState, setUpdateState] = useState<CompanyActionState>(initialState);
+  const [updateState, setUpdateState] =
+    useState<CompanyActionState>(initialState);
   const [isUpdating, setIsUpdating] = useState(false);
 
   const updateCompany = (companyId: number) => async (formData: FormData) => {
@@ -84,12 +97,12 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
     try {
       let updatedCompany = await apiClient.updateCompany(companyId, {
         name: String(formData.get("name")),
-        email: String(formData.get("email") || ''),
-        mobile_number: String(formData.get("mobile_number") || ''),
-        address: String(formData.get("address") || ''),
-        gst_number: String(formData.get("gst_number") || ''),
+        email: String(formData.get("email") || ""),
+        mobile_number: String(formData.get("mobile_number") || ""),
+        address: String(formData.get("address") || ""),
+        gst_number: String(formData.get("gst_number") || ""),
       });
-      
+
       updatedCompany = {
         ...updatedCompany,
         companyId: String(formData.get("companyId")),
@@ -100,9 +113,10 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
       };
 
       store.dispatch(updateCompanyInStore(updatedCompany));
-      setUpdateState({ success: true });
+      setUpdateState({ success: true, data: updatedCompany });
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to update company';
+      const msg =
+        err instanceof Error ? err.message : "Failed to update company";
       setUpdateState({ error: msg });
     } finally {
       setIsUpdating(false);

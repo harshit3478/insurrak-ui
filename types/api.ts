@@ -1,6 +1,6 @@
 /**
- * api.ts defines the data contracts (D/TOs) for interaction with the 
- * FastAPI backend. It provides type-safe schemas for request payloads 
+ * api.ts defines the data contracts (D/TOs) for interaction with the
+ * FastAPI backend. It provides type-safe schemas for request payloads
  * and response models across all functional modules.
  */
 export interface UserRead {
@@ -12,6 +12,7 @@ export interface UserRead {
   is_active: boolean;
   company_id: number;
   role_id: number;
+  role_name?: string;
 }
 
 export interface CompanyRead {
@@ -43,7 +44,7 @@ export interface UnitRead {
   occupancy?: string | null;
   hazard_details?: string | null;
   gstin?: string | null;
-  gst_certificate_path?: string | null;  // present in UnitUpdate schema
+  gst_certificate_path?: string | null; // present in UnitUpdate schema
   contact_person_name?: string | null;
   contact_person_email?: string | null;
   contact_person_phone?: string | null;
@@ -81,7 +82,7 @@ export interface PolicyRequestRead {
   broker_id: number;
   requested_by_id: number;
   line_of_business: string;
-  status: string;      // e.g. "DATA_COLLECTION", "QUOTING", "APPROVAL_PENDING", etc.
+  status: string; // e.g. "DATA_COLLECTION", "QUOTING", "APPROVAL_PENDING", etc.
   asset_description: string | null;
   policy_number: string | null;
   sum_insured: number | null;
@@ -270,7 +271,7 @@ export interface DeviationRead {
 
 export interface PaymentCreate {
   utr_number: string;
-  payment_date: string;  // ISO date string
+  payment_date: string; // ISO date string
   amount: number;
 }
 
@@ -299,12 +300,14 @@ export interface QuotationTermsCreate {
 export interface Token {
   access_token: string;
   token_type: string;
+  user: UserRead;
 }
 
 export interface LoginRequest {
   username: string;
   password: string;
   keep_login?: boolean;
+  system_login?: boolean;
 }
 
 export interface UserCreateIn {
@@ -325,6 +328,7 @@ export interface CompanyCreate {
   gst_number?: string | null;
   superadmin_username: string;
   superadmin_email: string;
+  superadmin_password: string;
   superadmin_designation?: string | null;
 }
 

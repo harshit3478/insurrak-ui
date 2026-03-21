@@ -1,20 +1,24 @@
-import { 
-  Building2, 
-  ShieldCheck, 
-  ClipboardList, 
-  RotateCcw, 
-  MapPin, 
-  Home, 
-  Table, 
-  PieChart, 
-  Users, 
-  Lock 
+import {
+  Building2,
+  Bell,
+  ShieldCheck,
+  ClipboardList,
+  RotateCcw,
+  MapPin,
+  Home,
+  Table,
+  PieChart,
+  Settings,
+  UserRound,
+  LogOut,
+  Users,
+  Lock,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { isBypassActive } from "@/types/permissions";
 
 /**
- * Metadata defining the sidebar navigation structure, including hierarchy, 
+ * Metadata defining the sidebar navigation structure, including hierarchy,
  * labels, icons, and role-based access control.
  */
 type IconType = LucideIcon;
@@ -49,20 +53,65 @@ type NavSection = {
 
 /**
  * Returns role-filtered navigation data based on the user's authentication status and role.
- * 
+ *
  * Logic:
  * 1. Items/sections without `allowedRoles` are visible to all authenticated users.
  * 2. If `allowedRoles` is present, the user's role must be included in that list.
  * 3. Sections are only returned if they contain at least one accessible item.
- * 
+ *
  * @param isAuthenticated - Whether the current user is signed in.
  * @param role - The current user's role string (e.g., "SUPER_ADMIN").
  * @returns An array of filtered navigation sections.
  */
-export function getNavData(isAuthenticated: boolean, role?: string): NavSection[] {
+export function getNavData(
+  isAuthenticated: boolean,
+  role?: string,
+): NavSection[] {
+  const isSystemSuperAdmin = role === "SUPER_ADMIN";
+
+  if (isSystemSuperAdmin) {
+    return [
+      {
+        label: "SYSTEM",
+        items: [
+          {
+            title: "Companies",
+            icon: Building2,
+            url: "/system",
+          },
+        ],
+      },
+      {
+        label: "ACCOUNT",
+        items: [
+          {
+            title: "Notifications",
+            icon: Bell,
+            url: "/notifications",
+          },
+          {
+            title: "View Profile",
+            icon: UserRound,
+            url: "/profile",
+          },
+          {
+            title: "Account Settings",
+            icon: Settings,
+            url: "/settings",
+          },
+          {
+            title: "Logout",
+            icon: LogOut,
+            url: "/auth/logout",
+          },
+        ],
+      },
+    ];
+  }
+
   const canAccess = (allowedRoles?: string[]) =>
     isBypassActive() || // Unified Dev Bypass: Show all navigation links during testing
-    !allowedRoles || 
+    !allowedRoles ||
     (!!role && allowedRoles.includes(role));
 
   const filterSubItems = (items: SubItem[]) =>
@@ -147,7 +196,10 @@ export function getNavData(isAuthenticated: boolean, role?: string): NavSection[
           icon: Table,
           items: [
             { title: "Compliance Dashboard", url: "/compliance" },
-            { title: "Missing Documents", url: "/compliance/missing-documents" },
+            {
+              title: "Missing Documents",
+              url: "/compliance/missing-documents",
+            },
             { title: "SLA Breaches", url: "/compliance/sla-breaches" },
             { title: "Review Status", url: "/compliance/review-status" },
             { title: "Audit Trail", url: "/compliance/audit-trail" },
@@ -197,6 +249,35 @@ export function getNavData(isAuthenticated: boolean, role?: string): NavSection[
                 { title: "Sign In", url: "/auth/login" },
                 { title: "Sign Up", url: "/auth/signup" },
               ],
+        },
+      ],
+    },
+    {
+      label: "ACCOUNT",
+      items: [
+        {
+          title: "Notifications",
+          icon: Bell,
+          url: "/notifications",
+          allowedRoles: ["COMPANY_ADMIN", "BRANCH_ADMIN", "COMPANY_USER"],
+        },
+        {
+          title: "View Profile",
+          icon: UserRound,
+          url: "/profile",
+          allowedRoles: ["COMPANY_ADMIN", "BRANCH_ADMIN", "COMPANY_USER"],
+        },
+        {
+          title: "Account Settings",
+          icon: Settings,
+          url: "/settings",
+          allowedRoles: ["COMPANY_ADMIN", "BRANCH_ADMIN", "COMPANY_USER"],
+        },
+        {
+          title: "Logout",
+          icon: LogOut,
+          url: "/auth/logout",
+          allowedRoles: ["COMPANY_ADMIN", "BRANCH_ADMIN", "COMPANY_USER"],
         },
       ],
     },

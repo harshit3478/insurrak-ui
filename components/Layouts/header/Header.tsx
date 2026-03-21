@@ -5,10 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useSidebarContext } from "../sidebar/sidebar-context";
 import { MenuIcon } from "./icons";
-import { Notification } from "./notification";
 import { ThemeToggleSwitch } from "./theme-toggle";
-import { UserInfo } from "./user-info";
-import { User } from "@/types";
 import Breadcrumb from "@/components/ui-elements/Breadcrumbs/Breadcrumb";
 
 
@@ -58,12 +55,6 @@ export function Header() {
         </div>
 
         <ThemeToggleSwitch />
-
-        <Notification />
-
-        <div className="shrink-0">
-          <UserInfo />
-        </div>
       </div>
     </header>
   );
