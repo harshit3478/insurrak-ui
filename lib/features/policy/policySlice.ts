@@ -1,5 +1,5 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { Policy } from '@/types';
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { Policy } from "@/types";
 
 interface PolicyState {
   items: Policy[];
@@ -14,7 +14,7 @@ const initialState: PolicyState = {
 };
 
 const policySlice = createSlice({
-  name: 'policy',
+  name: "policy",
   initialState,
   reducers: {
     setPolicies(state, action: PayloadAction<Policy[]>) {
@@ -25,11 +25,11 @@ const policySlice = createSlice({
       state.total += 1;
     },
     updatePolicy(state, action: PayloadAction<Policy>) {
-      const idx = state.items.findIndex(p => p.id === action.payload.id);
+      const idx = state.items.findIndex((p) => p.id === action.payload.id);
       if (idx >= 0) state.items[idx] = action.payload;
     },
     deletePolicy(state, action: PayloadAction<string>) {
-      state.items = state.items.filter(p => p.id !== action.payload);
+      state.items = state.items.filter((p) => p.id !== action.payload);
       state.total -= 1;
     },
     selectPolicy(state, action: PayloadAction<string | null>) {
@@ -38,6 +38,11 @@ const policySlice = createSlice({
   },
 });
 
-export const { setPolicies, addPolicy, updatePolicy, deletePolicy, selectPolicy } =
-  policySlice.actions;
+export const {
+  setPolicies,
+  addPolicy,
+  updatePolicy,
+  deletePolicy,
+  selectPolicy,
+} = policySlice.actions;
 export default policySlice.reducer;

@@ -28,17 +28,17 @@ const userSlice = createSlice({
       state.items.unshift(action.payload);
     },
     updateUser(state, action: PayloadAction<User>) {
-      const idx = state.items.findIndex(u => u.id === action.payload.id);
+      const idx = state.items.findIndex((u) => u.id === action.payload.id);
       if (idx >= 0) state.items[idx] = action.payload;
     },
 
     toggleUserActive(state, action: PayloadAction<string>) {
-      const user = state.items.find(u => u.id === action.payload);
+      const user = state.items.find((u) => u.id === action.payload);
       if (user) user.active = !user.active;
     },
 
     deleteUser(state, action: PayloadAction<string>) {
-      state.items = state.items.filter(u => u.id !== action.payload);
+      state.items = state.items.filter((u) => u.id !== action.payload);
       state.total -= 1;
     },
   },

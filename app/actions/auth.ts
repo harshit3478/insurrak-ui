@@ -4,11 +4,11 @@ import { cookies } from "next/headers";
 
 /**
  * Server Actions for Authentication Session Management
- * 
- * Since localStorage is inaccessible to Next.js Server Components, we use these 
- * Server Actions directly from Client Components (like AuthProvider.tsx) during 
+ *
+ * Since localStorage is inaccessible to Next.js Server Components, we use these
+ * Server Actions directly from Client Components (like AuthProvider.tsx) during
  * login to synchronize the JWT token into a secure HttpOnly cookie.
- * 
+ *
  * This enables Server Components (like Layouts) to read the token via `cookies()`
  * instantly, preventing unauthorized users from downloading protected JS payloads.
  */

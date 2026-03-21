@@ -30,7 +30,7 @@ export default function RepositoryPage() {
     (d) =>
       d.name.toLowerCase().includes(search.toLowerCase()) ||
       d.companyName.toLowerCase().includes(search.toLowerCase()) ||
-      d.policyNumber.toLowerCase().includes(search.toLowerCase())
+      d.policyNumber.toLowerCase().includes(search.toLowerCase()),
   );
 
   return (
@@ -38,7 +38,9 @@ export default function RepositoryPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Document Repository</h1>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+            Document Repository
+          </h1>
           <p className="text-sm text-gray-500 dark:text-dark-6 mt-0.5">
             {documents.length} documents across all policies
           </p>
@@ -121,7 +123,9 @@ export default function RepositoryPage() {
                   <td className="py-4 px-4 text-sm text-gray-500 dark:text-dark-6">
                     {doc.uploadedBy}
                   </td>
-                  <td className="py-4 px-4 text-sm text-gray-400">{formatSize(doc.sizeKb)}</td>
+                  <td className="py-4 px-4 text-sm text-gray-400">
+                    {formatSize(doc.sizeKb)}
+                  </td>
                   <td className="py-4 px-4">
                     <div className="flex items-center gap-2 justify-end">
                       <button
@@ -142,7 +146,10 @@ export default function RepositoryPage() {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="py-8 text-center text-sm text-gray-400">
+                  <td
+                    colSpan={8}
+                    className="py-8 text-center text-sm text-gray-400"
+                  >
                     No documents found
                   </td>
                 </tr>

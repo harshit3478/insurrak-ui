@@ -1,5 +1,5 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { Renewal } from '@/types';
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { Renewal } from "@/types";
 
 interface RenewalState {
   items: Renewal[];
@@ -12,7 +12,7 @@ const initialState: RenewalState = {
 };
 
 const renewalSlice = createSlice({
-  name: 'renewal',
+  name: "renewal",
   initialState,
   reducers: {
     setRenewals(state, action: PayloadAction<Renewal[]>) {
@@ -21,14 +21,13 @@ const renewalSlice = createSlice({
     },
     updateRenewalStatus(
       state,
-      action: PayloadAction<{ id: string; status: Renewal['status'] }>
+      action: PayloadAction<{ id: string; status: Renewal["status"] }>,
     ) {
-      const renewal = state.items.find(r => r.id === action.payload.id);
+      const renewal = state.items.find((r) => r.id === action.payload.id);
       if (renewal) renewal.status = action.payload.status;
     },
   },
 });
 
-export const { setRenewals, updateRenewalStatus } =
-  renewalSlice.actions;
+export const { setRenewals, updateRenewalStatus } = renewalSlice.actions;
 export default renewalSlice.reducer;

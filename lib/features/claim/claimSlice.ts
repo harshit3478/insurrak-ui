@@ -1,5 +1,5 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { Claim } from '@/types';
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { Claim } from "@/types";
 
 interface ClaimState {
   items: Claim[];
@@ -14,7 +14,7 @@ const initialState: ClaimState = {
 };
 
 const claimSlice = createSlice({
-  name: 'claim',
+  name: "claim",
   initialState,
   reducers: {
     setClaims(state, action: PayloadAction<Claim[]>) {
@@ -23,9 +23,9 @@ const claimSlice = createSlice({
     },
     updateClaimStatus(
       state,
-      action: PayloadAction<{ id: string; status: Claim['status'] }>
+      action: PayloadAction<{ id: string; status: Claim["status"] }>,
     ) {
-      const claim = state.items.find(c => c.id === action.payload.id);
+      const claim = state.items.find((c) => c.id === action.payload.id);
       if (claim) claim.status = action.payload.status;
     },
     selectClaim(state, action: PayloadAction<string | null>) {
@@ -34,6 +34,5 @@ const claimSlice = createSlice({
   },
 });
 
-export const { setClaims, updateClaimStatus, selectClaim } =
-  claimSlice.actions;
+export const { setClaims, updateClaimStatus, selectClaim } = claimSlice.actions;
 export default claimSlice.reducer;
