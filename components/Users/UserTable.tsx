@@ -12,9 +12,9 @@ import {
 } from "@/components/ui/table";
 import {
   MoreVertical,
-  Edit,
   CircleX,
   User as UserIcon,
+  Eye,
   CheckCircle,
 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
@@ -29,6 +29,7 @@ type UsersTableProps = {
   limit: number;
 
   onEditUser?: (user: User) => void;
+  onViewUser?: (user: User) => void;
   onDeleteUser?: (user: User) => void;
   onToggleUser?: (user: User) => void;
 
@@ -61,6 +62,7 @@ export function UsersTable({
   limit,
 
   onEditUser,
+  onViewUser,
   onDeleteUser,
   onToggleUser,
 
@@ -193,6 +195,17 @@ export function UsersTable({
                       }}
                       className="w-48 bg-gray-1 dark:bg-gray-dark rounded-lg divide-y shadow-2xl border border-dark-3 overflow-hidden animate-in fade-in zoom-in-95 duration-100"
                     >
+                      {onViewUser && (
+                        <button
+                          onClick={() => {
+                            setOpenActionId(null);
+                            onViewUser(user);
+                          }}
+                          className="w-full px-4 py-3 text-left text-sm dark:text-gray-300 hover:bg-[#253344] hover:text-white flex items-center gap-3 transition-colors"
+                        >
+                          <Eye className="w-4 h-4" /> View User
+                        </button>
+                      )}
                       {canEdit && onEditUser && (
                         <button
                           onClick={() => {
@@ -201,12 +214,9 @@ export function UsersTable({
                           }}
                           className="w-full px-4 py-3 text-left text-sm dark:text-gray-300 hover:bg-[#253344] hover:text-white flex items-center gap-3 transition-colors"
                         >
-                          <Edit className="w-4 h-4" /> Edit Details
+                          <UserIcon className="w-4 h-4" /> Manage Admin
                         </button>
                       )}
-                      <button className="w-full px-4 py-3 text-left text-sm dark:text-gray-300 hover:bg-[#253344] hover:text-white flex items-center gap-3 transition-colors">
-                        <UserIcon className="w-4 h-4" /> Manage Admin
-                      </button>
                       <div className="h-px bg-gray-700/50 mx-2"></div>
                       {canToggle && onToggleUser && (
                         <button

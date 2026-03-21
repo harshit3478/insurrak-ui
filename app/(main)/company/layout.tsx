@@ -11,7 +11,16 @@ export default async function CompanyLayout({
   const cookieStore = await cookies();
   const role = cookieStore.get("role")?.value;
 
-  if (!isBypassActive() && (!role || !["SUPER_ADMIN"].includes(role))) {
+  if (
+    !isBypassActive() &&
+    (!role ||
+      ![
+        "SUPER_ADMIN",
+        "COMPANY_ADMIN",
+        "BRANCH_ADMIN",
+        "COMPANY_USER",
+      ].includes(role))
+  ) {
     redirect("/");
   }
 

@@ -81,7 +81,7 @@ export default function EditUserPage() {
 
           <div className="mt-8 pt-8 border-t border-gray-100 dark:border-dark-3">
             <button
-              onClick={() => router.push('/users')}
+              onClick={() => router.push('/company/users')}
               className="px-8 py-3 bg-[#0B1727] text-white rounded-lg font-medium hover:bg-[#1a2639] transition-colors"
             >
               Back to List

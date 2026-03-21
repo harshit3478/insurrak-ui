@@ -6,10 +6,13 @@
 export const BREADCRUMB_MAP: Record<string, string> = {
   "/": "Home",
   "/dashboard": "Dashboard",
-  "/users": "Users",
-  "/users/create": "Add User",
-  "/policies": "Policies",
-  "/claims": "Claims",
+  "/company/users": "User Management",
+  "/company/users/add": "Add User",
+  "/company/policies": "Policy Management",
+  "/company/claims": "Claim Management",
+  "/company/company-management": "Company Management",
+  "/company/settings": "Company Setting",
+  "/company/profile": "Profile Setting",
   "/renewals": "Renewals",
   "/repository": "Repository",
   "/profile": "Profile",
@@ -24,7 +27,10 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  mobile?: string | null;
   role: Role;
+  roleId?: number;
+  permissionIds?: number[];
   active: boolean;
   companyId: string | null;
   designation?: string | null;

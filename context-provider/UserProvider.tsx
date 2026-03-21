@@ -1,7 +1,7 @@
 "use client";
 
-import { createContext, useContext, useActionState, useState } from "react";
-import { Role, UsersContextType, User } from "@/types";
+import { createContext, useContext, useActionState } from "react";
+import { UsersContextType, User } from "@/types";
 import { apiClient } from "@/lib/apiClient";
 import { store } from "@/lib/store";
 import {
@@ -34,11 +34,26 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
     if (formData.has("_reset")) return initialState;
 
     try {
+      const roleId = Number(formData.get("role_id"));
+      if (!roleId) {
+        throw new Error("Please select a role");
+      }
+
+      const permissionIds = formData
+        .getAll("permission_ids")
+        .map((value) => Number(value))
+        .filter((value) => Number.isFinite(value) && value > 0);
+
       const user = await apiClient.createUser({
         name: String(formData.get("username") || formData.get("name")),
         email: String(formData.get("email")),
-        role: formData.get("role") as Role,
+        role: "COMPANY_USER",
+        role_id: roleId,
         password: String(formData.get("password")),
+        mobile_number: String(formData.get("mobile") || "") || null,
+        designation: String(formData.get("designation") || "") || null,
+        reports_to: Number(formData.get("reportsTo") || 0) || null,
+        permission_ids: permissionIds,
       });
 
       store.dispatch(addUser(user));
@@ -84,16 +99,25 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
         throw new Error("User ID is missing for update");
       }
 
-      const updateData: Partial<User> = {};
-      const name = formData.get("name");
-      const email = formData.get("email");
-      const role = formData.get("role");
+      const roleId = Number(formData.get("role_id"));
+      if (!roleId) {
+        throw new Error("Please select a role");
+      }
 
-      if (name) updateData.name = String(name);
-      if (email) updateData.email = String(email);
-      if (role) updateData.role = role as Role;
+      const permissionIds = formData
+        .getAll("permission_ids")
+        .map((value) => Number(value))
+        .filter((value) => Number.isFinite(value) && value > 0);
 
-      const updatedUser = await apiClient.updateProfile(userId, updateData);
+      const updatedUser = await apiClient.updateProfile(userId, {
+        name: String(formData.get("name") || formData.get("username") || ""),
+        email: String(formData.get("email") || ""),
+        mobile: String(formData.get("mobile") || "") || null,
+        designation: String(formData.get("designation") || "") || null,
+        reportsTo: String(formData.get("reportsTo") || "") || null,
+        roleId,
+        permissionIds,
+      });
 
       store.dispatch(updateUserInStore(updatedUser));
       

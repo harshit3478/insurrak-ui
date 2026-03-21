@@ -14,7 +14,7 @@ export function UsersToolbar({ onAddUser }: { onAddUser?: () => void }) {
         <input
           type="search"
           placeholder="Search Users"
-          onChange={(e) => router.push(`/users?search=${e.target.value}`)}
+          onChange={(e) => router.push(`/company/users?search=${e.target.value}`)}
           className="w-full pl-10 pr-4 py-3 border border-gray-200 bg-gray-2 rounded-lg text-sm focus:outline-none focus:ring-1 outline-none transition-colors focus-visible:border-primary dark:border-dark-3 dark:bg-dark-2 dark:hover:border-dark-4 dark:hover:bg-dark-3 dark:hover:text-dark-6 dark:focus-visible:border-primary"
         />
       </div>

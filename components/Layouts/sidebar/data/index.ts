@@ -3,16 +3,10 @@ import {
   Bell,
   ShieldCheck,
   ClipboardList,
-  RotateCcw,
-  MapPin,
-  Home,
-  Table,
-  PieChart,
   Settings,
   UserRound,
   LogOut,
   Users,
-  Lock,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { isBypassActive } from "@/types/permissions";
@@ -131,124 +125,43 @@ export function getNavData(
 
   const sections: NavSection[] = [
     {
-      label: "MAIN MENU",
+      label: "COMPANY",
       items: [
         {
-          title: "Dashboard",
-          icon: Home,
-          items: [
-            {
-              title: "Admin Dashboard",
-              url: "/dashboard/admin",
-              allowedRoles: ["SUPER_ADMIN"],
-            },
-            {
-              title: "Company Dashboard",
-              url: "/dashboard/manager",
-              allowedRoles: ["COMPANY_ADMIN"],
-            },
-            {
-              title: "User Dashboard",
-              url: "/dashboard/user",
-              allowedRoles: ["COMPANY_USER"],
-            },
-          ],
-        },
-        {
-          title: "Company Profile",
-          icon: Building2,
-          url: "/company-profile",
-          allowedRoles: ["COMPANY_ADMIN", "BRANCH_ADMIN", "COMPANY_USER"],
-        },
-        {
-          title: "Branches",
-          icon: MapPin,
-          url: "/branches",
-          allowedRoles: ["COMPANY_ADMIN", "BRANCH_ADMIN", "COMPANY_USER"],
-        },
-        {
-          title: "Policies",
-          icon: ShieldCheck,
-          url: "/policies",
-          allowedRoles: ["COMPANY_ADMIN", "BRANCH_ADMIN", "COMPANY_USER"],
-        },
-        {
-          title: "Claims",
-          icon: ClipboardList,
-          url: "/claims",
-          allowedRoles: ["COMPANY_ADMIN", "BRANCH_ADMIN", "COMPANY_USER"],
-        },
-        {
-          title: "Renewals",
-          icon: RotateCcw,
-          url: "/renewals",
-          allowedRoles: ["COMPANY_ADMIN", "BRANCH_ADMIN", "COMPANY_USER"],
-        },
-      ],
-    },
-    // COMPLIANCE & REPORTS — only company roles
-    {
-      label: "COMPLIANCE & REPORTS",
-      allowedRoles: ["COMPANY_ADMIN", "BRANCH_ADMIN", "COMPANY_USER"],
-      items: [
-        {
-          title: "Compliance",
-          icon: Table,
-          items: [
-            { title: "Compliance Dashboard", url: "/compliance" },
-            {
-              title: "Missing Documents",
-              url: "/compliance/missing-documents",
-            },
-            { title: "SLA Breaches", url: "/compliance/sla-breaches" },
-            { title: "Review Status", url: "/compliance/review-status" },
-            { title: "Audit Trail", url: "/compliance/audit-trail" },
-          ],
-        },
-        {
-          title: "Reports",
-          icon: PieChart,
-          items: [
-            { title: "Policy Reports", url: "/reports/policies" },
-            { title: "Claims Reports", url: "/reports/claims" },
-            { title: "Renewal Reports", url: "/reports/renewals" },
-            { title: "Premium Analysis", url: "/reports/premium" },
-            { title: "GST Summary", url: "/reports/gst" },
-            { title: "Broker Performance", url: "/reports/broker-performance" },
-            { title: "Custom Reports", url: "/reports/custom" },
-          ],
-        },
-        {
-          title: "Analytics",
-          icon: Table,
-          url: "/analytics",
-        },
-      ],
-    },
-    {
-      label: "User Management",
-      items: [
-        {
-          title: "Users",
+          title: "User Management",
           icon: Users,
-          url: "/users",
-          allowedRoles: ["SUPER_ADMIN", "COMPANY_ADMIN", "BRANCH_ADMIN"],
+          url: "/company/users",
+          allowedRoles: ["COMPANY_ADMIN", "BRANCH_ADMIN"],
         },
         {
-          title: "Companies",
+          title: "Company Management",
           icon: Building2,
-          url: "/company",
-          allowedRoles: ["SUPER_ADMIN"],
+          url: "/company/company-management",
+          allowedRoles: ["COMPANY_ADMIN", "BRANCH_ADMIN", "COMPANY_USER"],
         },
         {
-          title: "Authentication",
-          icon: Lock,
-          items: isAuthenticated
-            ? [{ title: "Logout", url: "/auth/logout" }]
-            : [
-                { title: "Sign In", url: "/auth/login" },
-                { title: "Sign Up", url: "/auth/signup" },
-              ],
+          title: "Policy Management",
+          icon: ShieldCheck,
+          url: "/company/policies",
+          allowedRoles: ["COMPANY_ADMIN", "BRANCH_ADMIN", "COMPANY_USER"],
+        },
+        {
+          title: "Claim Management",
+          icon: ClipboardList,
+          url: "/company/claims",
+          allowedRoles: ["COMPANY_ADMIN", "BRANCH_ADMIN", "COMPANY_USER"],
+        },
+        {
+          title: "Company Setting",
+          icon: Settings,
+          url: "/company/settings",
+          allowedRoles: ["COMPANY_ADMIN", "BRANCH_ADMIN", "COMPANY_USER"],
+        },
+        {
+          title: "Profile Setting",
+          icon: UserRound,
+          url: "/company/profile",
+          allowedRoles: ["COMPANY_ADMIN", "BRANCH_ADMIN", "COMPANY_USER"],
         },
       ],
     },

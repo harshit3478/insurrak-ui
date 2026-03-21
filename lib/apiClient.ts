@@ -4,6 +4,9 @@ import {
   UserRead,
   CompanyRead,
   RolesAndPermissionsResponse,
+  RoleRead,
+  RoleCreateIn,
+  RoleUpdateIn,
   BranchRead,
   BranchCreate,
   BranchUpdate,
@@ -42,6 +45,7 @@ export const API_ENDPOINTS = {
   ROLES_PERMISSIONS: "/users/roles-permissions",
   COMPANIES: "/companies",
   USERS: "/users",
+  USER_STATUS: "/users",
   BRANCHES: "/branches",
   UNITS: "/units",
   BROKERS: "/brokers",
@@ -208,8 +212,11 @@ export const apiClient = {
     email: string;
     password: string;
     role: Role;
+    role_id?: number;
+    mobile_number?: string | null;
     designation?: string | null;
     reports_to?: number | null;
+    permission_ids?: number[];
   }): Promise<User> => {
     // Real API expects: { username, email, password, role_id, designation, reports_to }
     const roleIdMap: Record<Role, number> = {
@@ -223,9 +230,11 @@ export const apiClient = {
       username: data.name,
       email: data.email,
       password: data.password,
-      role_id: roleIdMap[data.role] || 1,
+      role_id: data.role_id ?? roleIdMap[data.role] ?? 3,
+      mobile_number: data.mobile_number || null,
       designation: data.designation || null,
       reports_to: data.reports_to || null,
+      permission_ids: data.permission_ids || null,
     };
 
     const newUser: UserRead = await api.post(API_ENDPOINTS.USERS, payload);
@@ -243,27 +252,22 @@ export const apiClient = {
     userId: string | number,
     data: Partial<User>,
   ): Promise<User> => {
-    // Synchronizes local user model updates with role-specific API endpoints.
-    // User profile updates are primarily driven by role transitions in the current schema.
-    if (data.role) {
-      const roleIdMap: Record<Role, number> = {
-        SUPER_ADMIN: 1,
-        COMPANY_ADMIN: 2,
-        COMPANY_USER: 3,
-        BRANCH_ADMIN: 4,
-      };
-      const roleId = roleIdMap[data.role];
-      if (roleId) {
-        await apiClient.updateUserRole(userId, roleId);
-      }
-    }
+    const payload: Record<string, unknown> = {};
+    if (data.name !== undefined) payload.username = data.name;
+    if (data.email !== undefined) payload.email = data.email;
+    if (data.mobile !== undefined) payload.mobile_number = data.mobile;
+    if (data.designation !== undefined) payload.designation = data.designation;
+    if (data.reportsTo !== undefined)
+      payload.reports_to = data.reportsTo ? Number(data.reportsTo) : null;
+    if (data.roleId !== undefined) payload.role_id = data.roleId;
+    if (data.permissionIds !== undefined) payload.permission_ids = data.permissionIds;
 
-    // Return the updated user by re-fetching
-    return apiClient.getById(userId);
+    const updated: UserRead = await api.patch(`${API_ENDPOINTS.USERS}/${userId}`, payload);
+    return adaptUser(updated);
   },
 
   deleteUser: async (_id: string | number) => {
-    // Non-existent in API. We pretend it works or deactivate.
+    await api.delete(`${API_ENDPOINTS.USERS}/${_id}`);
     return { success: true };
   },
 
@@ -272,8 +276,27 @@ export const apiClient = {
     return api.patch(`${API_ENDPOINTS.USERS}/${userId}/role`, payload);
   },
 
+  updateUserStatus: async (
+    userId: string | number,
+    payload: { is_active: boolean; reassign_reports_to?: number | null },
+  ): Promise<User> => {
+    const updated: UserRead = await api.patch(`${API_ENDPOINTS.USER_STATUS}/${userId}/status`, payload);
+    return adaptUser(updated);
+  },
+
   getRolesAndPermissions: async (): Promise<RolesAndPermissionsResponse> => {
     return api.get(API_ENDPOINTS.ROLES_PERMISSIONS);
+  },
+
+  createRole: async (payload: RoleCreateIn): Promise<RoleRead> => {
+    return api.post(`${API_ENDPOINTS.USERS}/roles`, payload);
+  },
+
+  updateRole: async (
+    roleId: number,
+    payload: RoleUpdateIn,
+  ): Promise<RoleRead> => {
+    return api.patch(`${API_ENDPOINTS.USERS}/roles/${roleId}`, payload);
   },
 
   // ─── Company Methods ────────────────────────────────────────

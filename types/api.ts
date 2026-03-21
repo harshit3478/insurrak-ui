@@ -7,12 +7,14 @@ export interface UserRead {
   id: number;
   username: string;
   email: string;
+  mobile_number: string | null;
   designation: string | null;
   reports_to: number | null;
   is_active: boolean;
   company_id: number;
   role_id: number;
   role_name?: string;
+  permission_ids?: number[];
 }
 
 export interface CompanyRead {
@@ -193,6 +195,7 @@ export interface PermissionRead {
 export interface RolesAndPermissionsResponse {
   roles: RoleRead[];
   permissions: PermissionRead[];
+  role_permissions: Record<number, number[]>;
 }
 
 // ─── Create / Update Payloads ───────────────────────────────────────
@@ -317,6 +320,16 @@ export interface UserCreateIn {
   designation?: string | null;
   role_id: number;
   reports_to?: number | null;
+}
+
+export interface RoleCreateIn {
+  name: string;
+  permission_ids: number[];
+}
+
+export interface RoleUpdateIn {
+  name?: string;
+  permission_ids?: number[];
 }
 
 export interface CompanyCreate {
