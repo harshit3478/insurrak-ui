@@ -260,9 +260,13 @@ export const apiClient = {
     if (data.reportsTo !== undefined)
       payload.reports_to = data.reportsTo ? Number(data.reportsTo) : null;
     if (data.roleId !== undefined) payload.role_id = data.roleId;
-    if (data.permissionIds !== undefined) payload.permission_ids = data.permissionIds;
+    if (data.permissionIds !== undefined)
+      payload.permission_ids = data.permissionIds;
 
-    const updated: UserRead = await api.patch(`${API_ENDPOINTS.USERS}/${userId}`, payload);
+    const updated: UserRead = await api.patch(
+      `${API_ENDPOINTS.USERS}/${userId}`,
+      payload,
+    );
     return adaptUser(updated);
   },
 
@@ -280,7 +284,10 @@ export const apiClient = {
     userId: string | number,
     payload: { is_active: boolean; reassign_reports_to?: number | null },
   ): Promise<User> => {
-    const updated: UserRead = await api.patch(`${API_ENDPOINTS.USER_STATUS}/${userId}/status`, payload);
+    const updated: UserRead = await api.patch(
+      `${API_ENDPOINTS.USER_STATUS}/${userId}/status`,
+      payload,
+    );
     return adaptUser(updated);
   },
 

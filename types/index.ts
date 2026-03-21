@@ -1,6 +1,6 @@
 /**
- * index.ts defines the core domain models and shared UI constants 
- * for the application. It establishes the central vocabulary for 
+ * index.ts defines the core domain models and shared UI constants
+ * for the application. It establishes the central vocabulary for
  * authentication, organizational structures, and insurance-specific entities.
  */
 export const BREADCRUMB_MAP: Record<string, string> = {
@@ -22,7 +22,6 @@ export const BREADCRUMB_MAP: Record<string, string> = {
   "/auth/signup": "Sign Up",
 };
 
-
 export interface User {
   id: string;
   name: string;
@@ -35,7 +34,7 @@ export interface User {
   companyId: string | null;
   designation?: string | null;
   reportsTo?: string | null;
-};
+}
 
 export interface Company {
   id: number;
@@ -45,15 +44,18 @@ export interface Company {
   adminEmail: string;
   branches: string;
   activePolicies: string;
-  status: 'Active' | 'Inactive';
+  status: "Active" | "Inactive";
   email: string;
   mobile_number: string;
   address: string;
   gst_number: string;
 }
 
-
-export type Role = "SUPER_ADMIN" | "COMPANY_ADMIN" | "BRANCH_ADMIN" | "COMPANY_USER";
+export type Role =
+  | "SUPER_ADMIN"
+  | "COMPANY_ADMIN"
+  | "BRANCH_ADMIN"
+  | "COMPANY_USER";
 
 export const ROLE_HIERARCHY: Record<Role, number> = {
   SUPER_ADMIN: 3,
@@ -100,8 +102,14 @@ export type ActionState = {
 export const initialState: ActionState = {};
 
 export type UsersContextType = {
-  createUserAction: (prevState: ActionState, formData: FormData) => Promise<ActionState>;
-  updateUserAction: (prevState: ActionState, formData: FormData) => Promise<ActionState>;
+  createUserAction: (
+    prevState: ActionState,
+    formData: FormData,
+  ) => Promise<ActionState>;
+  updateUserAction: (
+    prevState: ActionState,
+    formData: FormData,
+  ) => Promise<ActionState>;
 };
 
 export type CompaniesContextType = {
@@ -116,32 +124,54 @@ export type CompaniesContextType = {
 };
 
 export type PoliciesContextType = {
-  createPolicyAction: (prevState: ActionState, formData: FormData) => Promise<ActionState>;
-  updatePolicyAction: (prevState: ActionState, formData: FormData) => Promise<ActionState>;
+  createPolicyAction: (
+    prevState: ActionState,
+    formData: FormData,
+  ) => Promise<ActionState>;
+  updatePolicyAction: (
+    prevState: ActionState,
+    formData: FormData,
+  ) => Promise<ActionState>;
 };
 
 export type BranchesContextType = {
-  createBranchAction: (prevState: ActionState, formData: FormData) => Promise<ActionState>;
-  updateBranchAction: (prevState: ActionState, formData: FormData) => Promise<ActionState>;
+  createBranchAction: (
+    prevState: ActionState,
+    formData: FormData,
+  ) => Promise<ActionState>;
+  updateBranchAction: (
+    prevState: ActionState,
+    formData: FormData,
+  ) => Promise<ActionState>;
 };
 
 export type ClaimsContextType = {
-  createClaimAction: (prevState: ActionState, formData: FormData) => Promise<ActionState>;
-  updateClaimAction: (prevState: ActionState, formData: FormData) => Promise<ActionState>;
+  createClaimAction: (
+    prevState: ActionState,
+    formData: FormData,
+  ) => Promise<ActionState>;
+  updateClaimAction: (
+    prevState: ActionState,
+    formData: FormData,
+  ) => Promise<ActionState>;
 };
 
 // ─── Insurance Domain Types ───────────────────────────────────────────────────
 
 export type PolicyType =
-  | 'Fire'
-  | 'Marine'
-  | 'Motor'
-  | 'Health'
-  | 'Liability'
-  | 'Engineering'
-  | 'Miscellaneous';
+  | "Fire"
+  | "Marine"
+  | "Motor"
+  | "Health"
+  | "Liability"
+  | "Engineering"
+  | "Miscellaneous";
 
-export type PolicyStatus = 'Active' | 'Expiring Soon' | 'Expired' | 'Pending Renewal';
+export type PolicyStatus =
+  | "Active"
+  | "Expiring Soon"
+  | "Expired"
+  | "Pending Renewal";
 
 export interface Policy {
   id: string;
@@ -153,13 +183,18 @@ export interface Policy {
   sumInsured: number;
   premium: number;
   startDate: string; // ISO date string
-  endDate: string;   // ISO date string
+  endDate: string; // ISO date string
   status: PolicyStatus;
   broker?: string;
   documents?: string[];
 }
 
-export type ClaimStatus = 'Open' | 'Under Review' | 'Approved' | 'Rejected' | 'Settled';
+export type ClaimStatus =
+  | "Open"
+  | "Under Review"
+  | "Approved"
+  | "Rejected"
+  | "Settled";
 
 export interface Claim {
   id: string;
@@ -179,7 +214,7 @@ export interface Claim {
   assignedTo?: string;
 }
 
-export type RenewalStatus = 'Due' | 'In Progress' | 'Renewed' | 'Lapsed';
+export type RenewalStatus = "Due" | "In Progress" | "Renewed" | "Lapsed";
 
 export interface Renewal {
   id: string;
@@ -205,7 +240,7 @@ export interface DashboardStats {
 export interface RepositoryDocument {
   id: string;
   name: string;
-  fileType: 'PDF' | 'XLS' | 'XLSX' | 'JPG' | 'PNG' | 'DOCX';
+  fileType: "PDF" | "XLS" | "XLSX" | "JPG" | "PNG" | "DOCX";
   policyId: string;
   policyNumber: string;
   companyName: string;

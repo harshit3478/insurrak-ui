@@ -15,7 +15,10 @@ export default function EditUserPage() {
 
   const userId = params.id as string;
   const { updateUserAction } = useUsers();
-  const [updateState, updateUser, isUpdating] = useActionState(updateUserAction, initialState);
+  const [updateState, updateUser, isUpdating] = useActionState(
+    updateUserAction,
+    initialState,
+  );
 
   // Find the user to edit from the Redux store.
   const userToEdit = userId
@@ -31,49 +34,68 @@ export default function EditUserPage() {
           title="Employee Updated"
           subtitle="Successfully updated employee details!"
         />
-        
+
         <div className="bg-white dark:bg-gray-dark p-8 rounded-2xl border border-gray-200 dark:border-dark-3 shadow-sm mt-8 relative">
           <div className="flex items-center gap-4 mb-8">
             <div className="w-12 h-12 bg-gray-100 dark:bg-dark-3 rounded-full flex items-center justify-center">
-              <svg 
-                className="w-6 h-6 text-gray-500" 
-                fill="none" 
-                stroke="currentColor" 
+              <svg
+                className="w-6 h-6 text-gray-500"
+                fill="none"
+                stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                />
               </svg>
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Updated Employee Summary</h2>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              Updated Employee Summary
+            </h2>
           </div>
 
           <hr className="mb-8 border-gray-200 dark:border-dark-3" />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
             <div>
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-6">Updated Details</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-6">
+                Updated Details
+              </h3>
               <div className="space-y-6">
                 <div>
                   <p className="text-sm text-gray-400 mb-1">Full Name</p>
-                  <p className="font-medium text-gray-900 dark:text-white">{userToEdit?.name || summaryData.name || '-'}</p>
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    {userToEdit?.name || summaryData.name || "-"}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-400 mb-1">Email Address</p>
-                  <p className="font-medium text-gray-900 dark:text-white">{userToEdit?.email || summaryData.email || '-'}</p>
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    {userToEdit?.email || summaryData.email || "-"}
+                  </p>
                 </div>
               </div>
             </div>
 
             <div>
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-6">Updated Roles</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-6">
+                Updated Roles
+              </h3>
               <div className="space-y-6">
                 <div>
                   <p className="text-sm text-gray-400 mb-1">Role Type</p>
-                  <p className="font-medium text-gray-900 dark:text-white">{summaryData.role || '-'}</p>
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    {summaryData.role || "-"}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-400 mb-1">User ID</p>
-                  <p className="font-medium text-gray-900 dark:text-white text-xs">{userId}</p>
+                  <p className="font-medium text-gray-900 dark:text-white text-xs">
+                    {userId}
+                  </p>
                 </div>
               </div>
             </div>
@@ -81,7 +103,7 @@ export default function EditUserPage() {
 
           <div className="mt-8 pt-8 border-t border-gray-100 dark:border-dark-3">
             <button
-              onClick={() => router.push('/company/users')}
+              onClick={() => router.push("/company/users")}
               className="px-8 py-3 bg-[#0B1727] text-white rounded-lg font-medium hover:bg-[#1a2639] transition-colors"
             >
               Back to List
@@ -96,8 +118,8 @@ export default function EditUserPage() {
     return (
       <div className="p-8">
         <p className="text-gray-500">User not found.</p>
-        <button 
-          onClick={() => router.back()} 
+        <button
+          onClick={() => router.back()}
           className="mt-4 text-primary hover:underline"
         >
           Go Back
@@ -110,7 +132,9 @@ export default function EditUserPage() {
     <div className="p-8 bg-[#F4F7FE] dark:bg-gray-dark min-h-screen font-sans">
       <FormHeader
         title="Edit Employee"
-        subtitle={userToEdit ? `Update details for ${userToEdit.name}` : "Loading..."}
+        subtitle={
+          userToEdit ? `Update details for ${userToEdit.name}` : "Loading..."
+        }
       />
 
       {userToEdit && (

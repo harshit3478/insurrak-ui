@@ -10,7 +10,11 @@ import {
   selectUsers,
   selectUsersMeta,
 } from "@/lib/features/user/userSelectors";
-import { deleteUser, setUsers, updateUser as updateUserInStore } from "@/lib/features/user/userSlice";
+import {
+  deleteUser,
+  setUsers,
+  updateUser as updateUserInStore,
+} from "@/lib/features/user/userSlice";
 import { useAppDispatch } from "@/lib/hooks";
 import { useRouter } from "next/navigation";
 
@@ -20,7 +24,7 @@ import { useState } from "react";
 
 /**
  * UsersPage manages the platform's user accounts and their associated permissions.
- * It provides administrative tools for creating, editing, and toggling user 
+ * It provides administrative tools for creating, editing, and toggling user
  * statuses, enforced by a rigorous role-based access control (RBAC) system.
  */
 export default function UsersPage() {
@@ -50,7 +54,7 @@ export default function UsersPage() {
 
   const handleDeleteUser = async (user: User) => {
     const confirmed = window.confirm(
-      `Are you sure you want to delete ${user.name}?`
+      `Are you sure you want to delete ${user.name}?`,
     );
 
     if (!confirmed) return;
@@ -77,23 +81,36 @@ export default function UsersPage() {
   const handleToggleUser = async (user: User) => {
     if (user.active) {
       try {
-        const updated = await api.updateUserStatus(user.id, { is_active: false });
+        const updated = await api.updateUserStatus(user.id, {
+          is_active: false,
+        });
         dispatch(updateUserInStore(updated));
         return;
       } catch (error) {
-        const msg = error instanceof Error ? error.message : "Failed to deactivate user";
-        const detail = typeof msg === "string" ? tryParseErrorDetail(msg) : null;
+        const msg =
+          error instanceof Error ? error.message : "Failed to deactivate user";
+        const detail =
+          typeof msg === "string" ? tryParseErrorDetail(msg) : null;
 
-        const rawDetail = detail?.code ? detail : tryParseErrorDetail(String(detail));
+        const rawDetail = detail?.code
+          ? detail
+          : tryParseErrorDetail(String(detail));
         const code = rawDetail?.code || detail?.code;
         const subordinates = rawDetail?.subordinates || detail?.subordinates;
 
-        if (code === "SUBORDINATES_PRESENT" && Array.isArray(subordinates) && subordinates.length > 0) {
+        if (
+          code === "SUBORDINATES_PRESENT" &&
+          Array.isArray(subordinates) &&
+          subordinates.length > 0
+        ) {
           const options = users
-            .filter((candidate) =>
-              candidate.id !== user.id &&
-              candidate.active &&
-              !subordinates.some((s: { id: number }) => String(s.id) === candidate.id),
+            .filter(
+              (candidate) =>
+                candidate.id !== user.id &&
+                candidate.active &&
+                !subordinates.some(
+                  (s: { id: number }) => String(s.id) === candidate.id,
+                ),
             )
             .map((candidate) => `${candidate.id}: ${candidate.name}`)
             .join("\n");
@@ -115,8 +132,15 @@ export default function UsersPage() {
             dispatch(updateUserInStore(updated));
             return;
           } catch (retryError) {
-            console.error("Failed to deactivate user after reassignment", retryError);
-            alert(retryError instanceof Error ? retryError.message : "Failed to deactivate user");
+            console.error(
+              "Failed to deactivate user after reassignment",
+              retryError,
+            );
+            alert(
+              retryError instanceof Error
+                ? retryError.message
+                : "Failed to deactivate user",
+            );
             return;
           }
         }
@@ -136,7 +160,6 @@ export default function UsersPage() {
     }
   };
 
-
   // Evaluates role-based permissions for user management actions.
   const canCreate = hasPermission(authUser, Permission.CREATE_USER);
   const canEdit = hasPermission(authUser, Permission.EDIT_USER);
@@ -152,7 +175,9 @@ export default function UsersPage() {
     <div className="p-8 bg-[#F4F7FE] dark:bg-gray-dark min-h-screen font-sans">
       <div className="space-y-6 bg-white dark:bg-gray-dark p-10 rounded-2xl border border-gray-200 dark:border-dark-3 shadow-sm min-h-[600px]">
         <UsersToolbar
-          onAddUser={canCreate ? () => router.push('/company/users/add') : undefined}
+          onAddUser={
+            canCreate ? () => router.push("/company/users/add") : undefined
+          }
         />
 
         <UsersTable
@@ -162,7 +187,11 @@ export default function UsersPage() {
           page={page}
           limit={limit}
           onViewUser={(user) => router.push(`/company/users/view/${user.id}`)}
-          onEditUser={canEdit ? (user) => router.push(`/company/users/edit/${user.id}`) : undefined}
+          onEditUser={
+            canEdit
+              ? (user) => router.push(`/company/users/edit/${user.id}`)
+              : undefined
+          }
           onDeleteUser={canDelete ? handleDeleteUser : undefined}
           onToggleUser={canToggle ? handleToggleUser : undefined}
           canEdit={canEdit}

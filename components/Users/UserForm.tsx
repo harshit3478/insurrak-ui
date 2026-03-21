@@ -21,38 +21,119 @@ const ROLE_LABELS: Record<string, string> = {
 
 const PERMISSION_TEXT: Record<string, { label: string; short: string }> = {
   IAM_MAN_ROL: { label: "Manage Roles", short: "Create and manage roles" },
-  IAM_ASG_PER: { label: "Assign Permissions", short: "Assign permissions to roles/users" },
-  POLICY_PROC: { label: "Process Policies", short: "Create and edit policy requests" },
-  POLICY_APPR: { label: "Approve Policies", short: "Approve or reject policy decisions" },
-  POLICY_DELETE: { label: "Delete Policies", short: "Delete policy records within scope" },
-  POLICY_ASSIGN_OWNER: { label: "Assign Policy Owner", short: "Assign policy owner to another user" },
-  QUOTATION_FINAL_APPROVAL: { label: "Final Quote Approval", short: "Provide final quotation approval" },
+  IAM_ASG_PER: {
+    label: "Assign Permissions",
+    short: "Assign permissions to roles/users",
+  },
+  POLICY_PROC: {
+    label: "Process Policies",
+    short: "Create and edit policy requests",
+  },
+  POLICY_APPR: {
+    label: "Approve Policies",
+    short: "Approve or reject policy decisions",
+  },
+  POLICY_DELETE: {
+    label: "Delete Policies",
+    short: "Delete policy records within scope",
+  },
+  POLICY_ASSIGN_OWNER: {
+    label: "Assign Policy Owner",
+    short: "Assign policy owner to another user",
+  },
+  QUOTATION_FINAL_APPROVAL: {
+    label: "Final Quote Approval",
+    short: "Provide final quotation approval",
+  },
   CLAIM_INIT: { label: "Initiate Claims", short: "Raise new claims" },
-  CLAIM_SUBMIT_BROKER: { label: "Submit Claim to Broker", short: "Send claim documents to broker" },
-  CLAIM_RECORD_APPROVAL: { label: "Record Claim Approval", short: "Record insurer approval decision" },
-  CLAIM_RECORD_SETTLEMENT: { label: "Record Claim Settlement", short: "Record settlement receipt" },
+  CLAIM_SUBMIT_BROKER: {
+    label: "Submit Claim to Broker",
+    short: "Send claim documents to broker",
+  },
+  CLAIM_RECORD_APPROVAL: {
+    label: "Record Claim Approval",
+    short: "Record insurer approval decision",
+  },
+  CLAIM_RECORD_SETTLEMENT: {
+    label: "Record Claim Settlement",
+    short: "Record settlement receipt",
+  },
   CLAIM_CLOSE: { label: "Close Claims", short: "Close finalized claims" },
-  PAY_POST_UTR: { label: "Post UTR Payment", short: "Record payment and UTR details" },
+  PAY_POST_UTR: {
+    label: "Post UTR Payment",
+    short: "Record payment and UTR details",
+  },
   FIN_VIEW_PREMIUM: { label: "View Premium", short: "View premium amounts" },
   FIN_VIEW_GST: { label: "View GST", short: "View GST values" },
-  FIN_EDIT_FIELDS: { label: "Edit Financial Fields", short: "Edit premium and GST fields" },
+  FIN_EDIT_FIELDS: {
+    label: "Edit Financial Fields",
+    short: "Edit premium and GST fields",
+  },
   RENEWAL_START: { label: "Start Renewal", short: "Initiate policy renewal" },
-  RENEWAL_ASSIGN_OWNER: { label: "Assign Renewal Owner", short: "Assign renewal owner" },
-  RENEWAL_EDIT_STATUS: { label: "Edit Renewal Status", short: "Update renewal status" },
-  RENEWAL_APPROVE: { label: "Approve Renewal", short: "Approve renewal workflows" },
-  DOC_DELETE: { label: "Delete Documents", short: "Delete repository documents" },
-  DOC_VERSION_OVERRIDE: { label: "Override Doc Version", short: "Override version control rules" },
-  USR_CREATE_STATE_ADMIN: { label: "Create State Admin", short: "Create branch/state admins" },
-  USR_CREATE_UNIT_ADMIN: { label: "Create Unit Admin", short: "Create unit-level admins" },
-  USR_DEACTIVATE: { label: "Deactivate Users", short: "Deactivate user accounts" },
-  USR_ASSIGN_ROLES: { label: "Assign User Roles", short: "Assign roles to users" },
-  MASTER_MANAGE_COMPANY: { label: "Manage Company Master", short: "Manage company master data" },
-  MASTER_MANAGE_STATE: { label: "Manage State Master", short: "Manage state/branch master data" },
-  MASTER_MANAGE_UNIT: { label: "Manage Unit Master", short: "Manage unit master records" },
-  MASTER_MANAGE_BROKER: { label: "Manage Broker Master", short: "Manage broker master records" },
-  MASTER_MANAGE_INSURER: { label: "Manage Insurer Master", short: "Manage insurer master records" },
-  MASTER_MANAGE_POLICY_TYPE: { label: "Manage Policy Types", short: "Manage policy type masters" },
-  REPORT_ALL_INDIA: { label: "All India Reports", short: "View all-India reports" },
+  RENEWAL_ASSIGN_OWNER: {
+    label: "Assign Renewal Owner",
+    short: "Assign renewal owner",
+  },
+  RENEWAL_EDIT_STATUS: {
+    label: "Edit Renewal Status",
+    short: "Update renewal status",
+  },
+  RENEWAL_APPROVE: {
+    label: "Approve Renewal",
+    short: "Approve renewal workflows",
+  },
+  DOC_DELETE: {
+    label: "Delete Documents",
+    short: "Delete repository documents",
+  },
+  DOC_VERSION_OVERRIDE: {
+    label: "Override Doc Version",
+    short: "Override version control rules",
+  },
+  USR_CREATE_STATE_ADMIN: {
+    label: "Create State Admin",
+    short: "Create branch/state admins",
+  },
+  USR_CREATE_UNIT_ADMIN: {
+    label: "Create Unit Admin",
+    short: "Create unit-level admins",
+  },
+  USR_DEACTIVATE: {
+    label: "Deactivate Users",
+    short: "Deactivate user accounts",
+  },
+  USR_ASSIGN_ROLES: {
+    label: "Assign User Roles",
+    short: "Assign roles to users",
+  },
+  MASTER_MANAGE_COMPANY: {
+    label: "Manage Company Master",
+    short: "Manage company master data",
+  },
+  MASTER_MANAGE_STATE: {
+    label: "Manage State Master",
+    short: "Manage state/branch master data",
+  },
+  MASTER_MANAGE_UNIT: {
+    label: "Manage Unit Master",
+    short: "Manage unit master records",
+  },
+  MASTER_MANAGE_BROKER: {
+    label: "Manage Broker Master",
+    short: "Manage broker master records",
+  },
+  MASTER_MANAGE_INSURER: {
+    label: "Manage Insurer Master",
+    short: "Manage insurer master records",
+  },
+  MASTER_MANAGE_POLICY_TYPE: {
+    label: "Manage Policy Types",
+    short: "Manage policy type masters",
+  },
+  REPORT_ALL_INDIA: {
+    label: "All India Reports",
+    short: "View all-India reports",
+  },
   REPORT_STATE: { label: "State Reports", short: "View state-wise reports" },
   REPORT_UNIT: { label: "Unit Reports", short: "View unit-level reports" },
   REPORT_EXPORT: { label: "Export Reports", short: "Export reports to files" },
@@ -65,7 +146,8 @@ const toTitle = (value: string) =>
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
 
-const getRoleLabel = (roleName: string) => ROLE_LABELS[roleName] || toTitle(roleName);
+const getRoleLabel = (roleName: string) =>
+  ROLE_LABELS[roleName] || toTitle(roleName);
 
 const getPermissionLabel = (perm: PermissionRead) =>
   PERMISSION_TEXT[perm.name]?.label || toTitle(perm.name);
@@ -83,7 +165,7 @@ type UserFormProps = {
 
 /**
  * UserForm manages the creation and modification of user accounts.
- * It handles basic identity details, role assignments (RBAC), and 
+ * It handles basic identity details, role assignments (RBAC), and
  * organizational context such as reporting lines and company associations.
  */
 export function UserForm({
@@ -99,19 +181,25 @@ export function UserForm({
   const [fullName, setFullName] = useState(defaultValues?.name || "");
   const [email, setEmail] = useState(defaultValues?.email || "");
   const [mobile, setMobile] = useState(defaultValues?.mobile || "");
-  const [designation, setDesignation] = useState(defaultValues?.designation || "");
+  const [designation, setDesignation] = useState(
+    defaultValues?.designation || "",
+  );
   const [reportsTo, setReportsTo] = useState(defaultValues?.reportsTo || "");
   const [password, setPassword] = useState("");
   const [formError, setFormError] = useState("");
 
   const [roles, setRoles] = useState<RoleRead[]>([]);
   const [permissions, setPermissions] = useState<PermissionRead[]>([]);
-  const [rolePermissions, setRolePermissions] = useState<Record<number, number[]>>({});
+  const [rolePermissions, setRolePermissions] = useState<
+    Record<number, number[]>
+  >({});
   const [users, setUsers] = useState<User[]>([]);
   const [selectedRoleId, setSelectedRoleId] = useState<number | null>(
     defaultValues?.roleId ?? null,
   );
-  const [selectedPermissionIds, setSelectedPermissionIds] = useState<number[]>([]);
+  const [selectedPermissionIds, setSelectedPermissionIds] = useState<number[]>(
+    [],
+  );
   const [checkedAvailableIds, setCheckedAvailableIds] = useState<number[]>([]);
 
   const selectedRoleName = useMemo(() => {
@@ -126,12 +214,19 @@ export function UserForm({
     return 1;
   };
 
-  const selectedRoleRank = useMemo(() => roleRank(selectedRoleName), [selectedRoleName]);
+  const selectedRoleRank = useMemo(
+    () => roleRank(selectedRoleName),
+    [selectedRoleName],
+  );
 
   const higherRoleUsers = useMemo(() => {
-    const roleById = new Map<number, string>(roles.map((role) => [role.id, role.name]));
+    const roleById = new Map<number, string>(
+      roles.map((role) => [role.id, role.name]),
+    );
     return users.filter((user) => {
-      const userRoleName = user.roleId ? roleById.get(user.roleId) || user.role : user.role;
+      const userRoleName = user.roleId
+        ? roleById.get(user.roleId) || user.role
+        : user.role;
       return roleRank(userRoleName) > selectedRoleRank;
     });
   }, [users, roles, selectedRoleRank]);
@@ -163,7 +258,11 @@ export function UserForm({
       setSelectedPermissionIds([]);
       return;
     }
-    if (isEdit && defaultValues?.permissionIds && defaultValues.permissionIds.length > 0) {
+    if (
+      isEdit &&
+      defaultValues?.permissionIds &&
+      defaultValues.permissionIds.length > 0
+    ) {
       setSelectedPermissionIds(defaultValues.permissionIds);
     } else {
       setSelectedPermissionIds(rolePermissions[selectedRoleId] || []);
@@ -171,7 +270,8 @@ export function UserForm({
   }, [selectedRoleId, rolePermissions, isEdit, defaultValues?.permissionIds]);
 
   const availablePermissions = useMemo(
-    () => permissions.filter((perm) => !selectedPermissionIds.includes(perm.id)),
+    () =>
+      permissions.filter((perm) => !selectedPermissionIds.includes(perm.id)),
     [permissions, selectedPermissionIds],
   );
 
@@ -196,17 +296,23 @@ export function UserForm({
 
   const addCheckedPermissions = () => {
     if (checkedAvailableIds.length === 0) return;
-    setSelectedPermissionIds((prev) => Array.from(new Set([...prev, ...checkedAvailableIds])));
+    setSelectedPermissionIds((prev) =>
+      Array.from(new Set([...prev, ...checkedAvailableIds])),
+    );
     setCheckedAvailableIds([]);
   };
 
   const addSinglePermission = (permissionId: number) => {
-    setSelectedPermissionIds((prev) => Array.from(new Set([...prev, permissionId])));
+    setSelectedPermissionIds((prev) =>
+      Array.from(new Set([...prev, permissionId])),
+    );
     setCheckedAvailableIds((prev) => prev.filter((id) => id !== permissionId));
   };
 
   const removeSinglePermission = (permissionId: number) => {
-    setSelectedPermissionIds((prev) => prev.filter((id) => id !== permissionId));
+    setSelectedPermissionIds((prev) =>
+      prev.filter((id) => id !== permissionId),
+    );
   };
 
   const selectAllAvailable = () => {
@@ -224,7 +330,12 @@ export function UserForm({
   const goNext = () => {
     setFormError("");
     if (step === 1) {
-      if (!fullName.trim() || !email.trim() || !mobile.trim() || !selectedRoleId) {
+      if (
+        !fullName.trim() ||
+        !email.trim() ||
+        !mobile.trim() ||
+        !selectedRoleId
+      ) {
         setFormError("Please fill Full Name, Email, Mobile and Role.");
         return;
       }
@@ -435,7 +546,9 @@ export function UserForm({
                     </div>
                   ))}
                   {availablePermissions.length === 0 && (
-                    <p className="p-2 text-xs text-gray-500">All permissions selected.</p>
+                    <p className="p-2 text-xs text-gray-500">
+                      All permissions selected.
+                    </p>
                   )}
                 </div>
               </div>
@@ -479,7 +592,9 @@ export function UserForm({
                     </div>
                   ))}
                   {selectedPermissions.length === 0 && (
-                    <p className="p-2 text-xs text-gray-500">No permissions assigned yet.</p>
+                    <p className="p-2 text-xs text-gray-500">
+                      No permissions assigned yet.
+                    </p>
                   )}
                 </div>
               </div>
@@ -493,28 +608,39 @@ export function UserForm({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <p className="text-sm text-gray-400 mb-1">Full Name</p>
-              <p className="font-medium text-gray-900 dark:text-white">{fullName || "-"}</p>
+              <p className="font-medium text-gray-900 dark:text-white">
+                {fullName || "-"}
+              </p>
             </div>
             <div>
               <p className="text-sm text-gray-400 mb-1">Email</p>
-              <p className="font-medium text-gray-900 dark:text-white">{email || "-"}</p>
+              <p className="font-medium text-gray-900 dark:text-white">
+                {email || "-"}
+              </p>
             </div>
             <div>
               <p className="text-sm text-gray-400 mb-1">Mobile</p>
-              <p className="font-medium text-gray-900 dark:text-white">{mobile || "-"}</p>
+              <p className="font-medium text-gray-900 dark:text-white">
+                {mobile || "-"}
+              </p>
             </div>
             <div>
               <p className="text-sm text-gray-400 mb-1">Role</p>
-              <p className="font-medium text-gray-900 dark:text-white">{selectedRoleName ? getRoleLabel(selectedRoleName) : "-"}</p>
+              <p className="font-medium text-gray-900 dark:text-white">
+                {selectedRoleName ? getRoleLabel(selectedRoleName) : "-"}
+              </p>
             </div>
             <div>
               <p className="text-sm text-gray-400 mb-1">Designation</p>
-              <p className="font-medium text-gray-900 dark:text-white">{designation || "-"}</p>
+              <p className="font-medium text-gray-900 dark:text-white">
+                {designation || "-"}
+              </p>
             </div>
             <div>
               <p className="text-sm text-gray-400 mb-1">Reports To</p>
               <p className="font-medium text-gray-900 dark:text-white">
-                {higherRoleUsers.find((u) => u.id === reportsTo)?.name || "No Manager"}
+                {higherRoleUsers.find((u) => u.id === reportsTo)?.name ||
+                  "No Manager"}
               </p>
             </div>
             <div className="md:col-span-2">
@@ -561,7 +687,11 @@ export function UserForm({
             disabled={pending}
             className="px-8 py-3 bg-[#0B1727] text-white rounded-lg font-medium hover:bg-[#1a2639] transition-colors"
           >
-            {pending ? "Saving..." : isEdit ? "Update Employee" : "Create Employee"}
+            {pending
+              ? "Saving..."
+              : isEdit
+                ? "Update Employee"
+                : "Create Employee"}
           </button>
         )}
 

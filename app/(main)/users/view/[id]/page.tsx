@@ -21,15 +21,33 @@ const ROLE_LABELS: Record<string, string> = {
 
 const PERMISSION_TEXT: Record<string, { label: string; short: string }> = {
   IAM_MAN_ROL: { label: "Manage Roles", short: "Create and manage roles" },
-  IAM_ASG_PER: { label: "Assign Permissions", short: "Assign permissions to roles and users" },
-  POLICY_PROC: { label: "Process Policies", short: "Create and edit policy requests" },
-  POLICY_APPR: { label: "Approve Policies", short: "Approve and reject policy decisions" },
+  IAM_ASG_PER: {
+    label: "Assign Permissions",
+    short: "Assign permissions to roles and users",
+  },
+  POLICY_PROC: {
+    label: "Process Policies",
+    short: "Create and edit policy requests",
+  },
+  POLICY_APPR: {
+    label: "Approve Policies",
+    short: "Approve and reject policy decisions",
+  },
   POLICY_DELETE: { label: "Delete Policies", short: "Delete policy records" },
   CLAIM_INIT: { label: "Initiate Claims", short: "Raise new claims" },
   CLAIM_CLOSE: { label: "Close Claims", short: "Close finalized claims" },
-  PAY_POST_UTR: { label: "Post UTR Payment", short: "Record payment and UTR details" },
-  USR_ASSIGN_ROLES: { label: "Assign User Roles", short: "Assign roles to users" },
-  USR_DEACTIVATE: { label: "Deactivate Users", short: "Deactivate user accounts" },
+  PAY_POST_UTR: {
+    label: "Post UTR Payment",
+    short: "Record payment and UTR details",
+  },
+  USR_ASSIGN_ROLES: {
+    label: "Assign User Roles",
+    short: "Assign roles to users",
+  },
+  USR_DEACTIVATE: {
+    label: "Deactivate Users",
+    short: "Deactivate user accounts",
+  },
 };
 
 const toTitle = (value: string) =>
@@ -39,7 +57,8 @@ const toTitle = (value: string) =>
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
 
-const getRoleLabel = (roleName: string) => ROLE_LABELS[roleName] || toTitle(roleName);
+const getRoleLabel = (roleName: string) =>
+  ROLE_LABELS[roleName] || toTitle(roleName);
 
 const getPermissionLabel = (perm: PermissionRead) =>
   PERMISSION_TEXT[perm.name]?.label || toTitle(perm.name);
@@ -76,7 +95,9 @@ export default function ViewUserPage() {
         setRoles(metadata.roles || []);
         setPermissions(metadata.permissions || []);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Unable to load user details");
+        setError(
+          err instanceof Error ? err.message : "Unable to load user details",
+        );
       } finally {
         setLoading(false);
       }
@@ -104,8 +125,12 @@ export default function ViewUserPage() {
     return (
       <div className="p-8 bg-[#F4F7FE] dark:bg-gray-dark min-h-screen font-sans">
         <div className="bg-white dark:bg-gray-dark p-8 rounded-2xl border border-gray-200 dark:border-dark-3 shadow-sm">
-          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">User Details</h1>
-          <p className="mt-3 text-sm text-red-500">{error || "User not found"}</p>
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
+            User Details
+          </h1>
+          <p className="mt-3 text-sm text-red-500">
+            {error || "User not found"}
+          </p>
           <button
             onClick={() => router.push("/company/users")}
             className="mt-6 px-6 py-2.5 bg-[#0B1727] text-white rounded-lg font-medium hover:bg-[#1a2639] transition-colors"
@@ -122,7 +147,9 @@ export default function ViewUserPage() {
       <div className="space-y-6 bg-white dark:bg-gray-dark p-10 rounded-2xl border border-gray-200 dark:border-dark-3 shadow-sm">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">User Details</h1>
+            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
+              User Details
+            </h1>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
               Complete user profile and assigned permissions.
             </p>
@@ -137,45 +164,80 @@ export default function ViewUserPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="rounded-xl border border-gray-200 dark:border-dark-3 p-5 bg-gray-50/70 dark:bg-dark-2/30">
-            <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">Full Name</p>
-            <p className="text-base font-semibold text-gray-900 dark:text-white">{user.name}</p>
+            <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">
+              Full Name
+            </p>
+            <p className="text-base font-semibold text-gray-900 dark:text-white">
+              {user.name}
+            </p>
           </div>
           <div className="rounded-xl border border-gray-200 dark:border-dark-3 p-5 bg-gray-50/70 dark:bg-dark-2/30">
-            <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">Email</p>
-            <p className="text-base font-semibold text-gray-900 dark:text-white">{user.email || "-"}</p>
+            <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">
+              Email
+            </p>
+            <p className="text-base font-semibold text-gray-900 dark:text-white">
+              {user.email || "-"}
+            </p>
           </div>
           <div className="rounded-xl border border-gray-200 dark:border-dark-3 p-5 bg-gray-50/70 dark:bg-dark-2/30">
-            <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">Mobile</p>
-            <p className="text-base font-semibold text-gray-900 dark:text-white">{user.mobile || "-"}</p>
+            <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">
+              Mobile
+            </p>
+            <p className="text-base font-semibold text-gray-900 dark:text-white">
+              {user.mobile || "-"}
+            </p>
           </div>
           <div className="rounded-xl border border-gray-200 dark:border-dark-3 p-5 bg-gray-50/70 dark:bg-dark-2/30">
-            <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">Designation</p>
-            <p className="text-base font-semibold text-gray-900 dark:text-white">{user.designation || "-"}</p>
+            <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">
+              Designation
+            </p>
+            <p className="text-base font-semibold text-gray-900 dark:text-white">
+              {user.designation || "-"}
+            </p>
           </div>
           <div className="rounded-xl border border-gray-200 dark:border-dark-3 p-5 bg-gray-50/70 dark:bg-dark-2/30">
-            <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">Role</p>
-            <p className="text-base font-semibold text-gray-900 dark:text-white">{getRoleLabel(roleName)}</p>
+            <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">
+              Role
+            </p>
+            <p className="text-base font-semibold text-gray-900 dark:text-white">
+              {getRoleLabel(roleName)}
+            </p>
           </div>
           <div className="rounded-xl border border-gray-200 dark:border-dark-3 p-5 bg-gray-50/70 dark:bg-dark-2/30">
-            <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">Status</p>
-            <p className={`text-base font-semibold ${user.active ? "text-green-600" : "text-gray-500"}`}>
+            <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">
+              Status
+            </p>
+            <p
+              className={`text-base font-semibold ${user.active ? "text-green-600" : "text-gray-500"}`}
+            >
               {user.active ? "Active" : "Inactive"}
             </p>
           </div>
           <div className="rounded-xl border border-gray-200 dark:border-dark-3 p-5 bg-gray-50/70 dark:bg-dark-2/30">
-            <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">Reports To</p>
-            <p className="text-base font-semibold text-gray-900 dark:text-white">{user.reportsTo || "-"}</p>
+            <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">
+              Reports To
+            </p>
+            <p className="text-base font-semibold text-gray-900 dark:text-white">
+              {user.reportsTo || "-"}
+            </p>
           </div>
           <div className="rounded-xl border border-gray-200 dark:border-dark-3 p-5 bg-gray-50/70 dark:bg-dark-2/30">
-            <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">User ID</p>
-            <p className="text-base font-semibold text-gray-900 dark:text-white">{user.id}</p>
+            <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">
+              User ID
+            </p>
+            <p className="text-base font-semibold text-gray-900 dark:text-white">
+              {user.id}
+            </p>
           </div>
         </div>
 
         <section className="rounded-2xl border border-gray-200 dark:border-dark-3 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Assigned Permissions</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            Assigned Permissions
+          </h2>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            {assignedPermissions.length} permission{assignedPermissions.length === 1 ? "" : "s"} assigned
+            {assignedPermissions.length} permission
+            {assignedPermissions.length === 1 ? "" : "s"} assigned
           </p>
 
           {assignedPermissions.length === 0 ? (
@@ -192,8 +254,12 @@ export default function ViewUserPage() {
                   <p className="text-sm font-semibold text-gray-900 dark:text-white">
                     {getPermissionLabel(perm)}
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">{getPermissionShort(perm)}</p>
-                  <p className="text-[11px] text-gray-400 mt-2">Code: {perm.name}</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {getPermissionShort(perm)}
+                  </p>
+                  <p className="text-[11px] text-gray-400 mt-2">
+                    Code: {perm.name}
+                  </p>
                 </div>
               ))}
             </div>

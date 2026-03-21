@@ -21,8 +21,8 @@ const UsersContext = createContext<UsersContextType | null>(null);
 
 /**
  * UsersProvider manages the lifecycle of platform users.
- * It handles account creation, profile updates, and role assignments, 
- * orchestrating the synchronization between the UI state and the backend 
+ * It handles account creation, profile updates, and role assignments,
+ * orchestrating the synchronization between the UI state and the backend
  * administrative user endpoints.
  */
 export function UsersProvider({ children }: { children: React.ReactNode }) {
@@ -57,16 +57,16 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
       });
 
       store.dispatch(addUser(user));
-      return { 
+      return {
         success: true,
         data: {
           ...Object.fromEntries(formData.entries()),
           id: user.id,
           role: user.role,
-        }
+        },
       };
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to create user';
+      const msg = err instanceof Error ? err.message : "Failed to create user";
       return { error: msg };
     }
   };
@@ -120,17 +120,17 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
       });
 
       store.dispatch(updateUserInStore(updatedUser));
-      
-      return { 
+
+      return {
         success: true,
         data: {
           ...Object.fromEntries(formData.entries()),
           id: updatedUser.id,
           role: updatedUser.role,
-        }
+        },
       };
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Failed to update user';
+      const msg = err instanceof Error ? err.message : "Failed to update user";
       return { error: msg };
     }
   };
