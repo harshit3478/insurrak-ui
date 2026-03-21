@@ -15,8 +15,12 @@ import { User, Company, Role } from "@/types";
 // Mapping between human-readable role names and internal system constants.
 const ROLE_MAP: Record<string, Role> = {
   "Super Admin": "SUPER_ADMIN",
+  SUPER_ADMIN: "SUPER_ADMIN",
   "Company Admin": "COMPANY_ADMIN",
+  COMPANY_ADMIN: "COMPANY_ADMIN",
   "Branch Admin": "BRANCH_ADMIN",
+  BRANCH_ADMIN: "BRANCH_ADMIN",
+  COMPANY_USER: "COMPANY_USER",
 };
 
 /**

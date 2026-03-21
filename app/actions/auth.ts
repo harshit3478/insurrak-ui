@@ -14,10 +14,20 @@ import { cookies } from "next/headers";
  */
 export async function setAuthCookie(token: string, role: string) {
   const cookieStore = await cookies();
-  
+
+  // In non-HTTPS testing environments, Secure cookies are ignored by browsers.
+  // Allow an explicit override via COOKIE_SECURE=true|false.
+  const envOverride = process.env.COOKIE_SECURE;
+  const secureFlag =
+    envOverride === "true"
+      ? true
+      : envOverride === "false"
+        ? false
+        : process.env.NODE_ENV === "production";
+
   const options = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: secureFlag,
     maxAge: 604800, // 1 week
     path: "/",
     sameSite: "lax" as const,

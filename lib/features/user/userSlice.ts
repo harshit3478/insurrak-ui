@@ -1,5 +1,4 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { MOCK_USERS } from "./userMockData";
 import { User } from "@/types";
 
 interface UsersState {
@@ -20,10 +19,6 @@ const userSlice = createSlice({
   name: "user",
   initialState,
   reducers: {
-    setMockUsers(state) {
-      state.items = MOCK_USERS;
-      state.total = MOCK_USERS.length;
-    },
     setUsers(state, action: PayloadAction<User[]>) {
       state.items = action.payload;
       state.total = action.payload.length;
@@ -31,9 +26,7 @@ const userSlice = createSlice({
 
     addUser(state, action: PayloadAction<User>) {
       state.items.unshift(action.payload);
-      state.total += 1;
     },
-
     updateUser(state, action: PayloadAction<User>) {
       const idx = state.items.findIndex(u => u.id === action.payload.id);
       if (idx >= 0) state.items[idx] = action.payload;
@@ -83,8 +76,6 @@ const userSlice = createSlice({
 //       });
 //   },
 // });
-
-
-export const { setMockUsers, setUsers, addUser, updateUser, toggleUserActive, deleteUser } =
+export const { setUsers, addUser, updateUser, toggleUserActive, deleteUser } =
   userSlice.actions;
 export default userSlice.reducer;

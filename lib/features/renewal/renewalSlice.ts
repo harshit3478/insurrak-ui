@@ -1,6 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { Renewal } from '@/types';
-import { MOCK_RENEWALS } from '@/lib/mockData/renewals';
 
 interface RenewalState {
   items: Renewal[];
@@ -16,10 +15,6 @@ const renewalSlice = createSlice({
   name: 'renewal',
   initialState,
   reducers: {
-    setMockRenewals(state) {
-      state.items = MOCK_RENEWALS;
-      state.total = MOCK_RENEWALS.length;
-    },
     setRenewals(state, action: PayloadAction<Renewal[]>) {
       state.items = action.payload;
       state.total = action.payload.length;
@@ -34,6 +29,6 @@ const renewalSlice = createSlice({
   },
 });
 
-export const { setMockRenewals, setRenewals, updateRenewalStatus } =
+export const { setRenewals, updateRenewalStatus } =
   renewalSlice.actions;
 export default renewalSlice.reducer;

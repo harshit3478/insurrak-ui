@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MOCK_DOCUMENTS } from "@/lib/mockData/documents";
 import { RepositoryDocument } from "@/types";
 import { FileText, Search, Download, Eye } from "lucide-react";
 
@@ -23,9 +22,8 @@ export default function RepositoryPage() {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    // Simulate async load
-    const t = setTimeout(() => setDocuments(MOCK_DOCUMENTS), 300);
-    return () => clearTimeout(t);
+    // TODO: Replace with real API call when repository endpoint is available
+    setDocuments([]);
   }, []);
 
   const filtered = documents.filter(

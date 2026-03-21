@@ -1,6 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { Policy } from '@/types';
-import { MOCK_POLICIES } from '@/lib/mockData/policies';
 
 interface PolicyState {
   items: Policy[];
@@ -18,10 +17,6 @@ const policySlice = createSlice({
   name: 'policy',
   initialState,
   reducers: {
-    setMockPolicies(state) {
-      state.items = MOCK_POLICIES;
-      state.total = MOCK_POLICIES.length;
-    },
     setPolicies(state, action: PayloadAction<Policy[]>) {
       state.items = action.payload;
     },
@@ -43,6 +38,6 @@ const policySlice = createSlice({
   },
 });
 
-export const { setMockPolicies, setPolicies, addPolicy, updatePolicy, deletePolicy, selectPolicy } =
+export const { setPolicies, addPolicy, updatePolicy, deletePolicy, selectPolicy } =
   policySlice.actions;
 export default policySlice.reducer;

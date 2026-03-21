@@ -1,6 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { Claim } from '@/types';
-import { MOCK_CLAIMS } from '@/lib/mockData/claims';
 
 interface ClaimState {
   items: Claim[];
@@ -18,10 +17,6 @@ const claimSlice = createSlice({
   name: 'claim',
   initialState,
   reducers: {
-    setMockClaims(state) {
-      state.items = MOCK_CLAIMS;
-      state.total = MOCK_CLAIMS.length;
-    },
     setClaims(state, action: PayloadAction<Claim[]>) {
       state.items = action.payload;
       state.total = action.payload.length;
@@ -39,6 +34,6 @@ const claimSlice = createSlice({
   },
 });
 
-export const { setMockClaims, setClaims, updateClaimStatus, selectClaim } =
+export const { setClaims, updateClaimStatus, selectClaim } =
   claimSlice.actions;
 export default claimSlice.reducer;
