@@ -16,13 +16,13 @@ export default function AddUserPage() {
     const summaryData = createState.data || {};
 
     return (
-      <div className="p-8 bg-gray-50/50 dark:bg-dark-4 min-h-full">
+      <div className="p-8 bg-[#F4F7FE] dark:bg-gray-dark min-h-screen font-sans">
         <SuccessHeader
           title="Employee Added"
           subtitle="Successfully added a new employee to the platform!"
         />
 
-        <div className="bg-white dark:bg-gray-dark p-8 rounded-2xl border border-gray-100 dark:border-dark-3 shadow-sm mt-8 relative">
+        <div className="bg-white dark:bg-gray-dark p-8 rounded-2xl border border-gray-200 dark:border-dark-3 shadow-sm mt-8 relative">
           {/* Header Title with Icon */}
           <div className="flex items-center gap-4 mb-8">
             <div className="w-12 h-12 bg-gray-100 dark:bg-dark-3 rounded-full flex items-center justify-center">
@@ -85,7 +85,7 @@ export default function AddUserPage() {
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 dark:bg-dark-4 min-h-full">
+    <div className="p-8 bg-[#F4F7FE] dark:bg-gray-dark min-h-screen font-sans">
       <FormHeader
         title="Add Employee"
         subtitle="Register a new Employee into the platform"

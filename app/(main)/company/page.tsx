@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Building2,
@@ -17,12 +17,27 @@ import { CompaniesToolbar } from '@/components/Company/CompaniesToolbar';
 import { api } from '@/lib/api';
 
 import { Loading } from '@/components/ui/Loading';
+import { useAuth } from '@/context-provider/AuthProvider';
+import { hasPermission, Permission } from '@/types/permissions';
 
+/**
+ * CompanyManagementPage provides a central interface for Super Admins to manage 
+ * corporate entities. It includes real-time statistics on company health, 
+ * integration status, and an interactive table for CRUD operations.
+ */
 export default function CompanyManagementPage() {
   const router = useRouter();
+  const { user } = useAuth();
+  
+  const canCreate = hasPermission(user, Permission.CREATE_COMPANY);
+  const canEdit = hasPermission(user, Permission.EDIT_COMPANY);
+  const canDelete = hasPermission(user, Permission.DELETE_COMPANY);
+  const canView = hasPermission(user, Permission.MANAGE_COMPANIES);
+
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
 
   const fetchCompanies = async () => {
     try {
@@ -53,7 +68,22 @@ export default function CompanyManagementPage() {
     }
   };
 
-  if (loading) return <Loading />;
+  const filteredCompanies = useMemo(() => companies.filter((c) => 
+    (c.name || "").toLowerCase().includes(search.toLowerCase()) ||
+    (c.admin || "").toLowerCase().includes(search.toLowerCase()) ||
+    (c.adminEmail || "").toLowerCase().includes(search.toLowerCase())
+  ), [companies, search]);
+
+  if (!canView) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] bg-white dark:bg-gray-dark rounded-2xl border border-gray-100 dark:border-dark-3">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Unauthorized Access</h2>
+        <p className="text-gray-500 dark:text-dark-6 text-center max-w-md">
+          You do not have the required permissions to view the company list. Please contact your system administrator.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 bg-white dark:bg-gray-dark p-10 rounded-2xl">
@@ -66,15 +96,19 @@ export default function CompanyManagementPage() {
 
       <CompaniesToolbar
         onAddCompany={() => router.push('/company/add')}
+        onSearch={setSearch}
+        canCreate={canCreate}
       />
 
       {error && <div className="text-red-500 mb-4">{error}</div>}
 
       <CompaniesTable
-        companies={companies}
+        companies={filteredCompanies}
+        loading={loading}
         onEditCompany={(id) => router.push(`/company/edit/${id}`)}
-        onViewCompany={(id) => router.push(`/company/${id}`)}
         onDeleteCompany={handleDelete}
+        canEdit={canEdit}
+        canDelete={canDelete}
       />
     </div>
   );

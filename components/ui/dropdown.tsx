@@ -9,12 +9,15 @@ import {
   useContext,
   useEffect,
   useRef,
+  useState,
 } from "react";
+import { Portal } from "./portal";
 
 type DropdownContextType = {
   isOpen: boolean;
-  handleOpen: () => void;
+  handleOpen: (rect: DOMRect) => void;
   handleClose: () => void;
+  triggerRect: DOMRect | null;
 };
 
 const DropdownContext = createContext<DropdownContextType | null>(null);
@@ -34,6 +37,7 @@ type DropdownProps = {
 };
 
 export function Dropdown({ children, isOpen, setIsOpen }: DropdownProps) {
+  const [triggerRect, setTriggerRect] = useState<DOMRect | null>(null);
   const triggerRef = useRef<HTMLElement>(null);
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
@@ -45,28 +49,39 @@ export function Dropdown({ children, isOpen, setIsOpen }: DropdownProps) {
   useEffect(() => {
     if (isOpen) {
       triggerRef.current = document.activeElement as HTMLElement;
-
       document.body.style.pointerEvents = "none";
     } else {
       document.body.style.removeProperty("pointer-events");
-
       setTimeout(() => {
         triggerRef.current?.focus();
       }, 0);
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    const handleScroll = () => {
+      if (isOpen) {
+        setIsOpen(false);
+        setTriggerRect(null);
+      }
+    };
+    window.addEventListener("scroll", handleScroll, true);
+    return () => window.removeEventListener("scroll", handleScroll, true);
+  }, [isOpen, setIsOpen]);
+
   function handleClose() {
     setIsOpen(false);
+    setTriggerRect(null);
   }
 
-  function handleOpen() {
+  function handleOpen(rect: DOMRect) {
+    setTriggerRect(rect);
     setIsOpen(true);
   }
 
   return (
-    <DropdownContext.Provider value={{ isOpen, handleOpen, handleClose }}>
-      <div className="relative" onKeyDown={handleKeyDown}>
+    <DropdownContext.Provider value={{ isOpen, handleOpen, handleClose, triggerRect }}>
+      <div className="relative inline-block" onKeyDown={handleKeyDown}>
         {children}
       </div>
     </DropdownContext.Provider>
@@ -84,31 +99,50 @@ export function DropdownContent({
   align = "center",
   className,
 }: DropdownContentProps) {
-  const { isOpen, handleClose } = useDropdownContext();
+  const { isOpen, handleClose, triggerRect } = useDropdownContext();
 
   const contentRef = useClickOutside<HTMLDivElement>(() => {
     if (isOpen) handleClose();
   });
 
-  if (!isOpen) return null;
+  if (!isOpen || !triggerRect) return null;
+
+  // Calculate position
+  const isNearBottom = triggerRect.bottom + 200 > window.innerHeight;
+  const top = isNearBottom ? triggerRect.top - 8 : triggerRect.bottom + 8;
+  
+  let left = triggerRect.left;
+  let transform = "";
+
+  if (align === "end") {
+    left = triggerRect.right;
+    transform = "translateX(-100%)";
+  } else if (align === "center") {
+    left = triggerRect.left + triggerRect.width / 2;
+    transform = "translateX(-50%)";
+  }
 
   return (
-    <div
-      ref={contentRef}
-      role="menu"
-      aria-orientation="vertical"
-      className={cn(
-        "fade-in-0 zoom-in-95 pointer-events-auto absolute z-99 mt-2 min-w-[8rem] origin-top-right rounded-lg",
-        {
-          "animate-in right-0": align === "end",
-          "left-0": align === "start",
-          "left-1/2 -translate-x-1/2": align === "center",
-        },
-        className,
-      )}
-    >
-      {children}
-    </div>
+    <Portal>
+      <div
+        ref={contentRef}
+        role="menu"
+        aria-orientation="vertical"
+        style={{
+          position: "fixed",
+          top,
+          left,
+          transform: `${transform} ${isNearBottom ? 'translateY(-100%)' : ''}`,
+          zIndex: 9999,
+        }}
+        className={cn(
+          "fade-in-0 zoom-in-95 pointer-events-auto min-w-[8rem] rounded-lg bg-white shadow-2xl dark:bg-gray-800 border dark:border-gray-700 animate-in",
+          className,
+        )}
+      >
+        {children}
+      </div>
+    </Portal>
   );
 }
 
@@ -119,10 +153,15 @@ type DropdownTriggerProps = React.HTMLAttributes<HTMLButtonElement> & {
 export function DropdownTrigger({ children, className }: DropdownTriggerProps) {
   const { handleOpen, isOpen } = useDropdownContext();
 
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    handleOpen(rect);
+  };
+
   return (
     <button
       className={className}
-      onClick={handleOpen}
+      onClick={handleClick}
       aria-expanded={isOpen}
       aria-haspopup="menu"
       data-state={isOpen ? "open" : "closed"}

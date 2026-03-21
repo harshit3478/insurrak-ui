@@ -35,12 +35,12 @@ export default function EditCompanyPage() {
 
   if (updateState.success) {
     return (
-      <div className="p-8 bg-gray-50/50 dark:bg-dark-4 min-h-full">
+      <div className="p-8 bg-[#F4F7FE] dark:bg-gray-dark min-h-screen font-sans">
         <SuccessHeader
           title="Company Updated"
           subtitle="Successfully updated company details!"
         />
-        <div className="bg-white dark:bg-gray-dark p-8 rounded-2xl border border-gray-100 dark:border-dark-3 shadow-sm min-h-[400px] flex items-center justify-center">
+        <div className="bg-white dark:bg-gray-dark p-8 rounded-2xl border border-gray-200 dark:border-dark-3 shadow-sm min-h-[400px] flex items-center justify-center">
           <button
             onClick={() => router.push('/company')}
             className="px-8 py-3 bg-[#0B1727] text-white rounded-lg font-medium hover:bg-[#1a2639] transition-colors"
@@ -71,7 +71,7 @@ export default function EditCompanyPage() {
   }
 
   return (
-    <div className="p-8 bg-gray-50/50 dark:bg-dark-4 min-h-full">
+    <div className="p-8 bg-[#F4F7FE] dark:bg-gray-dark min-h-screen font-sans">
       <FormHeader
         title="Edit Company"
         subtitle={companyToEdit ? `Update details for ${companyToEdit.name}` : "Loading..."}

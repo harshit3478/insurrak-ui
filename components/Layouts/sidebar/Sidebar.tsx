@@ -1,16 +1,20 @@
 "use client";
 
-// import { Logo } from "@/components/logo";
 import { cn } from "@/lib/utils";
-import { Menu } from "lucide-react";
+import { Menu, ArrowLeft, ChevronUp } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getNavData } from "./data";
-import { ArrowLeftIcon, ChevronUp } from "./icons";
 import { MenuItem } from "./menu-item";
 import { useSidebarContext } from "./sidebar-context";
 import { useAuth } from "@/context-provider/AuthProvider";
 
+/**
+ * Sidebar component provides the primary vertical navigation for the application.
+ * It dynamically renders navigation items based on the user's role and 
+ * authentication status, supporting both desktop (with toggle) and mobile 
+ * overlay modes.
+ */
 export function Sidebar() {
   const pathname = usePathname();
   const { user } = useAuth();
@@ -18,7 +22,7 @@ export function Sidebar() {
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
 
   // Recompute nav data whenever the auth user changes
-  const NAV_DATA = getNavData(!!user);
+  const NAV_DATA = getNavData(!!user, user?.role ?? undefined);
 
   const toggleExpanded = (title: string) => {
     setExpandedItems((prev) => (prev.includes(title) ? [] : [title]));
@@ -96,7 +100,7 @@ export function Sidebar() {
               >
                 <span className="sr-only">Close Menu</span>
 
-                <ArrowLeftIcon className="ml-auto size-7" />
+                <ArrowLeft className="ml-auto size-7" />
               </button>
             )}
           </div>

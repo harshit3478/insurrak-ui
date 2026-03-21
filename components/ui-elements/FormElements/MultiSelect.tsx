@@ -1,5 +1,7 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
+import { Portal } from "@/components/ui/portal";
+import { cn } from "@/lib/utils";
 
 interface Option {
   value: string;
@@ -18,6 +20,13 @@ const MultiSelect: React.FC<DropdownProps> = ({ id }) => {
   const [show, setShow] = useState(false);
   const dropdownRef = useRef<any>(null);
   const trigger = useRef<any>(null);
+  const [triggerRect, setTriggerRect] = useState<DOMRect | null>(null);
+
+  const updateRect = () => {
+    if (trigger.current) {
+      setTriggerRect(trigger.current.getBoundingClientRect());
+    }
+  };
 
   useEffect(() => {
     const loadOptions = () => {
@@ -39,6 +48,7 @@ const MultiSelect: React.FC<DropdownProps> = ({ id }) => {
   }, [id]);
 
   const open = () => {
+    updateRect();
     setShow(true);
   };
 
@@ -90,9 +100,17 @@ const MultiSelect: React.FC<DropdownProps> = ({ id }) => {
         return;
       setShow(false);
     };
+    const handleScroll = () => {
+      if (show) setShow(false);
+    };
+
     document.addEventListener("click", clickHandler);
-    return () => document.removeEventListener("click", clickHandler);
-  });
+    window.addEventListener("scroll", handleScroll, true);
+    return () => {
+      document.removeEventListener("click", clickHandler);
+      window.removeEventListener("scroll", handleScroll, true);
+    };
+  }, [show]);
 
   return (
     <div className="relative z-50">
@@ -182,39 +200,47 @@ const MultiSelect: React.FC<DropdownProps> = ({ id }) => {
                   </div>
                 </div>
               </div>
-              <div className="w-full px-4">
-                <div
-                  className={`max-h-select absolute left-0 top-full z-40 w-full overflow-y-auto rounded bg-white shadow-1 dark:bg-dark-2 dark:shadow-card ${
-                    isOpen() ? "" : "hidden"
-                  }`}
-                  ref={dropdownRef}
-                  onFocus={() => setShow(true)}
-                  onBlur={() => setShow(false)}
-                >
-                  <div className="flex w-full flex-col">
-                    {options.map((option, index) => (
-                      <div key={index}>
-                        <div
-                          className="w-full cursor-pointer rounded-t border-b border-stroke hover:bg-primary/5 dark:border-dark-3"
-                          onClick={(event) => select(index, event)}
-                        >
+              {show && triggerRect && (
+                <Portal>
+                  <div
+                    ref={dropdownRef}
+                    style={{
+                      position: "fixed",
+                      top: triggerRect.bottom + 4 + 250 > window.innerHeight ? triggerRect.top - 250 : triggerRect.bottom + 4,
+                      left: triggerRect.left,
+                      width: triggerRect.width,
+                      zIndex: 9999,
+                    }}
+                    className="max-h-64 overflow-y-auto rounded bg-white shadow-2xl dark:bg-dark-2 dark:shadow-card border border-stroke dark:border-dark-3 animate-in fade-in zoom-in-95 duration-100"
+                    onFocus={() => setShow(true)}
+                    onBlur={() => setShow(false)}
+                  >
+                    <div className="flex w-full flex-col">
+                      {options.map((option, index) => (
+                        <div key={index}>
                           <div
-                            className={`relative flex w-full items-center border-l-2 border-transparent p-2 pl-2 ${
-                              option.selected ? "border-primary" : ""
-                            }`}
+                            className="w-full cursor-pointer rounded-t border-b border-stroke hover:bg-primary/5 dark:border-dark-3"
+                            onClick={(event) => select(index, event)}
                           >
-                            <div className="flex w-full items-center">
-                              <div className="mx-2 leading-6">
-                                {option.text}
+                            <div
+                              className={cn(
+                                "relative flex w-full items-center border-l-2 border-transparent p-2 pl-2",
+                                option.selected ? "border-primary" : ""
+                              )}
+                            >
+                              <div className="flex w-full items-center">
+                                <div className="mx-2 leading-6">
+                                  {option.text}
+                                </div>
                               </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              </div>
+                </Portal>
+              )}
             </div>
           </div>
         </div>

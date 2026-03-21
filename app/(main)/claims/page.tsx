@@ -4,11 +4,12 @@ import Link from "next/link";
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
 import { useAppDispatch } from "@/lib/hooks";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { setClaims } from "@/lib/features/claim/claimSlice";
 import { apiClient } from "@/lib/apiClient";
 import { Search, ChevronDown, Plus } from "lucide-react";
 import { Loading } from "@/components/ui/Loading";
+import { SkeletonRows } from "@/components/ui/SkeletonRows";
 import type { ClaimRead } from "@/types/api";
 
 const STATUS_STYLES: Record<string, string> = {
@@ -50,6 +51,11 @@ function SLABadge({ deadline }: { deadline: string }) {
   );
 }
 
+/**
+ * ClaimsPage provides a comprehensive overview of all insurance claims 
+ * registered within the system. It allows users to track claim status, 
+ * estimated versus settled amounts, and incident details.
+ */
 export default function ClaimsPage() {
   const dispatch = useAppDispatch();
   const claims = useSelector((s: RootState) => s.claim.items) as unknown as ClaimRead[];
@@ -71,19 +77,16 @@ export default function ClaimsPage() {
     fetchClaims();
   }, [dispatch]);
 
-  if (loading) {
-    return <Loading />;
-  }
-
-  const filtered = claims.filter(
+  const filtered = useMemo(() => claims.filter(
     c =>
       (c.insurer_claim_number || "").toLowerCase().includes(search.toLowerCase()) ||
       c.claim_type.toLowerCase().includes(search.toLowerCase()) ||
       c.status.toLowerCase().includes(search.toLowerCase())
-  );
+  ), [claims, search]);
 
   return (
-    <div className="space-y-6 bg-white dark:bg-gray-dark p-6 md:p-10 rounded-2xl">
+    <div className="p-8 bg-[#F4F7FE] dark:bg-gray-dark min-h-screen font-sans">
+      <div className="space-y-6 bg-white dark:bg-gray-dark p-6 md:p-10 rounded-2xl border border-gray-200 dark:border-dark-3 shadow-sm min-h-[600px]">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -125,8 +128,13 @@ export default function ClaimsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 dark:divide-dark-3">
-              {filtered.map(c => (
-                <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-dark-2 transition-colors">
+              {loading ? (
+                <SkeletonRows columns={7} rows={5} />
+              ) : filtered.length === 0 ? (
+                <tr><td colSpan={7} className="py-8 text-center text-sm text-gray-400">No claims found</td></tr>
+              ) : (
+                filtered.map(c => (
+                  <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-dark-2 transition-colors">
                   <td className="py-4 px-4 text-sm font-semibold text-blue-600 dark:text-blue-400">
                     <Link href={`/claims/${c.id}`} className="hover:underline">{c.insurer_claim_number || `CLM-${c.id}`}</Link>
                   </td>
@@ -147,14 +155,12 @@ export default function ClaimsPage() {
                     </span>
                   </td>
                 </tr>
-              ))}
-              {filtered.length === 0 && (
-                <tr><td colSpan={7} className="py-8 text-center text-sm text-gray-400">No claims found</td></tr>
-              )}
+              )))}
             </tbody>
           </table>
         </div>
       </div>
+    </div>
     </div>
   );
 }

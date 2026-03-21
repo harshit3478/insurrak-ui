@@ -1,26 +1,26 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
-import { api as apiClient } from '@/lib/api';
+import { useRouter } from 'next/navigation';
+import { apiClient } from '@/lib/apiClient';
+import { api as apiService } from '@/lib/api';
 import { BranchRead, PolicyRequestRead } from '@/types/api';
 import { Company } from '@/types';
-import { 
-  ArrowLeft, 
-  Edit, 
-  Search, 
-  Filter, 
-  Download, 
-  MoreVertical, 
+import {
+  Edit,
+  Search,
+  Filter,
+  Download,
+  MoreVertical,
   CheckCircle2,
   MinusCircle,
-  Loader2
+  Plus,
 } from 'lucide-react';
+import { isBypassActive } from '@/types/permissions';
+import { SkeletonRows } from '@/components/ui/SkeletonRows';
 
-export default function CompanyDetailsPage() {
+export default function CompanyProfilePage() {
   const router = useRouter();
-  const params = useParams();
-  const companyId = params.id as string;
 
   const [activeTab, setActiveTab] = useState<'branches' | 'policies'>('branches');
 
@@ -31,45 +31,66 @@ export default function CompanyDetailsPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchCompany() {
-      if (!companyId) return;
+    async function fetchMyCompany() {
       try {
         setLoading(true);
-        const data = await apiClient.getCompanyById(Number(companyId));
-        setCompany(data);
-      } catch (err) {
-        console.error("Failed to fetch company", err);
-        setError("Failed to load company details");
+        // Get current user to find their company
+        const currentUser = await apiClient.getCurrentUser();
+        if (!currentUser.companyId) {
+          if (isBypassActive()) {
+            // Dev Bypass Fallback: If not linked to a company, default to ID 1 to allow UI testing
+            currentUser.companyId = "1"; 
+          } else {
+            setError(`No company associated with your account. (User ID: ${currentUser.id}, Role: ${currentUser.role})`);
+            setLoading(false);
+            return;
+          }
+        }
+        const companyId = Number(currentUser.companyId);
+
+        let companyData: Company | null = null;
+        try {
+          companyData = await apiService.getCompanyById(companyId);
+        } catch (getErr: any) {
+          console.warn("Direct GET /companies/:id failed, trying getAllCompanies fallback...", getErr);
+          // Fallback if GET /companies/:id throws 403 for company admin
+          try {
+            const allCompanies = await apiService.getAllCompanies();
+            companyData = allCompanies.find(c => Number(c.id) === companyId) || null;
+          } catch (getAllErr) {
+             console.warn("getAllCompanies also failed (possibly 403 Forbidden). Creating a placeholder company.");
+          }
+          
+          if (!companyData) {
+             companyData = {
+               id: companyId,
+               companyId: String(companyId),
+               name: "Your Company",
+               is_active: true,
+               email: currentUser.email || "",
+               status: "Active",
+             } as unknown as Company;
+          }
+        }
+        
+        setCompany(companyData);
+
+        // Fetch branches and policies for this company
+        const [bData, pData] = await Promise.all([
+          apiClient.getAllBranches(companyId).catch(() => [] as BranchRead[]),
+          apiClient.getPolicyRequests(companyId).catch(() => [] as PolicyRequestRead[]),
+        ]);
+        setBranches(bData);
+        setPolicies(pData);
+      } catch (err: any) {
+        console.error("Failed to fetch company profile", err);
+        setError(`Failed to load company profile: ${err?.message || String(err)}`);
       } finally {
         setLoading(false);
       }
     }
-    fetchCompany();
-  }, [companyId]);
-
-  // Separate useEffect for branches and policies
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!companyId) return;
-      try {
-        const [bData, pData] = await Promise.all([
-          apiClient.getAllBranches(Number(companyId)).catch(e => {
-            console.error('Branches fetch error:', e);
-            return [] as BranchRead[];
-          }),
-          apiClient.getPolicyRequests(Number(companyId)).catch(e => {
-            console.error('Policies fetch error:', e);
-            return [] as PolicyRequestRead[];
-          })
-        ]);
-        setBranches(bData);
-        setPolicies(pData);
-      } catch (err) {
-        console.error("Related data fetch error:", err);
-      }
-    };
-    fetchData();
-  }, [companyId]);
+    fetchMyCompany();
+  }, []);
 
   const getStatusBadge = (status: string) => {
     let bg = 'bg-gray-100 text-gray-600';
@@ -109,15 +130,13 @@ export default function CompanyDetailsPage() {
     }
 
     if (['Approval Pending', 'Quoting', 'Data Collection', 'Payment Pending'].includes(status)) {
-        // Pill style for complex statuses
-        return (
-            <span className={`px-3 py-1 rounded-full text-xs font-medium ${bg}`}>
-                • {status}
-            </span>
-        )
+      return (
+        <span className={`px-3 py-1 rounded-full text-xs font-medium ${bg}`}>
+          • {status}
+        </span>
+      );
     }
 
-    // Default active/inactive style
     return (
       <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${bg}`}>
         <span className={`w-1.5 h-1.5 rounded-full ${dot}`}></span>
@@ -126,33 +145,19 @@ export default function CompanyDetailsPage() {
     );
   };
 
-  const onBack = () => router.push('/company');
-
-  const onViewPolicy = (policyId: number) => {
-    router.push(`/company/${companyId}/policy/${policyId}`);
-  };
-
-  if (loading) {
+  if (error || (!loading && !company)) {
     return (
-      <div className="p-8 flex justify-center items-center min-h-[400px]">
-        <Loader2 className="animate-spin text-gray-500 w-8 h-8" />
+      <div className="p-8 text-center text-gray-500">
+        {error || "Company not found."}
       </div>
     );
   }
 
-  const companyName = company?.name || 'Unknown Company';
+  const companyName = company?.name || 'Loading...';
   const companyInitial = companyName.charAt(0).toUpperCase();
 
   return (
     <div className="p-8 bg-gray-50/50 dark:bg-gray-dark min-h-full font-sans">
-      {/* Back Button */}
-      <button 
-        onClick={onBack}
-        className="flex items-center gap-2 text-sm font-medium text-gray-600 dark:text-gray-300 mb-6 hover:text-gray-900 dark:hover:text-white transition-colors bg-white dark:bg-dark-2 px-4 py-2 rounded-lg border border-gray-200 dark:border-dark-3 shadow-sm w-fit"
-      >
-        <ArrowLeft className="w-4 h-4" /> Back to Companies
-      </button>
-
       {/* Header Card */}
       <div className="bg-white dark:bg-gray-dark rounded-2xl border border-gray-200 dark:border-dark-3 shadow-sm p-8 mb-6">
         <div className="flex justify-between items-start mb-8">
@@ -167,7 +172,7 @@ export default function CompanyDetailsPage() {
               </div>
             </div>
           </div>
-          <button onClick={() => router.push(`/company/edit/${companyId}`)} className="flex items-center gap-2 text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white text-sm font-medium border border-gray-200 dark:border-dark-3 px-3 py-1.5 rounded-lg transition-colors">
+          <button onClick={() => router.push(company ? `/company/edit/${company.id}` : '#')} className="flex items-center gap-2 text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white text-sm font-medium border border-gray-200 dark:border-dark-3 px-3 py-1.5 rounded-lg transition-colors">
             <Edit className="w-4 h-4" /> Edit Details
           </button>
         </div>
@@ -207,38 +212,54 @@ export default function CompanyDetailsPage() {
       {/* Tabs & Content */}
       <div className="bg-white dark:bg-gray-dark rounded-2xl border border-gray-200 dark:border-dark-3 shadow-sm overflow-hidden min-h-[600px]">
         {/* Tabs Header */}
-        <div className="border-b border-gray-100 dark:border-dark-3 bg-gray-50/30 dark:bg-dark-2/30 px-6 pt-2">
+        <div className="border-b border-gray-100 dark:border-dark-3 bg-gray-50/30 dark:bg-dark-2/30 px-6 pt-2 flex justify-between items-end">
           <div className="flex gap-8">
-            <button 
+            <button
               onClick={() => setActiveTab('branches')}
               className={`pb-4 text-sm font-medium px-2 border-b-2 transition-colors ${
-                activeTab === 'branches' 
-                  ? 'border-gray-900 dark:border-white text-gray-900 dark:text-white' 
+                activeTab === 'branches'
+                  ? 'border-gray-900 dark:border-white text-gray-900 dark:text-white'
                   : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
               }`}
             >
               Branches
             </button>
-            <button 
+            <button
               onClick={() => setActiveTab('policies')}
               className={`pb-4 text-sm font-medium px-2 border-b-2 transition-colors ${
-                activeTab === 'policies' 
-                  ? 'border-gray-900 dark:border-white text-gray-900 dark:text-white' 
+                activeTab === 'policies'
+                  ? 'border-gray-900 dark:border-white text-gray-900 dark:text-white'
                   : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
               }`}
             >
               Policies
             </button>
           </div>
+          {activeTab === 'branches' && (
+            <button
+              onClick={() => router.push('/branches/add')}
+              className="mb-2 flex items-center gap-2 px-4 py-2 bg-[#0B1727] text-white rounded-lg text-sm font-medium hover:bg-[#1a2639] transition-colors"
+            >
+              <Plus className="w-4 h-4" /> Add Branch
+            </button>
+          )}
+          {activeTab === 'policies' && (
+            <button
+              onClick={() => router.push('/policies/add')}
+              className="mb-2 flex items-center gap-2 px-4 py-2 bg-[#C6F200] text-black rounded-lg text-sm font-medium hover:bg-[#b0d600] transition-colors shadow-sm"
+            >
+              <Plus className="w-4 h-4" /> Add Policy
+            </button>
+          )}
         </div>
 
-        {/* Tab Content Actions */}
+        {/* Tab Content */}
         <div className="p-6">
           <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
             <div className="relative w-full md:w-80">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300 w-4 h-4" />
-              <input 
-                type="text" 
+              <input
+                type="text"
                 placeholder={activeTab === 'branches' ? "Search Branches" : "Search Policies"}
                 className="w-full pl-9 pr-4 py-2.5 border border-gray-200 dark:border-dark-3 rounded-lg text-sm bg-white dark:bg-gray-dark focus:outline-none focus:ring-1 focus:ring-gray-300 dark:focus:ring-gray-500"
               />
@@ -267,7 +288,7 @@ export default function CompanyDetailsPage() {
                     </>
                   ) : (
                     <>
-                       {['Policy No.', 'Unit', 'Asset Description', 'Line of Business', 'Broker', 'Created Date', 'Status'].map(h => (
+                      {['Policy No.', 'Unit', 'Asset Description', 'Line of Business', 'Broker', 'Created Date', 'Status'].map(h => (
                         <th key={h} className="py-3 px-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400">{h} ↓</th>
                       ))}
                     </>
@@ -277,55 +298,61 @@ export default function CompanyDetailsPage() {
               </thead>
               <tbody className="divide-y divide-gray-50 dark:divide-dark-3">
                 {activeTab === 'branches' ? (
-                  branches.map((item) => (
-                    <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-dark-2 group">
-                      <td className="py-4 px-4"><CheckCircle2 className="w-4 h-4 text-gray-900 dark:text-gray-300" /></td>
-                      <td className="py-4 px-4 text-sm font-semibold text-gray-900 dark:text-white">{item.name}</td>
-                      <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">{item.state || '-'}</td>
-                      <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">{item.gst_number || '-'}</td>
-                      <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">-</td> {/* Manager not in BranchRead */}
-                      <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">-</td> {/* Email not in BranchRead */}
-                      <td className="py-4 px-4">{getStatusBadge(item.is_active ? 'Active' : 'Inactive')}</td>
-                      <td className="py-4 px-4 text-right">
-                         <button className="text-gray-400 hover:text-gray-600"><MoreVertical className="w-4 h-4" /></button>
-                      </td>
-                    </tr>
-                  ))
+                  loading ? (
+                    <SkeletonRows columns={8} rows={5} />
+                  ) : branches.length === 0 ? (
+                    <tr><td colSpan={8} className="py-12 text-center text-gray-400">No branches found. Click "Add Branch" to create one.</td></tr>
+                  ) : (
+                    branches.map((item) => (
+                      <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-dark-2 group">
+                        <td className="py-4 px-4"><CheckCircle2 className="w-4 h-4 text-gray-900 dark:text-gray-300" /></td>
+                        <td className="py-4 px-4 text-sm font-semibold text-gray-900 dark:text-white">{item.name}</td>
+                        <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">{item.state || '-'}</td>
+                        <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">{item.gst_number || '-'}</td>
+                        <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">-</td>
+                        <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">-</td>
+                        <td className="py-4 px-4">{getStatusBadge(item.is_active ? 'Active' : 'Inactive')}</td>
+                        <td className="py-4 px-4 text-right">
+                          <button
+                            onClick={() => router.push(`/branches/edit/${item.id}`)}
+                            className="text-gray-400 hover:text-gray-600"
+                          >
+                            <MoreVertical className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )
                 ) : (
-                  policies.map((item) => (
-                    <tr 
-                      key={item.id}
-                      className="hover:bg-gray-50 dark:hover:bg-dark-2 group cursor-pointer"
-                      onClick={() => onViewPolicy(item.id)}
-                    >
-                      <td className="py-4 px-4"><CheckCircle2 className="w-4 h-4 text-gray-900 dark:text-gray-300" /></td>
-                      <td className="py-4 px-4 text-sm font-semibold text-gray-900 dark:text-white">{item.policy_number || 'N/A'}</td>
-                      <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">Unit ID: {item.unit_id}</td>
-                      <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400 truncate max-w-[150px]" title={item.asset_description || ''}>{item.asset_description || '-'}</td>
-                      <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">{item.line_of_business}</td>
-                      <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">Broker ID: {item.broker_id}</td>
-                      <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">{new Date(item.created_at).toLocaleDateString()}</td>
-                      <td className="py-4 px-4">{getStatusBadge(item.status || 'Draft')}</td>
-                      <td className="py-4 px-4 text-right">
-                        <button className="text-gray-400 hover:text-gray-600" onClick={(e) => { e.stopPropagation(); }}><MoreVertical className="w-4 h-4" /></button>
-                      </td>
-                    </tr>
-                  ))
+                  loading ? (
+                    <SkeletonRows columns={9} rows={5} />
+                  ) : policies.length === 0 ? (
+                    <tr><td colSpan={9} className="py-12 text-center text-gray-400">No policies found for this company.</td></tr>
+                  ) : (
+                    policies.map((item) => (
+                      <tr key={item.id} onClick={() => router.push(`/policies/${item.id}`)} className="hover:bg-gray-50 dark:hover:bg-dark-2 group cursor-pointer">
+                        <td className="py-4 px-4"><CheckCircle2 className="w-4 h-4 text-gray-900 dark:text-gray-300" /></td>
+                        <td className="py-4 px-4 text-sm font-semibold text-gray-900 dark:text-white">{item.policy_number || 'N/A'}</td>
+                        <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">Unit ID: {item.unit_id}</td>
+                        <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400 truncate max-w-[150px]" title={item.asset_description || ''}>{item.asset_description || '-'}</td>
+                        <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">{item.line_of_business}</td>
+                        <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">Broker ID: {item.broker_id}</td>
+                        <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">{new Date(item.created_at).toLocaleDateString()}</td>
+                        <td className="py-4 px-4">{getStatusBadge(item.status || 'Draft')}</td>
+                        <td className="py-4 px-4 text-right">
+                          <button className="text-gray-400 hover:text-gray-600" onClick={(e) => { e.stopPropagation(); }}>
+                            <MoreVertical className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )
                 )}
               </tbody>
             </table>
           </div>
-           {/* Pagination Mock */}
-           <div className="flex justify-center mt-6 gap-2">
-              <button className="px-3 py-1 bg-gray-100 dark:bg-dark-2 rounded text-xs text-gray-600 dark:text-gray-300 disabled:opacity-50">Back</button>
-              <button className="px-3 py-1 bg-[#0B1727] rounded text-xs text-white">1</button>
-              <button className="px-3 py-1 bg-gray-100 dark:bg-dark-2 rounded text-xs text-gray-600 dark:text-gray-300">2</button>
-              <button className="px-3 py-1 bg-gray-100 dark:bg-dark-2 rounded text-xs text-gray-600 dark:text-gray-300">3</button>
-              <button className="px-3 py-1 bg-gray-100 dark:bg-dark-2 rounded text-xs text-gray-600 dark:text-gray-300">4</button>
-              <button className="px-3 py-1 bg-gray-100 dark:bg-dark-2 rounded text-xs text-gray-600 dark:text-gray-300">Next</button>
-           </div>
         </div>
       </div>
     </div>
   );
-};
+}

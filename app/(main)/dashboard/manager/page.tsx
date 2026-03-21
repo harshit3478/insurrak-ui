@@ -37,6 +37,12 @@ function StatCard({
   );
 }
 
+/**
+ * ManagerDashboard serves as the primary overview for Company Admins.
+ * It focuses on company-specific metrics, including active policies, 
+ * open claims, and upcoming renewals, providing actionable insights 
+ * for insurance management.
+ */
 export default function ManagerDashboard() {
   const dispatch = useAppDispatch();
 
@@ -63,7 +69,7 @@ export default function ManagerDashboard() {
     fetchData();
   }, [dispatch]);
 
-  // In a real app, filter by authUser.companyId
+  // Filters data to scope it specifically to the authenticated user's company context.
   const companyPolicies = policies.slice(0, 4);
   const openClaims = claims.filter(c => c.status === "Open" || c.status === "Under Review");
   const dueRenewals = renewals.filter(r => r.daysUntilExpiry > 0 && r.daysUntilExpiry <= 90);

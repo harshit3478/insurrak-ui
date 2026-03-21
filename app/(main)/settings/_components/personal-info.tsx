@@ -1,3 +1,5 @@
+"use client";
+
 import {
   CallIcon,
   EmailIcon,
@@ -7,8 +9,11 @@ import {
 import InputGroup from "@/components/ui-elements/FormElements/InputGroup";
 import { TextAreaGroup } from "@/components/ui-elements/FormElements/InputGroup/text-area";
 import { ShowcaseSection } from "@/components/Layouts/showcase-section";
+import { useAuth } from "@/context-provider/AuthProvider";
 
 export function PersonalInfoForm() {
+  const { user } = useAuth();
+
   return (
     <ShowcaseSection title="Personal Information" className="p-7!">
       <form>
@@ -18,8 +23,8 @@ export function PersonalInfoForm() {
             type="text"
             name="fullName"
             label="Full Name"
-            placeholder="David Jhon"
-            defaultValue="David Jhon"
+            placeholder="Name"
+            defaultValue={user?.name || ""}
             icon={<UserIcon />}
             height="sm"
           />
@@ -30,7 +35,7 @@ export function PersonalInfoForm() {
             name="phoneNumber"
             label="Phone Number"
             placeholder="+990 3343 7865"
-            defaultValue={"+990 3343 7865"}
+            defaultValue={""}
             icon={<CallIcon />}
             height="sm"
           />
@@ -41,8 +46,8 @@ export function PersonalInfoForm() {
           type="email"
           name="email"
           label="Email Address"
-          placeholder="devidjond45@gmail.com"
-          defaultValue="devidjond45@gmail.com"
+          placeholder="Email"
+          defaultValue={user?.email || ""}
           icon={<EmailIcon />}
           height="sm"
         />
@@ -52,8 +57,8 @@ export function PersonalInfoForm() {
           type="text"
           name="username"
           label="Username"
-          placeholder="devidjhon24"
-          defaultValue="devidjhon24"
+          placeholder="Username"
+          defaultValue={user?.name || ""}
           icon={<UserIcon />}
           height="sm"
         />
@@ -63,7 +68,7 @@ export function PersonalInfoForm() {
           label="BIO"
           placeholder="Write your bio here"
           icon={<PencilSquareIcon />}
-          defaultValue="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam lacinia turpis tortor, consequat efficitur mi congue a. Curabitur cursus, ipsum ut lobortis sodales, enim arcu pellentesque lectus ac suscipit diam sem a felis. Cras sapien ex, blandit eu dui et suscipit gravida nunc. Sed sed est quis dui."
+          defaultValue={user?.designation || ""}
         />
 
         <div className="flex justify-end gap-3">

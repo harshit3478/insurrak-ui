@@ -16,6 +16,11 @@ const STATUS_STYLES: Record<PolicyStatus, string> = {
   "Pending Renewal": "bg-purple-50 text-purple-700",
 };
 
+/**
+ * UserDashboard provides a simplified, read-only view of insurance data 
+ * for standard company users. It displays key statistics (total policies, 
+ * active, expiring) and a list of their specific policy overview.
+ */
 export default function UserDashboard() {
   const dispatch = useAppDispatch();
   const authUser = useSelector((s: RootState) => s.auth.user);
@@ -47,7 +52,7 @@ export default function UserDashboard() {
         </p>
       </div>
 
-      {/* Quick stats */}
+      {/* Dashboard KPI Statistics */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         {[
           { icon: FileText, label: "My Policies", value: myPolicies.length, color: "bg-blue-500" },
@@ -66,7 +71,7 @@ export default function UserDashboard() {
         ))}
       </div>
 
-      {/* My Policies (read-only) */}
+      {/* Policy List Summary (Read-Only context) */}
       <div className="bg-white dark:bg-gray-dark rounded-2xl border border-gray-100 dark:border-dark-3 p-6">
         <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-5">My Policies</h2>
         <div className="space-y-3">

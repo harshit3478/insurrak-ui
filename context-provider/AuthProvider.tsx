@@ -8,6 +8,8 @@ import {
 } from "../lib/features/auth/authSlice";
 
 import { AuthContextType, Role, ROLE_HIERARCHY, User } from "@/types";
+import { isBypassActive } from "@/types/permissions";
+import { setAuthCookie, clearAuthCookie } from "@/app/actions/auth";
 import {
   createContext,
   useContext,
@@ -33,6 +35,7 @@ function getDashboardRoute(role: Role): string {
     case "SUPER_ADMIN":
       return "/dashboard/admin";
     case "COMPANY_ADMIN":
+    case "BRANCH_ADMIN":
       return "/dashboard/manager";
     default:
       return "/dashboard/user";
@@ -41,6 +44,11 @@ function getDashboardRoute(role: Role): string {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+/**
+ * AuthProvider manages the global authentication state and user session.
+ * It coordinates with Redux for persistence and provides utility methods for 
+ * role-based permission checks and secure navigation.
+ */
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const user = useSelector((state: RootState) => state.auth.user);
   const isAuthenticated = useSelector(
@@ -66,6 +74,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       localStorage.setItem("token", token);
 
       const user = await api.getCurrentUser();
+      
+      // Sync the cookie to the Next.js server securely for Server Component routing
+      await setAuthCookie(token, user.role);
 
       if (!user) {
         return { error: "Login failed: Could not fetch user details." };
@@ -94,12 +105,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     initialState,
   );
 
-  /* ===================== SIGNUP ACTION ===================== */
   const signupAction = async (
     prevState: AuthState,
     formData: FormData,
   ): Promise<AuthState> => {
-    // Real API does not support public signup. User must be created by Admin.
+    // Public user registration is restricted. All new users must be established by a system administrator to maintain organizational hierarchy.
     return { error: "Signup is not supported. Please contact your administrator." };
   };
 
@@ -112,6 +122,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       await api.logout();
       store.dispatch(logoutAction());
+      await clearAuthCookie();
       localStorage.removeItem("token");
       window.location.href = "/auth/login";
     } catch (error) {
@@ -137,6 +148,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         isSignupPending,
         logout,
         hasPermission,
+        isBypassActive,
       }}
     >
       {children}
