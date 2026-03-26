@@ -11,6 +11,7 @@ const mockCompanies: Company[] = Array(12).fill(null).map((_, i) => ({
   branches: 'Regular text column',
   activePolicies: 'Regular text column',
   status: [1, 3, 6, 8, 10].includes(i) ? 'Inactive' as const : 'Active' as const,
+  is_active: ![1, 3, 6, 8, 10].includes(i),
   email: '',
   mobile_number: '',
   address: '',

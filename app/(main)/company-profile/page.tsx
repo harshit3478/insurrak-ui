@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/apiClient';
 import { api as apiService } from '@/lib/api';
-import { BranchRead, PolicyRequestRead } from '@/types/api';
+import { UnitRead, PolicyRequestRead } from '@/types/api';
 import { Company } from '@/types';
 import {
   Edit,
@@ -25,7 +25,7 @@ export default function CompanyProfilePage() {
   const [activeTab, setActiveTab] = useState<'branches' | 'policies'>('branches');
 
   const [company, setCompany] = useState<Company | null>(null);
-  const [branches, setBranches] = useState<BranchRead[]>([]);
+  const [branches, setBranches] = useState<UnitRead[]>([]);
   const [policies, setPolicies] = useState<PolicyRequestRead[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -77,7 +77,7 @@ export default function CompanyProfilePage() {
 
         // Fetch branches and policies for this company
         const [bData, pData] = await Promise.all([
-          apiClient.getAllBranches(companyId).catch(() => [] as BranchRead[]),
+          apiClient.getAllUnits().catch(() => [] as UnitRead[]),
           apiClient.getPolicyRequests(companyId).catch(() => [] as PolicyRequestRead[]),
         ]);
         setBranches(bData);
@@ -222,7 +222,7 @@ export default function CompanyProfilePage() {
                   : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
               }`}
             >
-              Branches
+              Units / Branches
             </button>
             <button
               onClick={() => setActiveTab('policies')}
@@ -240,7 +240,7 @@ export default function CompanyProfilePage() {
               onClick={() => router.push('/branches/add')}
               className="mb-2 flex items-center gap-2 px-4 py-2 bg-[#0B1727] text-white rounded-lg text-sm font-medium hover:bg-[#1a2639] transition-colors"
             >
-              <Plus className="w-4 h-4" /> Add Branch
+              <Plus className="w-4 h-4" /> Add Unit
             </button>
           )}
           {activeTab === 'policies' && (
@@ -282,7 +282,7 @@ export default function CompanyProfilePage() {
                   <th className="w-10 py-3 px-4 text-left"><MinusCircle className="w-4 h-4 text-gray-400" /></th>
                   {activeTab === 'branches' ? (
                     <>
-                      {['Branch Name', 'State', 'GST Number', 'Branch Manager', 'Branch Manager Email', 'Status'].map(h => (
+                      {['Unit Name', 'State', 'GSTIN', 'Contact Person', 'Contact Email', 'Status'].map(h => (
                         <th key={h} className="py-3 px-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400">{h} ↓</th>
                       ))}
                     </>
@@ -301,16 +301,16 @@ export default function CompanyProfilePage() {
                   loading ? (
                     <SkeletonRows columns={8} rows={5} />
                   ) : branches.length === 0 ? (
-                    <tr><td colSpan={8} className="py-12 text-center text-gray-400">No branches found. Click "Add Branch" to create one.</td></tr>
+                    <tr><td colSpan={8} className="py-12 text-center text-gray-400">No units found. Click "Add Unit" to create one.</td></tr>
                   ) : (
                     branches.map((item) => (
                       <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-dark-2 group">
                         <td className="py-4 px-4"><CheckCircle2 className="w-4 h-4 text-gray-900 dark:text-gray-300" /></td>
                         <td className="py-4 px-4 text-sm font-semibold text-gray-900 dark:text-white">{item.name}</td>
                         <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">{item.state || '-'}</td>
-                        <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">{item.gst_number || '-'}</td>
-                        <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">-</td>
-                        <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">-</td>
+                        <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">{item.gstin || '-'}</td>
+                        <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">{item.contact_person_name || '-'}</td>
+                        <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">{item.contact_person_email || '-'}</td>
                         <td className="py-4 px-4">{getStatusBadge(item.is_active ? 'Active' : 'Inactive')}</td>
                         <td className="py-4 px-4 text-right">
                           <button

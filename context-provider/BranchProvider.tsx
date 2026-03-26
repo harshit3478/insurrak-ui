@@ -1,17 +1,12 @@
 "use client";
 
-import { createContext, useContext, useActionState } from "react";
+import { createContext, useContext } from "react";
 import { ActionState, BranchesContextType, initialState } from "@/types";
 import { apiClient } from "@/lib/apiClient";
-import { BranchCreate, BranchUpdate } from "@/types/api";
+import { UnitCreate, UnitUpdate } from "@/types/api";
 
 const BranchesContext = createContext<BranchesContextType | undefined>(undefined);
 
-/**
- * BranchesProvider manages the organizational hierarchy of corporate branches.
- * It facilitates the creation and updating of branch-level metadata, ensuring 
- * that geographical and tax-specific data is correctly synchronized.
- */
 export function BranchesProvider({ children }: { children: React.ReactNode }) {
   const createBranchAction = async (
     prevState: ActionState,
@@ -20,25 +15,28 @@ export function BranchesProvider({ children }: { children: React.ReactNode }) {
     if (formData.has("_reset")) return initialState;
 
     try {
-      const payload: BranchCreate = {
+      const payload: UnitCreate = {
         name: String(formData.get("name")),
-        state: String(formData.get("state") || ""),
-        gst_number: String(formData.get("gst_number") || ""),
-        address: String(formData.get("address") || ""),
+        state: String(formData.get("state") || "") || null,
+        gstin: String(formData.get("gstin") || "") || null,
+        address: String(formData.get("address") || "") || null,
+        contact_person_name: String(formData.get("contact_person_name") || "") || null,
+        contact_person_email: String(formData.get("contact_person_email") || "") || null,
+        contact_person_phone: String(formData.get("contact_person_phone") || "") || null,
         is_active: true,
       };
 
-      const newBranch = await apiClient.createBranch(payload);
-      
+      const newUnit = await apiClient.createUnit(payload);
+
       return {
         success: true,
         data: {
           ...Object.fromEntries(formData.entries()),
-          id: newBranch.id,
+          id: newUnit.id,
         },
       };
     } catch (err: any) {
-      return { error: err.message || "Failed to create branch" };
+      return { error: err.message || "Failed to create unit" };
     }
   };
 
@@ -50,18 +48,21 @@ export function BranchesProvider({ children }: { children: React.ReactNode }) {
 
     try {
       const id = Number(formData.get("id"));
-      const payload: BranchUpdate = {
+      const payload: UnitUpdate = {
         name: String(formData.get("name")),
-        state: String(formData.get("state") || ""),
-        gst_number: String(formData.get("gst_number") || ""),
-        address: String(formData.get("address") || ""),
+        state: String(formData.get("state") || "") || null,
+        gstin: String(formData.get("gstin") || "") || null,
+        address: String(formData.get("address") || "") || null,
+        contact_person_name: String(formData.get("contact_person_name") || "") || null,
+        contact_person_email: String(formData.get("contact_person_email") || "") || null,
+        contact_person_phone: String(formData.get("contact_person_phone") || "") || null,
       };
 
-      await apiClient.updateBranch(id, payload);
+      await apiClient.updateUnit(id, payload);
 
       return { success: true };
     } catch (err: any) {
-      return { error: err.message || "Failed to update branch" };
+      return { error: err.message || "Failed to update unit" };
     }
   };
 

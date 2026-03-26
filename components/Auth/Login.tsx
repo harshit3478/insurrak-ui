@@ -1,135 +1,162 @@
 "use client";
-import Link from "next/link";
 import { useState } from "react";
 import { useAuth } from "@/context-provider/AuthProvider";
-import { Eye, EyeOff, ShieldCheck } from "lucide-react";
+import { Mail, ArrowLeft, ShieldCheck } from "lucide-react";
 import InputGroup from "../ui-elements/FormElements/InputGroup";
 
-interface LogInProps {
-  systemMode?: boolean;
-}
+const inputClasses =
+  "w-full px-4 py-3.5 bg-gray-100 border-none rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C6F200] focus:bg-white transition-all duration-200";
 
-export default function LogIn({ systemMode = false }: LogInProps) {
-  const { loginState, login, isLoginPending } = useAuth();
-  // const router = useRouter();
-  const [showPassword, setShowPassword] = useState(false);
+export default function LogIn() {
+  const { requestOtp, login, loginState, isLoginPending } = useAuth();
 
-  //   useEffect(() => {
-  //   if (loginState.success) {
-  //     router.replace("/dashboard");
-  //   }
-  // }, [loginState.success]);
-  // const [data, setData] = useState({
-  //   email: process.env.NEXT_PUBLIC_DEMO_USER_MAIL || "",
-  //   password: process.env.NEXT_PUBLIC_DEMO_USER_PASS || "",
-  //   remember: false,
-  // });
+  const [step, setStep] = useState<"email" | "otp">("email");
+  const [email, setEmail] = useState(
+    process.env.NODE_ENV === "development" ? "superadmin@example.com" : "",
+  );
+  const [otpError, setOtpError] = useState<string | undefined>();
+  const [isSending, setIsSending] = useState(false);
 
-  const inputClasses =
-    "w-full px-4 py-3.5 bg-gray-100 border-none rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C6F200] focus:bg-white transition-all duration-200 dark:bg-form-input dark:text-gray-900 dark:focus:text-white dark:focus:bg-gray-dark";
+  const handleEmailSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSending(true);
+    setOtpError(undefined);
+    const result = await requestOtp(email);
+    setIsSending(false);
+    if (result.error) {
+      setOtpError(result.error);
+    } else {
+      setStep("otp");
+    }
+  };
 
+  if (step === "email") {
+    return (
+      <div className="space-y-8">
+        <div className="space-y-2">
+          <h2 className="text-3xl font-bold text-white tracking-tight">
+            Welcome
+          </h2>
+          <p className="text-gray-500 text-sm">
+            Enter your email to receive a one-time login code
+          </p>
+        </div>
+
+        <form onSubmit={handleEmailSubmit} className="space-y-6 mt-8">
+          {otpError && (
+            <div className="bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded text-sm">
+              {otpError}
+            </div>
+          )}
+
+          <InputGroup
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            required
+            placeholder="Email Address"
+            inputClassName={inputClasses}
+            className="mt-0! mb-0!"
+            value={email}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setEmail(e.target.value)
+            }
+            endIcon={<Mail className="h-5 w-5 text-gray-400" />}
+          />
+
+          <button
+            type="submit"
+            disabled={isSending || !email}
+            className="w-full flex justify-center py-3 px-4 mt-5 rounded-full text-sm font-semibold text-black bg-[#C6F200] hover:bg-[#b0d600] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSending ? (
+              <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-solid border-black border-t-transparent" />
+            ) : (
+              "Send Code"
+            )}
+          </button>
+        </form>
+      </div>
+    );
+  }
+
+  // Step 2: OTP entry
   return (
     <div className="space-y-8">
       <div className="space-y-2">
-        <h2 className="text-3xl font-bold text-gray-900 tracking-tight dark:text-white">
-          {systemMode ? "System Login" : "Welcome"}
-        </h2>
-        <p className="text-gray-500 text-sm dark:text-dark-6">
-          {systemMode
-            ? "Sign in with system account credentials"
-            : "Enter your login details to continue"}
+        <div className="flex items-center gap-2 mb-1">
+          <ShieldCheck className="w-6 h-6 text-[#C6F200]" />
+          <h2 className="text-3xl font-bold text-gray-800 tracking-tight">
+            Check your email
+          </h2>
+        </div>
+        <p className="text-gray-500 text-sm">
+          We sent a 6-digit code to{" "}
+          <span className="font-medium text-gray-400">{email}</span>
         </p>
       </div>
 
       <form action={login} className="space-y-6 mt-8">
-        <input
-          type="hidden"
-          name="system_login"
-          value={systemMode ? "true" : "false"}
-        />
-        {loginState.error && (
-          <div className="bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded">
-            {loginState.error}
+        {/* Pass email as hidden field so the form action can read it */}
+        <input type="hidden" name="email" value={email} />
+
+        {(loginState.error || otpError) && (
+          <div className="bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded text-sm">
+            {loginState.error || otpError}
           </div>
         )}
-        <div className="space-y-4">
-          <InputGroup
-            id="username"
-            name="username"
-            type="text"
-            autoComplete="username"
-            required
-            placeholder="Username"
-            inputClassName={inputClasses}
-            className="mt-0! mb-0!"
-          />
 
-          <InputGroup
-            id="password"
-            name="password"
-            type={showPassword ? "text" : "password"}
-            autoComplete="current-password"
-            required
-            placeholder="Password"
-            inputClassName={`${inputClasses} pr-12`}
-            className="mt-0! mb-0!"
-            endIcon={
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="text-gray-400 hover:text-gray-600 focus:outline-none"
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? (
-                  <EyeOff className="h-5 w-5" />
-                ) : (
-                  <Eye className="h-5 w-5" />
-                )}
-              </button>
-            }
-          />
-        </div>
+        <InputGroup
+          id="otp"
+          name="otp"
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]{6}"
+          maxLength={6}
+          autoComplete="one-time-code"
+          required
+          placeholder="000000"
+          inputClassName={`${inputClasses} text-center text-2xl tracking-[0.5em] font-mono`}
+          className="mt-0! mb-0!"
+          autoFocus
+        />
 
-        <div className="flex items-center justify-end">
-          <Link
-            href="/auth/forgot-password"
-            className="text-sm font-medium text-primary hover:underline"
-          >
-            Forgot Password?
-          </Link>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <button
-            type="submit"
-            disabled={isLoginPending}
-            className="w-24 flex justify-center py-3 px-4 border border-transparent rounded-full shadow-sm text-sm font-semibold text-black bg-[#C6F200] hover:bg-[#b0d600] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#C6F200] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoginPending ? (
-              <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-solid border-black border-t-transparent" />
-            ) : (
-              "Log In"
-            )}
-          </button>
-          {systemMode ? (
-            <p className="text-sm text-gray-500 dark:text-dark-6">
-              Use normal user login?{" "}
-              <Link
-                href="/auth/login"
-                className="font-medium text-primary hover:underline"
-              >
-                Back to Login
-              </Link>
-            </p>
+        <button
+          type="submit"
+          disabled={isLoginPending}
+          className="w-full flex justify-center py-3 px-4 mt-5 rounded-full text-sm font-semibold text-black bg-[#C6F200] hover:bg-[#b0d600] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isLoginPending ? (
+            <span className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-solid border-black border-t-transparent" />
           ) : (
-            <Link
-              href="/auth/system-login"
-              className="inline-flex items-center gap-2 rounded-full border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 dark:border-dark-3 dark:text-dark-7 dark:hover:bg-dark-2"
-            >
-              <ShieldCheck className="h-4 w-4" />
-              Login as System
-            </Link>
+            "Verify & Sign In"
           )}
+        </button>
+
+        <div className="flex items-center justify-between text-sm">
+          <button
+            type="button"
+            onClick={() => {
+              setStep("email");
+              setOtpError(undefined);
+            }}
+            className="flex items-center gap-1 text-gray-500 hover:text-gray-700"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Change email
+          </button>
+          <button
+            type="button"
+            onClick={async () => {
+              setOtpError(undefined);
+              const result = await requestOtp(email);
+              if (result.error) setOtpError(result.error);
+            }}
+            className="text-gray-500 hover:text-gray-700"
+          >
+            Resend code
+          </button>
         </div>
       </form>
     </div>

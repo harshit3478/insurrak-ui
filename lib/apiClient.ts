@@ -7,9 +7,6 @@ import {
   RoleRead,
   RoleCreateIn,
   RoleUpdateIn,
-  BranchRead,
-  BranchCreate,
-  BranchUpdate,
   UnitRead,
   UnitCreate,
   UnitUpdate,
@@ -34,19 +31,17 @@ import { adaptUser, adaptCompany, adaptPolicy } from "@/lib/adapters";
  * authentication headers, error orchestration, and data transformation
  * between the wire and the application's domain models.
  */
-const API_BASE_URL = "/api/v1";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api/v1";
 
 export const API_ENDPOINTS = {
-  LOGIN: "/auth/login",
-  SYSTEM_LOGIN: "/auth/login",
+  REQUEST_OTP: "/auth/request-otp",
+  VERIFY_OTP: "/auth/verify-otp",
   LOGOUT: "/auth/logout",
-  UPDATE_PASSWORD: "/auth/update-password",
   ME: "/users/me",
   ROLES_PERMISSIONS: "/users/roles-permissions",
   COMPANIES: "/companies",
   USERS: "/users",
   USER_STATUS: "/users",
-  BRANCHES: "/branches",
   UNITS: "/units",
   BROKERS: "/brokers",
   INSURERS: "/insurers",
@@ -64,6 +59,17 @@ const getHeaders = () => {
   };
 };
 
+/** Clear auth and redirect to login on 401/403 responses. */
+const handleAuthError = (response: Response) => {
+  if (response.status === 401 || response.status === 403) {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("token");
+      localStorage.removeItem("insurrack_auth");
+      window.location.href = "/auth/login";
+    }
+  }
+};
+
 const api = {
   get: async (endpoint: string) => {
     try {
@@ -76,8 +82,10 @@ const api = {
         },
         cache: "no-store",
       });
-      if (!response.ok)
+      if (!response.ok) {
+        handleAuthError(response);
         throw new Error(`GET ${endpoint} failed: ${response.statusText}`);
+      }
       return await response.json();
     } catch (error) {
       console.error("API Error:", error);
@@ -93,6 +101,7 @@ const api = {
         body: JSON.stringify(data),
       });
       if (!response.ok) {
+        handleAuthError(response);
         const err = await response.json().catch(() => ({}));
         throw new Error(
           err.detail
@@ -115,6 +124,7 @@ const api = {
         body: JSON.stringify(data),
       });
       if (!response.ok) {
+        handleAuthError(response);
         const err = await response.json().catch(() => ({}));
         throw new Error(
           err.detail
@@ -135,8 +145,10 @@ const api = {
         method: "DELETE",
         headers: getHeaders(),
       });
-      if (!response.ok)
+      if (!response.ok) {
+        handleAuthError(response);
         throw new Error(`DELETE ${endpoint} failed: ${response.statusText}`);
+      }
       // Handle 204 No Content
       return response.status === 204
         ? { success: true }
@@ -150,45 +162,24 @@ const api = {
 
 export const apiClient = {
   // ─── Auth Methods ──────────────────────────────────────────
-  login: async (credentials: {
-    username: string;
-    password: string;
-  }): Promise<Token> => {
-    // The FastAPI backend strictly expects a JSON dictionary, not URL-encoded Form Data.
-    return api.post(API_ENDPOINTS.LOGIN, {
-      username: credentials.username,
-      password: credentials.password,
-      keep_login: true,
-      system_login: false,
-    });
+  requestOtp: async (email: string): Promise<{ message: string }> => {
+    return api.post(API_ENDPOINTS.REQUEST_OTP, { email });
   },
 
-  systemLogin: async (credentials: {
-    username: string;
-    password: string;
+  verifyOtp: async (credentials: {
+    email: string;
+    otp: string;
+    keep_login?: boolean;
   }): Promise<Token> => {
-    return api.post(API_ENDPOINTS.SYSTEM_LOGIN, {
-      username: credentials.username,
-      password: credentials.password,
-      keep_login: true,
-      system_login: true,
+    return api.post(API_ENDPOINTS.VERIFY_OTP, {
+      email: credentials.email,
+      otp: credentials.otp,
+      keep_login: credentials.keep_login ?? true,
     });
-  },
-
-  signup: async (_data: { name: string; email: string; password: string }) => {
-    // Note: Public registration is currently restricted at the API level.
-    console.warn(
-      "Direct signup is restricted. Users must be onboarded via administrative tools.",
-    );
-    return { success: false, detail: "Signup not supported" };
   },
 
   logout: async () => {
     return { success: true };
-  },
-
-  updatePassword: async (token: string, new_password: string) => {
-    return api.post(API_ENDPOINTS.UPDATE_PASSWORD, { token, new_password });
   },
 
   getCurrentUser: async (): Promise<User> => {
@@ -326,23 +317,22 @@ export const apiClient = {
   },
 
   createCompany: async (
-    data: Omit<Company, "id" | "status"> & {
-      adminPassword: string;
-      adminDesignation?: string;
+    data: {
+      name: string;
+      adminEmail: string;
     },
   ): Promise<Company> => {
-    // We must pass superadmin details as per the schema.
+    const username = data.adminEmail.split("@")[0] || "admin";
     const payload = {
       name: data.name,
-      email: data.email || data.adminEmail || null,
-      mobile_number: data.mobile_number || null,
-      address: data.address || null,
-      gst_number: data.gst_number || null,
+      email: data.adminEmail,
+      mobile_number: null,
+      address: null,
+      gst_number: null,
       is_active: true,
-      superadmin_username: data.admin || "admin",
-      superadmin_email: data.adminEmail || "admin@example.com",
-      superadmin_password: data.adminPassword,
-      superadmin_designation: data.adminDesignation || null,
+      superadmin_username: username,
+      superadmin_email: data.adminEmail,
+      superadmin_designation: null,
     };
     const comp: CompanyRead = await api.post(API_ENDPOINTS.COMPANIES, payload);
     return adaptCompany(comp);
@@ -356,7 +346,8 @@ export const apiClient = {
     if (data.name !== undefined) payload.name = data.name;
     if (data.email !== undefined || data.adminEmail !== undefined)
       payload.email = data.email || data.adminEmail || null;
-    if (data.status !== undefined) payload.is_active = data.status === "Active";
+    if (data.is_active !== undefined) payload.is_active = data.is_active;
+    else if (data.status !== undefined) payload.is_active = data.status === "Active";
     if (data.mobile_number !== undefined)
       payload.mobile_number = data.mobile_number || null;
     if (data.address !== undefined) payload.address = data.address || null;
@@ -370,52 +361,37 @@ export const apiClient = {
   },
 
   deleteCompany: async (id: number): Promise<{ success: boolean }> => {
-    // Soft delete via is_active
-    await api.patch(`${API_ENDPOINTS.COMPANIES}/${id}`, { is_active: false });
+    await api.delete(`${API_ENDPOINTS.COMPANIES}/${id}`);
     return { success: true };
   },
 
-  // ─── Branches & Units ─────────────────────────────────────────────
-  getAllBranches: async (companyId?: number): Promise<BranchRead[]> => {
-    // NOTE: The backend /branches endpoint doesn't accept company_id as a query param.
-    // It returns branches for the authenticated user's company. companyId param is kept
-    // for compatibility but not sent to avoid unexpected behavior.
-    return api.get(API_ENDPOINTS.BRANCHES);
+  // ─── System admin: company units + unit detail ────────────────────
+  getCompanyUnits: async (companyId: number): Promise<UnitRead[]> => {
+    return api.get(`${API_ENDPOINTS.COMPANIES}/${companyId}/units`);
   },
-  getBranchById: async (branchId: number): Promise<BranchRead> => {
-    return api.get(`${API_ENDPOINTS.BRANCHES}/${branchId}`);
+  getUnitPolicies: async (unitId: number): Promise<import("@/types/api").PolicyRequestRead[]> => {
+    return api.get(`${API_ENDPOINTS.UNITS}/${unitId}/policies`);
   },
-  createBranch: async (data: BranchCreate): Promise<BranchRead> => {
-    return api.post(API_ENDPOINTS.BRANCHES, data);
+  getUnitClaims: async (unitId: number): Promise<import("@/types/api").ClaimRead[]> => {
+    return api.get(`${API_ENDPOINTS.UNITS}/${unitId}/claims`);
   },
-  updateBranch: async (
-    branchId: number,
-    data: BranchUpdate,
-  ): Promise<BranchRead> => {
-    return api.patch(`${API_ENDPOINTS.BRANCHES}/${branchId}`, data);
-  },
-  getUnitsByBranch: async (branchId: number): Promise<UnitRead[]> => {
-    return api.get(`${API_ENDPOINTS.BRANCHES}/${branchId}/units`);
-  },
-  createUnitForBranch: async (
-    branchId: number,
-    data: Omit<UnitCreate, "branch_id">,
-  ): Promise<UnitRead> => {
-    return api.post(`${API_ENDPOINTS.BRANCHES}/${branchId}/units`, data);
-  },
-  // Standalone unit creation (POST /api/v1/units)
-  createUnit: async (data: UnitCreate): Promise<UnitRead> => {
-    return api.post(API_ENDPOINTS.UNITS, data);
-  },
-  getAllUnits: async (companyId?: number): Promise<UnitRead[]> => {
-    const query = companyId ? `?company_id=${companyId}` : "";
-    return api.get(`${API_ENDPOINTS.UNITS}${query}`);
+
+  // ─── Units ────────────────────────────────────────────────────────
+  getAllUnits: async (): Promise<UnitRead[]> => {
+    return api.get(API_ENDPOINTS.UNITS);
   },
   getUnitById: async (unitId: number): Promise<UnitRead> => {
     return api.get(`${API_ENDPOINTS.UNITS}/${unitId}`);
   },
+  createUnit: async (data: UnitCreate): Promise<UnitRead> => {
+    return api.post(API_ENDPOINTS.UNITS, data);
+  },
   updateUnit: async (unitId: number, data: UnitUpdate): Promise<UnitRead> => {
     return api.patch(`${API_ENDPOINTS.UNITS}/${unitId}`, data);
+  },
+  deleteUnit: async (unitId: number): Promise<{ success: boolean }> => {
+    await api.delete(`${API_ENDPOINTS.UNITS}/${unitId}`);
+    return { success: true };
   },
 
   // ─── Masters (Brokers/Insurers) ────────────────────────────────────
@@ -669,5 +645,29 @@ export const apiClient = {
     close: async (id: number): Promise<import("@/types/api").ClaimRead> => {
       return api.post(`${API_ENDPOINTS.CLAIMS}/${id}/close`, {});
     },
+  },
+
+  // ─── File Upload (Cloudflare R2) ─────────────────────────────────
+  getPresignedUrl: async (data: {
+    file_name: string;
+    content_type: string;
+    folder?: string;
+  }): Promise<{ upload_url: string; public_url: string }> => {
+    return api.post("/files/presign", data);
+  },
+
+  extractQuotationFromPdf: async (fileUrl: string): Promise<{
+    premium: number | null;
+    gst: number | null;
+    total_premium: number | null;
+    perils_included: string | null;
+    perils_excluded: string | null;
+    deductibles: string | null;
+    exclusions: string | null;
+    warranties: string | null;
+    co_insurance: string | null;
+    special_conditions: string | null;
+  }> => {
+    return api.post("/files/extract-quotation", { file_url: fileUrl });
   },
 };

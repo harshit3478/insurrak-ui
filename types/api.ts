@@ -15,6 +15,7 @@ export interface UserRead {
   role_id: number;
   role_name?: string;
   permission_ids?: number[];
+  company_name?: string;
 }
 
 export interface CompanyRead {
@@ -25,31 +26,23 @@ export interface CompanyRead {
   mobile_number: string | null;
   address: string | null;
   gst_number: string | null;
-}
-
-export interface BranchRead {
-  id: number;
-  company_id: number;
-  name: string;
-  is_active: boolean;
-  address: string | null;
-  state: string | null;
-  gst_number: string | null;
+  unit_count?: number;
 }
 
 export interface UnitRead {
   id: number;
-  branch_id: number;
+  company_id: number;
   name: string;
   is_active: boolean;
+  state: string | null;
   address: string | null;
-  occupancy?: string | null;
-  hazard_details?: string | null;
-  gstin?: string | null;
-  gst_certificate_path?: string | null; // present in UnitUpdate schema
-  contact_person_name?: string | null;
-  contact_person_email?: string | null;
-  contact_person_phone?: string | null;
+  occupancy: string | null;
+  hazard_details: string | null;
+  gstin: string | null;
+  gst_certificate_path: string | null;
+  contact_person_name: string | null;
+  contact_person_email: string | null;
+  contact_person_phone: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -81,16 +74,19 @@ export interface PolicyRequestRead {
   id: number;
   company_id: number;
   unit_id: number;
-  broker_id: number;
+  broker_id: number | null;
   requested_by_id: number;
   line_of_business: string;
   status: string; // e.g. "DATA_COLLECTION", "QUOTING", "APPROVAL_PENDING", etc.
   asset_description: string | null;
   policy_number: string | null;
   sum_insured: number | null;
+  premium: number | null;
   policy_start_date: string | null;
   policy_end_date: string | null;
   notes: string | null;
+  renewal_of_policy_id: number | null;
+  unit_name: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -200,25 +196,10 @@ export interface RolesAndPermissionsResponse {
 
 // ─── Create / Update Payloads ───────────────────────────────────────
 
-export interface BranchCreate {
-  name: string;
-  is_active?: boolean;
-  address?: string | null;
-  state?: string | null;
-  gst_number?: string | null;
-}
-
-export interface BranchUpdate {
-  name?: string;
-  is_active?: boolean;
-  address?: string | null;
-  state?: string | null;
-  gst_number?: string | null;
-}
-
 export interface UnitCreate {
-  branch_id: number;
   name: string;
+  is_active?: boolean;
+  state?: string | null;
   address?: string | null;
   occupancy?: string | null;
   hazard_details?: string | null;
@@ -231,6 +212,8 @@ export interface UnitCreate {
 
 export interface UnitUpdate {
   name?: string | null;
+  is_active?: boolean | null;
+  state?: string | null;
   address?: string | null;
   occupancy?: string | null;
   hazard_details?: string | null;
@@ -239,16 +222,20 @@ export interface UnitUpdate {
   contact_person_name?: string | null;
   contact_person_email?: string | null;
   contact_person_phone?: string | null;
-  is_active?: boolean | null;
 }
 
 export interface PolicyRequestCreate {
   company_id: number;
   unit_id: number;
-  broker_id: number;
+  broker_id?: number | null;
   line_of_business: string;
   asset_description?: string | null;
   notes?: string | null;
+  sum_insured?: number | null;
+  premium?: number | null;
+  policy_start_date?: string | null;
+  policy_end_date?: string | null;
+  renewal_of_policy_id?: number | null;
 }
 
 export interface PolicyRequestUpdate {

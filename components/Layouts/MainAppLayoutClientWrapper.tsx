@@ -4,6 +4,7 @@ import { Header } from "@/components/Layouts/header/Header";
 import { Sidebar } from "@/components/Layouts/sidebar/Sidebar";
 import { useSidebarContext } from "@/components/Layouts/sidebar/sidebar-context";
 import { cn } from "@/lib/utils";
+import { OnboardingTour } from "@/components/ui/OnboardingTour";
 
 export function MainAppLayoutClientWrapper({
   children,
@@ -14,6 +15,7 @@ export function MainAppLayoutClientWrapper({
 
   return (
     <div className="min-h-screen">
+      <OnboardingTour />
       <Sidebar />
       <div
         className={cn(

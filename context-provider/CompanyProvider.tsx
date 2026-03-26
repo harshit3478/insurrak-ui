@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useActionState } from "react";
+import { createContext, useContext, useState } from "react";
 import { Company, CompaniesContextType } from "@/types";
 import { apiClient } from "@/lib/apiClient";
 import { store } from "@/lib/store";
@@ -25,55 +25,21 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
     useState<CompanyActionState>(initialState);
   const [isCreating, setIsCreating] = useState(false);
 
-  const createCompany = async (formData: FormData) => {
+  const createCompany = async (data: { name: string; adminEmail: string }) => {
     setIsCreating(true);
     setCreateState({});
     try {
-      const name = String(formData.get("name") || "").trim();
-      const email = String(formData.get("email") || "").trim();
-      const adminUsername = String(formData.get("admin") || "").trim();
-      const adminEmail = String(formData.get("adminEmail") || "").trim();
-      const adminPassword = String(formData.get("adminPassword") || "").trim();
-
-      if (!name || !email || !adminUsername || !adminEmail || !adminPassword) {
-        setCreateState({
-          error:
-            "Please fill required fields: company name, company email, admin username, admin email, and admin password.",
-        });
-        return;
-      }
-
-      // Use the dedicated backend company onboarding endpoint.
-      let company = await apiClient.createCompany({
-        name,
-        companyId: String(formData.get("companyId") || ""),
-        admin: adminUsername,
-        adminEmail,
-        adminPassword,
-        branches: String(formData.get("branches") || "0"),
-        activePolicies: String(formData.get("activePolicies") || "0"),
-        email,
-        mobile_number: String(formData.get("mobile_number") || ""),
-        address: String(formData.get("address") || ""),
-        gst_number: String(formData.get("gst_number") || ""),
-        adminDesignation: String(formData.get("adminDesignation") || ""),
+      const company = await apiClient.createCompany({
+        name: data.name,
+        adminEmail: data.adminEmail,
       });
-
-      // Keep frontend-only fields for table view.
-      company = {
-        ...company,
-        companyId: String(formData.get("companyId")),
-        admin: adminUsername,
-        adminEmail,
-        branches: String(formData.get("branches")),
-        activePolicies: String(formData.get("activePolicies")),
-      };
 
       store.dispatch(addCompany(company));
       setCreateState({
         success: true,
         data: {
-          ...Object.fromEntries(formData.entries()),
+          name: data.name,
+          adminEmail: data.adminEmail,
           assignedCompanyId: `COM${String(company.id).padStart(8, "0")}`,
         },
       });
@@ -86,42 +52,38 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const resetCreateState = () => setCreateState(initialState);
+
   /* ================= UPDATE COMPANY ================= */
   const [updateState, setUpdateState] =
     useState<CompanyActionState>(initialState);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const updateCompany = (companyId: number) => async (formData: FormData) => {
-    setIsUpdating(true);
-    setUpdateState({});
-    try {
-      let updatedCompany = await apiClient.updateCompany(companyId, {
-        name: String(formData.get("name")),
-        email: String(formData.get("email") || ""),
-        mobile_number: String(formData.get("mobile_number") || ""),
-        address: String(formData.get("address") || ""),
-        gst_number: String(formData.get("gst_number") || ""),
-      });
+  const updateCompany =
+    (companyId: number) => async (data: Partial<Company>) => {
+      setIsUpdating(true);
+      setUpdateState({});
+      try {
+        const updatedCompany = await apiClient.updateCompany(companyId, {
+          name: data.name,
+          email: data.email,
+          mobile_number: data.mobile_number,
+          address: data.address,
+          gst_number: data.gst_number,
+        });
 
-      updatedCompany = {
-        ...updatedCompany,
-        companyId: String(formData.get("companyId")),
-        admin: String(formData.get("admin")),
-        adminEmail: String(formData.get("adminEmail")),
-        branches: String(formData.get("branches")),
-        activePolicies: String(formData.get("activePolicies")),
-      };
+        store.dispatch(updateCompanyInStore(updatedCompany));
+        setUpdateState({ success: true, data: updatedCompany });
+      } catch (err: unknown) {
+        const msg =
+          err instanceof Error ? err.message : "Failed to update company";
+        setUpdateState({ error: msg });
+      } finally {
+        setIsUpdating(false);
+      }
+    };
 
-      store.dispatch(updateCompanyInStore(updatedCompany));
-      setUpdateState({ success: true, data: updatedCompany });
-    } catch (err: unknown) {
-      const msg =
-        err instanceof Error ? err.message : "Failed to update company";
-      setUpdateState({ error: msg });
-    } finally {
-      setIsUpdating(false);
-    }
-  };
+  const resetUpdateState = () => setUpdateState(initialState);
 
   return (
     <CompanyContext.Provider
@@ -132,6 +94,8 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
         updateState,
         isCreating,
         isUpdating,
+        resetCreateState,
+        resetUpdateState,
       }}
     >
       {children}

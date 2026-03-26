@@ -3,10 +3,9 @@ import {
   Bell,
   ShieldCheck,
   ClipboardList,
-  Settings,
   UserRound,
   LogOut,
-  Users,
+  GitBranch,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { isBypassActive } from "@/types/permissions";
@@ -84,16 +83,6 @@ export function getNavData(
             url: "/notifications",
           },
           {
-            title: "View Profile",
-            icon: UserRound,
-            url: "/profile",
-          },
-          {
-            title: "Account Settings",
-            icon: Settings,
-            url: "/settings",
-          },
-          {
             title: "Logout",
             icon: LogOut,
             url: "/auth/logout",
@@ -128,21 +117,15 @@ export function getNavData(
       label: "COMPANY",
       items: [
         {
-          title: "User Management",
-          icon: Users,
-          url: "/company/users",
-          allowedRoles: ["COMPANY_ADMIN", "BRANCH_ADMIN"],
-        },
-        {
-          title: "Company Management",
-          icon: Building2,
-          url: "/company/company-management",
+          title: "Dashboard",
+          icon: ShieldCheck,
+          url: "/company/policies",
           allowedRoles: ["COMPANY_ADMIN", "BRANCH_ADMIN", "COMPANY_USER"],
         },
         {
-          title: "Policy Management",
-          icon: ShieldCheck,
-          url: "/company/policies",
+          title: "Units / Branches",
+          icon: GitBranch,
+          url: "/branches",
           allowedRoles: ["COMPANY_ADMIN", "BRANCH_ADMIN", "COMPANY_USER"],
         },
         {
@@ -152,13 +135,7 @@ export function getNavData(
           allowedRoles: ["COMPANY_ADMIN", "BRANCH_ADMIN", "COMPANY_USER"],
         },
         {
-          title: "Company Setting",
-          icon: Settings,
-          url: "/company/settings",
-          allowedRoles: ["COMPANY_ADMIN", "BRANCH_ADMIN", "COMPANY_USER"],
-        },
-        {
-          title: "Profile Setting",
+          title: "View Profile",
           icon: UserRound,
           url: "/company/profile",
           allowedRoles: ["COMPANY_ADMIN", "BRANCH_ADMIN", "COMPANY_USER"],
@@ -172,18 +149,6 @@ export function getNavData(
           title: "Notifications",
           icon: Bell,
           url: "/notifications",
-          allowedRoles: ["COMPANY_ADMIN", "BRANCH_ADMIN", "COMPANY_USER"],
-        },
-        {
-          title: "View Profile",
-          icon: UserRound,
-          url: "/profile",
-          allowedRoles: ["COMPANY_ADMIN", "BRANCH_ADMIN", "COMPANY_USER"],
-        },
-        {
-          title: "Account Settings",
-          icon: Settings,
-          url: "/settings",
           allowedRoles: ["COMPANY_ADMIN", "BRANCH_ADMIN", "COMPANY_USER"],
         },
         {

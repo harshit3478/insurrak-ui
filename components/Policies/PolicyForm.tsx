@@ -6,13 +6,14 @@ import { FormSection, FormInput, FormTextarea } from "@/components/ui/FormCommon
 import { Select } from "@/components/ui-elements/FormElements/select";
 import { apiClient } from "@/lib/apiClient";
 import { Policy } from "@/types";
-import { CompanyRead, BranchRead, UnitRead, BrokerRead } from "@/types/api";
+import { UnitRead, PolicyRequestRead } from "@/types/api";
 
 type PolicyFormProps = {
   action: (formData: FormData) => void;
   pending: boolean;
   defaultValues?: Partial<Policy>;
   isEdit?: boolean;
+  defaultUnitId?: number;
 };
 
 const POLICY_TYPES = [
@@ -25,51 +26,31 @@ const POLICY_TYPES = [
   { label: "Miscellaneous", value: "Miscellaneous" },
 ];
 
-/**
- * PolicyForm provides a standardized interface for both creating and editing 
- * insurance policy requests. It handles dynamic data loading for companies, 
- * branches, and units, and manages complex form state for policy metadata.
- */
 export function PolicyForm({
   action,
   pending,
   defaultValues,
   isEdit = false,
+  defaultUnitId,
 }: PolicyFormProps) {
   const router = useRouter();
-  const [companies, setCompanies] = useState<CompanyRead[]>([]);
-  const [branches, setBranches] = useState<BranchRead[]>([]);
   const [units, setUnits] = useState<UnitRead[]>([]);
-  const [brokers, setBrokers] = useState<BrokerRead[]>([]);
-
-  const [selectedCompanyId, setSelectedCompanyId] = useState<string>(defaultValues?.companyId || "");
-  const [selectedBranchId, setSelectedBranchId] = useState<string>("");
+  const [selectedUnitId, setSelectedUnitId] = useState<string>(
+    defaultUnitId ? String(defaultUnitId) : ""
+  );
+  const [unitPolicies, setUnitPolicies] = useState<PolicyRequestRead[]>([]);
+  const [isRenewal, setIsRenewal] = useState(false);
 
   useEffect(() => {
-    const loadMasters = async () => {
-      try {
-        const [cData, bData, brData] = await Promise.all([
-          apiClient.getAllCompanies(),
-          apiClient.getAllBranches(),
-          apiClient.getAllBrokers(),
-        ]);
-        setCompanies(cData as any);
-        setBranches(bData);
-        setBrokers(brData);
-      } catch (err) {
-        console.error("Failed to load form masters:", err);
-      }
-    };
-    loadMasters();
+    apiClient.getAllUnits().then(setUnits).catch(console.error);
   }, []);
 
+  // Load existing policies for the selected unit (for renewal dropdown)
   useEffect(() => {
-    if (selectedBranchId) {
-      apiClient.getUnitsByBranch(Number(selectedBranchId)).then(setUnits).catch(console.error);
-    } else {
-      setUnits([]);
-    }
-  }, [selectedBranchId]);
+    const uid = defaultUnitId || (selectedUnitId ? Number(selectedUnitId) : null);
+    if (!uid || isEdit) return;
+    apiClient.getUnitPolicies(uid).then(setUnitPolicies).catch(console.error);
+  }, [selectedUnitId, defaultUnitId, isEdit]);
 
   return (
     <form action={action}>
@@ -77,38 +58,40 @@ export function PolicyForm({
         {isEdit && defaultValues?.id && (
           <input type="hidden" name="id" value={defaultValues.id} />
         )}
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <FormSection title="Core Information">
             {!isEdit && (
               <>
-                <Select
-                  label="Select Company*"
-                  name="company_id"
-                  items={companies.map(c => ({ label: c.name, value: String(c.id) }))}
-                  defaultValue={selectedCompanyId}
-                  placeholder="Choose Company"
-                  className="mb-4"
-                />
-                <Select
-                  label="Select Branch"
-                  name="branch_id"
-                  items={branches.map(b => ({ label: b.name, value: String(b.id) }))}
-                  defaultValue={selectedBranchId}
-                  placeholder="Choose Branch (Optional)"
-                  className="mb-4"
-                />
-                <Select
-                  label="Select Unit*"
-                  name="unit_id"
-                  items={units.map(u => ({ label: u.name, value: String(u.id) }))}
-                  defaultValue=""
-                  placeholder={selectedBranchId ? "Choose Unit" : "Select Branch First"}
-                  className="mb-4"
-                />
+                {defaultUnitId ? (
+                  <>
+                    <input type="hidden" name="unit_id" value={defaultUnitId} />
+                    <div className="mb-4">
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Unit</p>
+                      <p className="text-sm text-gray-900 dark:text-white px-4 py-3 bg-gray-50 dark:bg-dark-3 rounded-lg border border-gray-200 dark:border-dark-3">
+                        {units.find(u => u.id === defaultUnitId)?.name || `Unit #${defaultUnitId}`}
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Select Unit*</label>
+                    <select
+                      name="unit_id"
+                      value={selectedUnitId}
+                      onChange={(e) => { setSelectedUnitId(e.target.value); setIsRenewal(false); }}
+                      className="w-full appearance-none rounded-lg border border-stroke bg-transparent px-5.5 py-3 outline-none transition focus:border-primary dark:border-dark-3 dark:bg-dark-2 dark:focus:border-primary text-dark dark:text-white"
+                    >
+                      <option value="">Choose Unit</option>
+                      {units.map(u => (
+                        <option key={u.id} value={String(u.id)}>{u.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </>
             )}
-            
+
             <Select
               label="Line of Business*"
               name="line_of_business"
@@ -118,13 +101,34 @@ export function PolicyForm({
               className="mb-4"
             />
 
-            <Select
-              label="Select Broker*"
-              name="broker_id"
-              items={brokers.map(b => ({ label: b.name, value: String(b.id) }))}
-              defaultValue={defaultValues?.broker || ""}
-              placeholder="Choose Broker"
-            />
+            {/* Renewal section (create mode only) */}
+            {!isEdit && unitPolicies.length > 0 && (
+              <div className="mb-4 border border-gray-100 dark:border-dark-3 rounded-lg p-4 space-y-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isRenewal}
+                    onChange={(e) => { setIsRenewal(e.target.checked); }}
+                    className="w-4 h-4 rounded border-gray-300"
+                  />
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Renewing an existing policy?
+                  </span>
+                </label>
+                {isRenewal && (
+                  <Select
+                    label="Policy to renew"
+                    name="renewal_of_policy_id"
+                    items={unitPolicies.map(p => ({
+                      label: `${p.policy_number || "#" + p.id} — ${p.line_of_business} (${p.status.replace(/_/g, " ")})`,
+                      value: String(p.id),
+                    }))}
+                    defaultValue=""
+                    placeholder="Choose existing policy..."
+                  />
+                )}
+              </div>
+            )}
           </FormSection>
 
           <FormSection title="Policy Details">
@@ -133,19 +137,17 @@ export function PolicyForm({
               name="policy_number"
               defaultValue={defaultValues?.policyNumber}
               placeholder="TBD or Existing Number"
-              // Note: Initial policy requests typically do not have a policy number assigned yet.
-              disabled={!isEdit && false} 
             />
-            
+
             <div className="grid grid-cols-2 gap-4">
               <FormInput
-                label="Sum Insured (INR)"
+                label="Sum Insured (₹)"
                 name="sum_insured"
                 type="number"
                 defaultValue={defaultValues?.sumInsured}
               />
               <FormInput
-                label="Premium (INR)"
+                label="Premium (₹)"
                 name="premium"
                 type="number"
                 defaultValue={defaultValues?.premium}
@@ -170,7 +172,6 @@ export function PolicyForm({
             <FormTextarea
               label="Asset Description & Risk Details"
               name="asset_description"
-              defaultValue={defaultValues?.companyName} // Maps company name as a fallback for asset description in legacy contexts.
               placeholder="Describe the insured asset..."
               rows={3}
             />

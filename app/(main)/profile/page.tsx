@@ -119,8 +119,8 @@ export default function ProfilePage() {
               <Building className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Company ID</p>
-              <p className="mt-1 font-medium text-gray-900 dark:text-white">{user.companyId || 'Independent / Root'}</p>
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Company</p>
+              <p className="mt-1 font-medium text-gray-900 dark:text-white">{user.companyName || user.companyId || 'Independent / Root'}</p>
             </div>
           </div>
 

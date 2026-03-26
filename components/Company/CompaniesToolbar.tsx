@@ -1,5 +1,5 @@
 import React from "react";
-import { Search, Filter, Download, Plus } from "lucide-react";
+import { Search, Filter, Plus } from "lucide-react";
 
 interface CompaniesToolbarProps {
   onAddCompany?: () => void;
@@ -30,11 +30,9 @@ export const CompaniesToolbar: React.FC<CompaniesToolbarProps> = ({
         <button className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 dark:border-dark-3 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-2 transition-colors">
           <Filter className="w-4 h-4" /> Filters
         </button>
-        <button className="flex items-center gap-2 px-4 py-2.5 border border-gray-200 dark:border-dark-3 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-2 transition-colors">
-          <Download className="w-4 h-4" /> Export
-        </button>
         {canCreate && onAddCompany && (
           <button
+            data-tour="add-company-btn"
             onClick={onAddCompany}
             className="flex items-center gap-2 px-5 py-2.5 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-dark transition-colors shadow-sm"
           >

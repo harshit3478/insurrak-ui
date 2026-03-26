@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { cn } from "@/lib/utils";
 import {
   MoreVertical,
   ArrowDown,
-  Square,
-  CheckSquare,
   Eye,
   Edit,
+  PowerOff,
+  Power,
   Trash2,
 } from "lucide-react";
 import { Company } from "@/types";
@@ -19,25 +18,21 @@ interface CompaniesTableProps {
   onViewCompany: (id: number) => void;
   onEditCompany: (id: number) => void;
   onDeleteCompany: (id: number) => void;
+  onActivateCompany: (id: number) => void;
   canEdit?: boolean;
   canDelete?: boolean;
 }
 
-/**
- * CompaniesTable renders a sortable, selectable list of corporate entities.
- * It provides administrative actions for editing or deleting firms and
- * high-level metrics like active policies and status tracking.
- */
 export const CompaniesTable: React.FC<CompaniesTableProps> = ({
   companies,
   loading,
   onViewCompany,
   onEditCompany,
   onDeleteCompany,
+  onActivateCompany,
   canEdit = false,
   canDelete = false,
 }) => {
-  const [selectedCompanies, setSelectedCompanies] = useState<number[]>([]);
   const [openActionId, setOpenActionId] = useState<number | null>(null);
   const [menuRect, setMenuRect] = useState<DOMRect | null>(null);
 
@@ -51,14 +46,9 @@ export const CompaniesTable: React.FC<CompaniesTableProps> = ({
         setMenuRect(null);
       }
     };
-
     const handleScroll = () => {
-      if (openActionId) {
-        setOpenActionId(null);
-        setMenuRect(null);
-      }
+      if (openActionId) { setOpenActionId(null); setMenuRect(null); }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
     window.addEventListener("scroll", handleScroll, true);
     return () => {
@@ -66,20 +56,6 @@ export const CompaniesTable: React.FC<CompaniesTableProps> = ({
       window.removeEventListener("scroll", handleScroll, true);
     };
   }, [openActionId]);
-
-  const toggleSelect = (id: number) => {
-    setSelectedCompanies((prev) =>
-      prev.includes(id) ? prev.filter((uid) => uid !== id) : [...prev, id],
-    );
-  };
-
-  const toggleSelectAll = () => {
-    if (selectedCompanies.length === companies.length) {
-      setSelectedCompanies([]);
-    } else {
-      setSelectedCompanies(companies.map((u) => u.id));
-    }
-  };
 
   const handleActionClick = (e: React.MouseEvent, id: number) => {
     if (openActionId === id) {
@@ -91,15 +67,11 @@ export const CompaniesTable: React.FC<CompaniesTableProps> = ({
     }
   };
 
-  const headers = [
-    "Name",
-    "Company ID",
-    "Admin",
-    "Admin Email",
-    "Units/Branches",
-    "Active Policies",
-    "Status",
-  ];
+  // Filter out the system admin company (id === 1)
+  const visibleCompanies = companies.filter((c) => c.id !== 1);
+
+  const headers = ["Name", "Admin Email", "Units/Branches", "Active Policies", "Status"];
+  const colSpan = headers.length + 1; // headers + actions column
 
   return (
     <div className="border border-gray-100 dark:border-dark-3 rounded-lg">
@@ -107,19 +79,6 @@ export const CompaniesTable: React.FC<CompaniesTableProps> = ({
         <table className="w-full whitespace-nowrap xl:whitespace-normal">
           <thead className="bg-white dark:bg-gray-dark border-b border-gray-100 dark:border-dark-3">
             <tr>
-              <th className="py-4 px-6 text-left w-14">
-                <button
-                  onClick={toggleSelectAll}
-                  className="flex items-center justify-center text-gray-400 hover:text-gray-600"
-                >
-                  {selectedCompanies.length === companies.length &&
-                  companies.length > 0 ? (
-                    <CheckSquare className="w-5 h-5 text-primary" />
-                  ) : (
-                    <Square className="w-5 h-5" />
-                  )}
-                </button>
-              </th>
               {headers.map((header) => (
                 <th key={header} className="py-4 px-4 text-left">
                   <div className="flex items-center gap-1 text-xs font-medium text-gray-500 dark:text-dark-6 hover:text-gray-700 dark:hover:text-white cursor-pointer transition-colors">
@@ -127,52 +86,35 @@ export const CompaniesTable: React.FC<CompaniesTableProps> = ({
                   </div>
                 </th>
               ))}
-              <th className="py-4 px-6 text-right w-14"></th>
+              <th className="py-4 px-6 text-right w-14" />
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50 dark:divide-dark-3">
             {loading ? (
-              <SkeletonRows columns={9} rows={5} />
-            ) : companies.length === 0 ? (
+              <SkeletonRows columns={colSpan} rows={5} />
+            ) : visibleCompanies.length === 0 ? (
               <tr>
-                <td colSpan={9} className="py-8 text-center text-gray-500">
+                <td colSpan={colSpan} className="py-8 text-center text-gray-500">
                   No companies found.
                 </td>
               </tr>
             ) : (
-              companies.map((company, index) => (
+              visibleCompanies.map((company) => (
                 <tr
                   key={company.id}
-                  className="hover:bg-gray-50 dark:hover:bg-dark-2 transition-colors group"
+                  onDoubleClick={() => onViewCompany(company.id)}
+                  className="hover:bg-gray-50 dark:hover:bg-dark-2 transition-colors cursor-pointer select-none"
                 >
-                  <td className="py-4 px-6">
-                    <button
-                      onClick={() => toggleSelect(company.id)}
-                      className="flex items-center justify-center"
-                    >
-                      {selectedCompanies.includes(company.id) ? (
-                        <CheckSquare className="w-5 h-5 text-primary" />
-                      ) : (
-                        <Square className="w-5 h-5 text-gray-200 dark:text-gray-600 group-hover:text-gray-400 transition-colors" />
-                      )}
-                    </button>
-                  </td>
                   <td className="py-4 px-4">
                     <span className="text-sm font-semibold text-gray-900 dark:text-white">
                       {company.name}
                     </span>
                   </td>
                   <td className="py-4 px-4 text-sm text-gray-500 dark:text-dark-6 font-light">
-                    {company.companyId}
-                  </td>
-                  <td className="py-4 px-4 text-sm text-gray-500 dark:text-dark-6 font-light">
-                    {company.admin || "-"}
-                  </td>
-                  <td className="py-4 px-4 text-sm text-gray-500 dark:text-dark-6 font-light">
                     {company.adminEmail || "-"}
                   </td>
                   <td className="py-4 px-4 text-sm text-gray-500 dark:text-dark-6 font-light">
-                    {company.branches || "-"}
+                    {company.branches || "0"}
                   </td>
                   <td className="py-4 px-4 text-sm text-gray-500 dark:text-dark-6 font-light">
                     {company.activePolicies || "0"}
@@ -185,9 +127,7 @@ export const CompaniesTable: React.FC<CompaniesTableProps> = ({
                           : "bg-gray-100 text-gray-500"
                       }`}
                     >
-                      <span
-                        className={`w-1.5 h-1.5 rounded-full ${company.status === "Active" ? "bg-green-500" : "bg-gray-400"}`}
-                      ></span>
+                      <span className={`w-1.5 h-1.5 rounded-full ${company.status === "Active" ? "bg-green-500" : "bg-gray-400"}`} />
                       {company.status}
                     </span>
                   </td>
@@ -209,51 +149,65 @@ export const CompaniesTable: React.FC<CompaniesTableProps> = ({
                           onMouseDown={(e) => e.stopPropagation()}
                           style={{
                             position: "fixed",
-                            top:
-                              menuRect.bottom + 100 > window.innerHeight
-                                ? menuRect.top - 120
-                                : menuRect.bottom + 4,
+                            top: menuRect.bottom + 100 > window.innerHeight ? menuRect.top - 120 : menuRect.bottom + 4,
                             left: menuRect.left - 120,
                             zIndex: 9999,
                           }}
                           className="w-36 bg-gray-dark rounded-lg shadow-2xl border border-dark-3 overflow-hidden animate-in fade-in zoom-in-95 duration-100"
                         >
                           <button
-                            onClick={() => {
-                              setOpenActionId(null);
-                              onViewCompany(company.id);
-                            }}
+                            onClick={() => { setOpenActionId(null); onViewCompany(company.id); }}
                             className="w-full px-4 py-3 text-left text-sm text-gray-300 hover:bg-dark-2 hover:text-white flex items-center gap-3 transition-colors"
                           >
                             <Eye className="w-4 h-4" /> View
                           </button>
-                          {(canEdit || canDelete) && (
-                            <div className="h-px bg-dark-3/50 mx-2"></div>
-                          )}
-                          {canEdit && (
-                            <button
-                              onClick={() => {
-                                setOpenActionId(null);
-                                onEditCompany(company.id);
-                              }}
-                              className="w-full px-4 py-3 text-left text-sm text-gray-300 hover:bg-dark-2 hover:text-white flex items-center gap-3 transition-colors"
-                            >
-                              <Edit className="w-4 h-4" /> Edit
-                            </button>
-                          )}
-                          {canEdit && canDelete && (
-                            <div className="h-px bg-dark-3/50 mx-2"></div>
-                          )}
-                          {canDelete && (
-                            <button
-                              onClick={() => {
-                                setOpenActionId(null);
-                                onDeleteCompany(company.id);
-                              }}
-                              className="w-full px-4 py-3 text-left text-sm text-red-400 hover:bg-dark-2 hover:text-red-300 flex items-center gap-3 transition-colors"
-                            >
-                              <Trash2 className="w-4 h-4" /> Delete
-                            </button>
+
+                          {company.is_active ? (
+                            <>
+                              {canEdit && (
+                                <>
+                                  <div className="h-px bg-dark-3/50 mx-2" />
+                                  <button
+                                    onClick={() => { setOpenActionId(null); onEditCompany(company.id); }}
+                                    className="w-full px-4 py-3 text-left text-sm text-gray-300 hover:bg-dark-2 hover:text-white flex items-center gap-3 transition-colors"
+                                  >
+                                    <Edit className="w-4 h-4" /> Edit
+                                  </button>
+                                </>
+                              )}
+                              {canDelete && (
+                                <>
+                                  <div className="h-px bg-dark-3/50 mx-2" />
+                                  <button
+                                    onClick={() => { setOpenActionId(null); onDeleteCompany(company.id); }}
+                                    className="w-full px-4 py-3 text-left text-sm text-red-400 hover:bg-dark-2 hover:text-red-300 flex items-center gap-3 transition-colors"
+                                  >
+                                    <PowerOff className="w-4 h-4" /> Deactivate
+                                  </button>
+                                </>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              {canDelete && (
+                                <>
+                                  <div className="h-px bg-dark-3/50 mx-2" />
+                                  <button
+                                    onClick={() => { setOpenActionId(null); onActivateCompany(company.id); }}
+                                    className="w-full px-4 py-3 text-left text-sm text-green-400 hover:bg-dark-2 hover:text-green-300 flex items-center gap-3 transition-colors"
+                                  >
+                                    <Power className="w-4 h-4" /> Activate
+                                  </button>
+                                  <div className="h-px bg-dark-3/50 mx-2" />
+                                  <button
+                                    onClick={() => { setOpenActionId(null); onDeleteCompany(company.id); }}
+                                    className="w-full px-4 py-3 text-left text-sm text-red-400 hover:bg-dark-2 hover:text-red-300 flex items-center gap-3 transition-colors"
+                                  >
+                                    <Trash2 className="w-4 h-4" /> Delete
+                                  </button>
+                                </>
+                              )}
+                            </>
                           )}
                         </div>
                       </Portal>

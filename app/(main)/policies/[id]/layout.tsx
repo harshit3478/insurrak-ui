@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { apiClient } from "@/lib/apiClient";
-import { PolicyRequestRead, UnitRead, BrokerRead } from "@/types/api";
+import { PolicyRequestRead, UnitRead, BrokerRead, QuotationRead, InsurerRead } from "@/types/api";
 import { User } from "@/types";
-import { ChevronLeft, Check } from "lucide-react";
-import Link from "next/link";
+import { ChevronLeft, Check, Loader2, X, ArrowRight, AlertCircle, CheckCircle2, XCircle } from "lucide-react";
 import { Loading } from "@/components/ui/Loading";
+import { useAuth } from "@/context-provider/AuthProvider";
 
 /**
  * Policy lifecycle stages used for the horizontal progress stepper.
@@ -48,6 +48,24 @@ const getStatusDotColor = (status: string) => {
 };
 
 /**
+ * Contextual actions available at each workflow stage.
+ */
+type ActionConfig = { label: string; nextStatus: string; variant: "primary" | "success" | "danger" };
+const STATUS_ACTIONS: Partial<Record<string, ActionConfig[]>> = {
+  DRAFT: [{ label: "Start Data Collection", nextStatus: "DATA_COLLECTION", variant: "primary" }],
+  DATA_COLLECTION: [{ label: "Submit for Quoting", nextStatus: "QUOTING", variant: "primary" }],
+  QUOTING: [{ label: "Request Approval", nextStatus: "APPROVAL_PENDING", variant: "primary" }],
+  APPROVAL_PENDING: [
+    { label: "Approve", nextStatus: "APPROVED", variant: "success" },
+    { label: "Reject / Revise", nextStatus: "QUOTING", variant: "danger" },
+  ],
+  APPROVED: [{ label: "Mark Payment Pending", nextStatus: "PAYMENT_PENDING", variant: "primary" }],
+};
+
+const CLAIM_ELIGIBLE_STATUSES = ["RISK_HELD", "POLICY_ISSUED_SOFT", "POLICY_ISSUED_HARD", "ACTIVE"];
+const CLAIM_TYPES = ["FIRE", "FLOOD", "THEFT", "ACCIDENT", "LIABILITY", "OTHER"];
+
+/**
  * Navigation tabs for different aspects of a specific policy request.
  */
 const TABS = [
@@ -63,47 +81,153 @@ export default function PolicyDetailsLayout({ children }: { children: React.Reac
   const { id } = useParams();
   const pathname = usePathname();
   const router = useRouter();
+  const { user } = useAuth();
+
   const [policy, setPolicy] = useState<PolicyRequestRead | null>(null);
   const [unit, setUnit] = useState<UnitRead | null>(null);
   const [broker, setBroker] = useState<BrokerRead | null>(null);
   const [creator, setCreator] = useState<User | null>(null);
+  const [quotations, setQuotations] = useState<QuotationRead[]>([]);
+  const [insurerMap, setInsurerMap] = useState<Record<number, InsurerRead>>({});
   const [loading, setLoading] = useState(true);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  // Approval modal state
+  const [showApprovalModal, setShowApprovalModal] = useState(false);
+  const [approvalDecision, setApprovalDecision] = useState<"APPROVED" | "REJECTED">("APPROVED");
+  const [approvalQuotationId, setApprovalQuotationId] = useState<number | "">("");
+  const [approvalComments, setApprovalComments] = useState("");
+  const [isSubmittingApproval, setIsSubmittingApproval] = useState(false);
+  const [approvalError, setApprovalError] = useState("");
+
+  // Raise Claim modal state
+  const [showClaimModal, setShowClaimModal] = useState(false);
+  const [claimType, setClaimType] = useState("FIRE");
+  const [incidentDate, setIncidentDate] = useState("");
+  const [incidentDescription, setIncidentDescription] = useState("");
+  const [estimatedLoss, setEstimatedLoss] = useState("");
+  const [isSubmittingClaim, setIsSubmittingClaim] = useState(false);
+  const [claimError, setClaimError] = useState("");
+
+  const fetchPolicy = useCallback(async () => {
+    try {
+      const p = await apiClient.getPolicyRequestById(Number(id));
+      setPolicy(p);
+
+      const [u, b, c, quots, allInsurers] = await Promise.all([
+        apiClient.getUnitById(p.unit_id).catch(() => null),
+        p.broker_id ? apiClient.getBrokerById(p.broker_id).catch(() => null) : Promise.resolve(null),
+        apiClient.getById(p.requested_by_id).catch(() => null),
+        apiClient.getQuotations(Number(id)).catch(() => [] as QuotationRead[]),
+        apiClient.getAllInsurers().catch(() => [] as InsurerRead[]),
+      ]);
+      setUnit(u);
+      setBroker(b);
+      setCreator(c);
+      setQuotations(quots);
+      const map: Record<number, InsurerRead> = {};
+      allInsurers.forEach(ins => { map[ins.id] = ins; });
+      setInsurerMap(map);
+    } catch (err) {
+      console.error("Failed to fetch policy details", err);
+    }
+  }, [id]);
 
   useEffect(() => {
-    async function fetchData() {
+    async function loadData() {
       try {
         setLoading(true);
-        const p = await apiClient.getPolicyRequestById(Number(id));
-        setPolicy(p);
-
-        // Parallel fetch for associated data
-        const [u, b, c] = await Promise.all([
-          apiClient.getUnitById(p.unit_id).catch(() => null),
-          apiClient.getBrokerById(p.broker_id).catch(() => null),
-          apiClient.getById(p.requested_by_id).catch(() => null),
-        ]);
-        setUnit(u);
-        setBroker(b);
-        setCreator(c);
-      } catch (err) {
-        console.error("Failed to fetch policy details", err);
+        await fetchPolicy();
       } finally {
         setLoading(false);
       }
     }
-    if (id) fetchData();
-  }, [id]);
+    if (id) loadData();
+  }, [id, fetchPolicy]);
+
+  const handleTransition = async (nextStatus: string) => {
+    if (!policy) return;
+    setIsTransitioning(true);
+    try {
+      await apiClient.transitionPolicyRequest(policy.id, nextStatus);
+      await fetchPolicy();
+    } catch (err) {
+      console.error("Transition failed", err);
+    } finally {
+      setIsTransitioning(false);
+    }
+  };
+
+  const openApprovalModal = (decision: "APPROVED" | "REJECTED") => {
+    setApprovalDecision(decision);
+    setApprovalQuotationId(quotations[0]?.id ?? "");
+    setApprovalComments("");
+    setApprovalError("");
+    setShowApprovalModal(true);
+  };
+
+  const handleSubmitApproval = async () => {
+    if (!policy) return;
+    if (approvalDecision === "REJECTED" && !approvalComments.trim()) {
+      setApprovalError("Please provide a reason for rejection.");
+      return;
+    }
+    if (approvalDecision === "APPROVED" && !approvalQuotationId) {
+      setApprovalError("Please select the quotation being approved.");
+      return;
+    }
+    setIsSubmittingApproval(true);
+    setApprovalError("");
+    try {
+      await apiClient.submitApproval(policy.id, {
+        decision: approvalDecision,
+        quotation_id: approvalDecision === "APPROVED" ? Number(approvalQuotationId) : null,
+        comments: approvalComments.trim() || null,
+      });
+      setShowApprovalModal(false);
+      await fetchPolicy();
+    } catch (err) {
+      setApprovalError("Failed to submit. Please try again.");
+      console.error(err);
+    } finally {
+      setIsSubmittingApproval(false);
+    }
+  };
+
+  const handleRaiseClaim = async () => {
+    if (!policy || !incidentDate || !incidentDescription.trim()) return;
+    setIsSubmittingClaim(true);
+    setClaimError("");
+    try {
+      await apiClient.claims.create({
+        policy_request_id: policy.id,
+        claim_type: claimType,
+        incident_date: incidentDate,
+        incident_description: incidentDescription.trim(),
+        estimated_loss: estimatedLoss ? parseFloat(estimatedLoss) : undefined,
+      });
+      setShowClaimModal(false);
+      router.push("/company/claims");
+    } catch (err) {
+      setClaimError("Failed to raise claim. Please try again.");
+      console.error(err);
+    } finally {
+      setIsSubmittingClaim(false);
+    }
+  };
 
   if (loading) return <Loading />;
   if (!policy) return <div className="p-8 text-center text-gray-500 font-medium">Policy not found.</div>;
 
   const currentStepIndex = STEPS.findIndex(s => s.status === policy.status);
   const activeTab = TABS.find(tab => pathname.includes(tab.href))?.href || "documents";
+  const statusActions = STATUS_ACTIONS[policy.status] || [];
+  const canRaiseClaim = CLAIM_ELIGIBLE_STATUSES.includes(policy.status);
 
   return (
-    <div className="p-4 md:p-8 bg-[#F4F7FE] dark:bg-gray-dark min-h-screen font-sans space-y-6">
+    <div className="p-4 md:p-8  min-h-screen font-sans space-y-6">
       {/* Back Button */}
-      <button 
+      <button
         onClick={() => router.push('/policies')}
         className="flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white text-sm font-medium border border-gray-200 dark:border-dark-3 px-3 py-1.5 rounded-lg bg-white dark:bg-gray-dark transition-colors shadow-sm"
       >
@@ -112,31 +236,41 @@ export default function PolicyDetailsLayout({ children }: { children: React.Reac
 
       {/* Main Header Card */}
       <div className="bg-white dark:bg-gray-dark rounded-2xl border border-gray-200 dark:border-dark-3 shadow-sm p-4 md:p-8 space-y-8">
-        {/* Title and Status */}
-        <div className="flex justify-between items-center">
+        {/* Title, Status, and Raise Claim */}
+        <div className="flex flex-wrap justify-between items-center gap-3">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             Policy Request: {policy.policy_number || `PRQ-${policy.id}`}
           </h1>
-          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${STATUS_STYLES[policy.status] || STATUS_STYLES.DRAFT}`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${getStatusDotColor(policy.status)}`}></span>
-            {policy.status.replace(/_/g, " ")}
-          </span>
+          <div className="flex items-center gap-3">
+            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${STATUS_STYLES[policy.status] || STATUS_STYLES.DRAFT}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${getStatusDotColor(policy.status)}`}></span>
+              {policy.status.replace(/_/g, " ")}
+            </span>
+            {canRaiseClaim && (
+              <button
+                onClick={() => setShowClaimModal(true)}
+                className="flex items-center gap-1.5 px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg transition-colors shadow-sm"
+              >
+                <AlertCircle className="w-3.5 h-3.5" />
+                Raise Claim
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Progress Bar (Stepper) */}
         <div className="relative pt-4 pb-12 overflow-x-hidden">
           <div className="flex items-center justify-between w-full relative">
             {STEPS.map((step, idx) => {
-              // A step is considered completed if its index is before the current status index or if the policy is fully active.
-              const isCompleted = idx < currentStepIndex || policy.status === "ACTIVE"; 
+              const isCompleted = idx < currentStepIndex || policy.status === "ACTIVE";
               const isActive = idx === currentStepIndex;
-              
+
               return (
                 <React.Fragment key={step.status}>
-                  <div className="flex flex-col items-center relative z-10">
+                  <div className="flex flex-col items-center relative z-10 px-4">
                     <div className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
-                      isCompleted ? "bg-[#00B69B] text-white" : 
-                      isActive ? "border-2 border-[#00B69B] bg-white text-[#00B69B]" : 
+                      isCompleted ? "bg-[#00B69B] text-white" :
+                      isActive ? "border-2 border-[#00B69B] bg-white text-[#00B69B]" :
                       "bg-gray-200 text-gray-400 dark:bg-dark-3"
                     }`}>
                       {isCompleted ? <Check className="w-4 h-4" /> : <div className={`w-2 h-2 rounded-full ${isActive ? "bg-[#00B69B]" : "bg-transparent"}`} />}
@@ -167,23 +301,25 @@ export default function PolicyDetailsLayout({ children }: { children: React.Reac
             </div>
             <div>
               <p className="text-xs text-gray-400 mb-1">Broker</p>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">{broker?.name || 'SecureRisk Brokers'}</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">{broker?.name || '—'}</p>
             </div>
             <div>
               <p className="text-xs text-gray-400 mb-1">Sum Insured</p>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">₹{policy.sum_insured?.toLocaleString() || '5,00,00,000'}</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">
+                {policy.sum_insured ? `₹${policy.sum_insured.toLocaleString()}` : '—'}
+              </p>
             </div>
             <div>
               <p className="text-xs text-gray-400 mb-1">Created By</p>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">{creator?.name || 'Rajesh Kumar'}</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">{creator?.name || '—'}</p>
             </div>
             <div>
               <p className="text-xs text-gray-400 mb-1">Asset</p>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">{policy.asset_description || 'Heavy Machinery (2)'}</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">{policy.asset_description || '—'}</p>
             </div>
             <div>
               <p className="text-xs text-gray-400 mb-1">Line of Business</p>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">{policy.line_of_business || 'Fire & Burglary'}</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">{policy.line_of_business || '—'}</p>
             </div>
             <div>
               <p className="text-xs text-gray-400 mb-1">Created</p>
@@ -194,6 +330,55 @@ export default function PolicyDetailsLayout({ children }: { children: React.Reac
           </div>
         </div>
       </div>
+
+      {/* Status Action Bar */}
+      {statusActions.length > 0 && (
+        <div className="bg-white dark:bg-gray-dark rounded-2xl border border-gray-200 dark:border-dark-3 shadow-sm px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <p className="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-0.5">Next Step</p>
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {policy.status === "DRAFT" && "Upload supporting documents for the broker to approach insurers."}
+              {policy.status === "DATA_COLLECTION" && "Documents are ready. Submit this request for broker quoting."}
+              {policy.status === "QUOTING" && "Quotes collected. Send for management approval."}
+              {policy.status === "APPROVAL_PENDING" && "Management review required. Approve or return for revision."}
+              {policy.status === "APPROVED" && "Policy approved. Initiate payment process."}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            {statusActions.map((action) => {
+              const isApprovalAction = policy.status === "APPROVAL_PENDING";
+              const onClick = isApprovalAction
+                ? () => openApprovalModal(action.nextStatus === "APPROVED" ? "APPROVED" : "REJECTED")
+                : () => handleTransition(action.nextStatus);
+              return (
+                <button
+                  key={action.nextStatus}
+                  onClick={onClick}
+                  disabled={isTransitioning}
+                  className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 ${
+                    action.variant === "success"
+                      ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                      : action.variant === "danger"
+                      ? "bg-white dark:bg-dark-2 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                      : "bg-[#0B1727] dark:bg-white text-white dark:text-[#0B1727] hover:bg-[#1a2639] dark:hover:bg-gray-100"
+                  }`}
+                >
+                  {isTransitioning ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : action.variant === "success" ? (
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                  ) : action.variant === "danger" ? (
+                    <XCircle className="w-3.5 h-3.5" />
+                  ) : (
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  )}
+                  {action.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Tabs Navigation */}
       <div className="w-full overflow-hidden">
@@ -206,8 +391,8 @@ export default function PolicyDetailsLayout({ children }: { children: React.Reac
                 onClick={() => router.push(`/policies/${id}/${tab.href}`)}
                 className={`
                   w-full px-0.5 sm:px-4 py-2 sm:py-2.5 text-[7px] min-[340px]:text-[8px] min-[380px]:text-[10px] min-[480px]:text-xs sm:text-sm font-bold rounded-lg sm:rounded-xl transition-all duration-200 text-center truncate
-                  ${isActive 
-                    ? "bg-[#0B1727] text-white dark:bg-white dark:text-[#0B1727] shadow-md shadow-[#0B1727]/10 border-none" 
+                  ${isActive
+                    ? "bg-[#0B1727] text-white dark:bg-white dark:text-[#0B1727] shadow-md shadow-[#0B1727]/10 border-none"
                     : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white bg-white dark:bg-dark-2 border-none dark:border dark:border-dark-3 hover:border-gray-300 dark:hover:border-dark-4 shadow-[0_4px_20px_rgba(0,0,0,0.08)]"}
                 `}
                 title={tab.label}
@@ -223,6 +408,207 @@ export default function PolicyDetailsLayout({ children }: { children: React.Reac
       <div className="bg-white dark:bg-gray-dark rounded-2xl border border-gray-200 dark:border-dark-3 shadow-sm min-h-[400px]">
         {children}
       </div>
+
+      {/* Approval Modal */}
+      {showApprovalModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white dark:bg-gray-dark rounded-2xl border border-gray-200 dark:border-dark-3 shadow-2xl w-full max-w-md">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-dark-3">
+              <div>
+                <h2 className="text-base font-bold text-gray-900 dark:text-white">Submit Approval Decision</h2>
+                <p className="text-xs text-gray-400 mt-0.5">Policy: {policy.policy_number || `PRQ-${policy.id}`}</p>
+              </div>
+              <button onClick={() => setShowApprovalModal(false)} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-2 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="px-6 py-5 space-y-4">
+              {approvalError && (
+                <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-lg px-3 py-2">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  {approvalError}
+                </div>
+              )}
+
+              {/* Decision toggle */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">Decision *</label>
+                <div className="flex rounded-lg border border-gray-200 dark:border-dark-3 overflow-hidden">
+                  <button
+                    onClick={() => setApprovalDecision("APPROVED")}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-sm font-semibold transition-colors ${
+                      approvalDecision === "APPROVED"
+                        ? "bg-emerald-600 text-white"
+                        : "bg-white dark:bg-dark-2 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-3"
+                    }`}
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Approve
+                  </button>
+                  <button
+                    onClick={() => setApprovalDecision("REJECTED")}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-sm font-semibold transition-colors ${
+                      approvalDecision === "REJECTED"
+                        ? "bg-red-600 text-white"
+                        : "bg-white dark:bg-dark-2 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-dark-3"
+                    }`}
+                  >
+                    <XCircle className="w-3.5 h-3.5" /> Reject
+                  </button>
+                </div>
+              </div>
+
+              {/* Quotation selector — only for Approve */}
+              {approvalDecision === "APPROVED" && (
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">Select Approved Quotation *</label>
+                  <select
+                    value={approvalQuotationId}
+                    onChange={e => setApprovalQuotationId(Number(e.target.value))}
+                    className="w-full rounded-lg border border-gray-200 dark:border-dark-3 bg-white dark:bg-dark-2 text-sm text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                  >
+                    <option value="">Select a quotation...</option>
+                    {quotations.map(q => (
+                      <option key={q.id} value={q.id}>
+                        {insurerMap[q.insurer_id]?.name || `Insurer ${q.insurer_id}`} — ₹{q.total_premium.toLocaleString()} (v{q.version})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Comments */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">
+                  {approvalDecision === "REJECTED" ? "Reason for Rejection *" : "Comments (optional)"}
+                </label>
+                <textarea
+                  value={approvalComments}
+                  onChange={e => setApprovalComments(e.target.value)}
+                  rows={3}
+                  placeholder={approvalDecision === "REJECTED" ? "Explain what needs to be revised..." : "Any notes for the record..."}
+                  className="w-full rounded-lg border border-gray-200 dark:border-dark-3 bg-white dark:bg-dark-2 text-sm text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0B1727]/20 resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 dark:border-dark-3">
+              <button onClick={() => setShowApprovalModal(false)} className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmitApproval}
+                disabled={isSubmittingApproval}
+                className={`flex items-center gap-2 px-5 py-2 text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 ${
+                  approvalDecision === "APPROVED"
+                    ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                    : "bg-red-600 hover:bg-red-700 text-white"
+                }`}
+              >
+                {isSubmittingApproval && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                {isSubmittingApproval ? "Submitting..." : approvalDecision === "APPROVED" ? "Confirm Approval" : "Confirm Rejection"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Raise Claim Modal */}
+      {showClaimModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white dark:bg-gray-dark rounded-2xl border border-gray-200 dark:border-dark-3 shadow-2xl w-full max-w-lg">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-dark-3">
+              <div>
+                <h2 className="text-base font-bold text-gray-900 dark:text-white">Raise a Claim</h2>
+                <p className="text-xs text-gray-400 mt-0.5">Policy: {policy.policy_number || `PRQ-${policy.id}`}</p>
+              </div>
+              <button
+                onClick={() => { setShowClaimModal(false); setClaimError(""); }}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-dark-2 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="px-6 py-5 space-y-4">
+              {claimError && (
+                <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-lg px-3 py-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  {claimError}
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">Claim Type *</label>
+                  <select
+                    value={claimType}
+                    onChange={e => setClaimType(e.target.value)}
+                    className="w-full rounded-lg border border-gray-200 dark:border-dark-3 bg-white dark:bg-dark-2 text-sm text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0B1727]/20"
+                  >
+                    {CLAIM_TYPES.map(t => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">Incident Date *</label>
+                  <input
+                    type="date"
+                    value={incidentDate}
+                    onChange={e => setIncidentDate(e.target.value)}
+                    max={new Date().toISOString().split("T")[0]}
+                    className="w-full rounded-lg border border-gray-200 dark:border-dark-3 bg-white dark:bg-dark-2 text-sm text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0B1727]/20"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">Incident Description *</label>
+                <textarea
+                  value={incidentDescription}
+                  onChange={e => setIncidentDescription(e.target.value)}
+                  rows={3}
+                  placeholder="Describe what happened..."
+                  className="w-full rounded-lg border border-gray-200 dark:border-dark-3 bg-white dark:bg-dark-2 text-sm text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0B1727]/20 resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">Estimated Loss (₹)</label>
+                <input
+                  type="number"
+                  value={estimatedLoss}
+                  onChange={e => setEstimatedLoss(e.target.value)}
+                  placeholder="Optional"
+                  min="0"
+                  className="w-full rounded-lg border border-gray-200 dark:border-dark-3 bg-white dark:bg-dark-2 text-sm text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0B1727]/20"
+                />
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 dark:border-dark-3">
+              <button
+                onClick={() => { setShowClaimModal(false); setClaimError(""); }}
+                className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRaiseClaim}
+                disabled={isSubmittingClaim || !incidentDate || !incidentDescription.trim()}
+                className="flex items-center gap-2 px-5 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50"
+              >
+                {isSubmittingClaim && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                Submit Claim
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

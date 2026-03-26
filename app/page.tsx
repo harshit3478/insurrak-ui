@@ -20,7 +20,7 @@ import {
  */
 export default function Home() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
 
   const toggleFaq = (index: number) => {
     setOpenFaqIndex(openFaqIndex === index ? null : index);
@@ -297,17 +297,16 @@ export default function Home() {
       <section className="py-8 bg-white border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <p className="text-sm text-gray-500 font-medium mb-8">
-            Trusted by over 200+ Partners
+            Trusted by over 200+ Corporate Partners
           </p>
           <div className="flex flex-wrap justify-center items-center gap-x-12 gap-y-8 grayscale opacity-70">
-            {/* Partner brand representations */}
-            <span className="text-xl font-bold font-serif">ASPEN</span>
-            <span className="text-xl font-bold italic">Crop & Highlight</span>
-            <span className="text-2xl font-bold">N</span>
-            <span className="text-xl font-light tracking-widest">Millssy</span>
-            <span className="text-lg font-semibold">Peppermint</span>
+            <span className="text-xl font-bold font-serif">TATA AIG</span>
+            <span className="text-xl font-bold italic">Bajaj Allianz</span>
+            <span className="text-xl font-bold tracking-wide">HDFC ERGO</span>
+            <span className="text-xl font-light tracking-widest">Marsh India</span>
+            <span className="text-lg font-semibold">Aon Risk</span>
             <span className="text-lg font-bold flex items-center gap-1">
-              <div className="w-4 h-4 bg-black rounded-full"></div> Pixie Labs
+              <div className="w-4 h-4 bg-black rounded-full"></div> Willis Towers
             </span>
           </div>
         </div>
@@ -330,24 +329,48 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {[1, 2, 3, 4].map((item) => (
+            {[
+              {
+                title: "Centralized Policy Repository",
+                description:
+                  "Store, organize, and retrieve every insurance policy across all branches and entities from a single source of truth. No more hunting through emails or shared drives.",
+                icon: "📁",
+                bg: "from-blue-50 to-indigo-50",
+              },
+              {
+                title: "Claims Tracking & Settlement",
+                description:
+                  "Track claim status in real time from first notice of loss through final settlement. Set SLA alerts, assign handlers, and maintain a full audit trail.",
+                icon: "📋",
+                bg: "from-green-50 to-emerald-50",
+              },
+              {
+                title: "Renewal Automation",
+                description:
+                  "Get notified 90, 60, and 30 days before policy expiry. Compare renewal quotes, initiate approvals, and ensure zero lapse in coverage across your portfolio.",
+                icon: "🔄",
+                bg: "from-amber-50 to-yellow-50",
+              },
+              {
+                title: "Compliance & Reporting",
+                description:
+                  "Generate audit-ready reports on coverage gaps, pending renewals, claim ratios, and premium spend. Stay compliant with internal governance requirements at all times.",
+                icon: "📊",
+                bg: "from-purple-50 to-pink-50",
+              },
+            ].map((feature) => (
               <div
-                key={item}
+                key={feature.title}
                 className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow"
               >
-                <div className="aspect-video bg-gray-200 rounded-xl mb-6 flex items-center justify-center">
-                  {/* Visual feature representation */}
-                  <div className="text-gray-400 font-medium">
-                    Feature Graphic {item}
-                  </div>
+                <div className={`aspect-video bg-linear-to-br ${feature.bg} rounded-xl mb-6 flex items-center justify-center`}>
+                  <span className="text-5xl">{feature.icon}</span>
                 </div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2 font-poppins">
-                  Feature {item}
+                  {feature.title}
                 </h3>
                 <p className="text-gray-500 text-sm leading-relaxed">
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis
-                  id luctus felis. Curabitur id venenatis augue. Praesent
-                  tincidunt massa vel aliquam fermentum.
+                  {feature.description}
                 </p>
               </div>
             ))}
@@ -369,19 +392,68 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
+            {[
+              {
+                name: "Rajiv Mehta",
+                company: "Oberoi Group",
+                role: "Head of Risk & Insurance",
+                verified: true,
+                quote:
+                  "We manage policies across 14 properties. Before InsurRack, renewals would slip through the cracks every quarter. Now we get alerts 90 days out and the whole team is on the same page.",
+              },
+              {
+                name: "Priya Sharma",
+                company: "Zomato",
+                role: "Group CFO",
+                verified: true,
+                quote:
+                  "The compliance reporting alone saved us weeks of manual work during our last audit. Everything is traceable, timestamped, and ready to export.",
+              },
+              {
+                name: "Anil Desai",
+                company: "Mahindra Logistics",
+                role: "VP Corporate Affairs",
+                verified: true,
+                quote:
+                  "Our insurance portfolio spans fleet, cargo, and liability across 6 states. InsurRack gives us a single view of all of it. Claims tracking has become completely transparent.",
+              },
+              {
+                name: "Neha Kapoor",
+                company: "Lenskart",
+                role: "Legal & Compliance Lead",
+                verified: false,
+                quote:
+                  "Setting up new branch admins is instant. They get access to only what they need and the audit trail is perfect for our internal governance requirements.",
+              },
+              {
+                name: "Suresh Iyer",
+                company: "Tata Chemicals",
+                role: "Treasury Manager",
+                verified: false,
+                quote:
+                  "Comparing renewal quotes used to take two weeks of email back-and-forth. We now do it in the platform in a day. The savings in time translate directly to better negotiating leverage.",
+              },
+              {
+                name: "Kavita Rao",
+                company: "PharmEasy",
+                role: "Director, Finance Operations",
+                verified: false,
+                quote:
+                  "The role-based access model is exactly what a high-growth company needs. Our broker, internal team, and finance department each see only what's relevant to them.",
+              },
+            ].map((t) => (
               <div
-                key={i}
+                key={t.name}
                 className="bg-gray-50 p-6 rounded-xl border border-gray-100"
               >
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-                    <Users className="w-5 h-5" />
+                  <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold text-sm">
+                    {t.name.charAt(0)}
                   </div>
                   <div>
                     <div className="font-semibold text-gray-900 flex items-center gap-1">
-                      Wade Warren{" "}
-                      {i <= 3 && (
+                      {t.name}
+                      {t.verified && (
                         <div
                           className="w-3 h-3 bg-blue-500 rounded-full ml-1"
                           title="Verified"
@@ -389,14 +461,12 @@ export default function Home() {
                       )}
                     </div>
                     <div className="text-xs text-gray-500">
-                      Penthouse Studios
+                      {t.role}, {t.company}
                     </div>
                   </div>
                 </div>
                 <p className="text-gray-600 text-sm leading-relaxed">
-                  {
-                    "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis id luctus felis. Curabitur id venenatis augue. Praesent tincidunt massa vel aliquam fermentum."
-                  }
+                  &ldquo;{t.quote}&rdquo;
                 </p>
               </div>
             ))}
@@ -434,30 +504,37 @@ export default function Home() {
               </div>
               <p className="text-sm text-gray-500 mb-8">7 Days Free Trial</p>
               <p className="text-sm text-gray-500 mb-8 leading-relaxed">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                Ideal for small businesses or single-entity companies getting started with structured insurance management.
               </p>
 
               <ul className="space-y-4 mb-8">
-                {[1, 2, 3].map((i) => (
+                {[
+                  "Up to 3 users",
+                  "Policy repository (up to 25 policies)",
+                  "Renewal reminders (email)",
+                ].map((feature) => (
                   <li
-                    key={i}
+                    key={feature}
                     className="flex items-center gap-3 text-sm text-gray-700"
                   >
                     <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center text-green-600 shrink-0">
                       <Check className="w-3 h-3" />
                     </div>
-                    Lorem ipsum dolor sit amet.
+                    {feature}
                   </li>
                 ))}
-                {[1, 2].map((i) => (
+                {[
+                  "Claims tracking",
+                  "Multi-branch support",
+                ].map((feature) => (
                   <li
-                    key={i}
+                    key={feature}
                     className="flex items-center gap-3 text-sm text-gray-400"
                   >
                     <div className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center text-red-500 shrink-0">
                       <X className="w-3 h-3" />
                     </div>
-                    Lorem ipsum dolor sit amet.
+                    {feature}
                   </li>
                 ))}
               </ul>
@@ -476,27 +553,32 @@ export default function Home() {
               </div>
               <p className="text-sm text-gray-400 mb-8">7 Days Free Trial</p>
               <p className="text-sm text-gray-400 mb-8 leading-relaxed">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Best
-                for growing teams.
+                Built for growing companies managing multiple policy types, teams, and claim workflows.
               </p>
 
               <ul className="space-y-4 mb-8">
-                {[1, 2, 3, 4, 5].map((i) => (
+                {[
+                  "Up to 20 users",
+                  "Unlimited policies",
+                  "Claims tracking & SLA alerts",
+                  "Role-based access control",
+                  "Compliance reports & exports",
+                ].map((feature) => (
                   <li
-                    key={i}
+                    key={feature}
                     className="flex items-center gap-3 text-sm text-gray-300"
                   >
                     <div className="w-5 h-5 rounded-full bg-green-900/50 flex items-center justify-center text-[#C6F200] shrink-0">
                       <Check className="w-3 h-3" />
                     </div>
-                    Lorem ipsum dolor sit amet.
+                    {feature}
                   </li>
                 ))}
                 <li className="flex items-center gap-3 text-sm text-gray-500">
                   <div className="w-5 h-5 rounded-full bg-red-900/20 flex items-center justify-center text-red-800 shrink-0">
                     <X className="w-3 h-3" />
                   </div>
-                  Lorem ipsum dolor sit amet.
+                  Multi-branch / group entity support
                 </li>
               </ul>
               <button className="w-full bg-[#C6F200] text-black py-3 rounded-full text-sm font-semibold hover:bg-[#b0d600]">
@@ -514,19 +596,25 @@ export default function Home() {
               </div>
               <p className="text-sm text-gray-500 mb-8">7 Days Free Trial</p>
               <p className="text-sm text-gray-500 mb-8 leading-relaxed">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+                For large corporates, conglomerates, and brokers managing complex multi-entity insurance portfolios at scale.
               </p>
 
               <ul className="space-y-4 mb-8">
-                {[1, 2, 3, 4, 5].map((i) => (
+                {[
+                  "Unlimited users & branches",
+                  "Multi-entity / group company support",
+                  "Custom approval workflows",
+                  "Dedicated account manager",
+                  "API access & integrations",
+                ].map((feature) => (
                   <li
-                    key={i}
+                    key={feature}
                     className="flex items-center gap-3 text-sm text-gray-700"
                   >
                     <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center text-green-600 shrink-0">
                       <Check className="w-3 h-3" />
                     </div>
-                    Lorem ipsum dolor sit amet.
+                    {feature}
                   </li>
                 ))}
               </ul>
@@ -552,27 +640,45 @@ export default function Home() {
           </div>
 
           <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
+            {[
+              {
+                q: "How does InsurRack handle multi-branch or group companies?",
+                a: "InsurRack supports a hierarchical structure — your Super Admin sets up companies and branches, assigns Company Admins per entity, and each branch manages its own policies and users independently. Cross-entity reports are available at the top level, giving you a consolidated view without mixing up data.",
+              },
+              {
+                q: "Can we give our insurance broker access to the platform?",
+                a: "Yes. You can invite external stakeholders as limited users with read-only or specific permissions. They see only what you assign them — for example, renewal data or open claims — without access to the rest of your portfolio.",
+              },
+              {
+                q: "What happens if a policy renewal is missed?",
+                a: "InsurRack sends automated alerts at 90, 60, and 30 days before expiry to the assigned policy owner and Company Admin. Overdue renewals are flagged prominently on your dashboard so nothing slips through.",
+              },
+              {
+                q: "Is our data secure and audit-ready?",
+                a: "All data is encrypted at rest and in transit. Every action — policy upload, approval, claim update — is logged with a timestamp and user identity. You can export a full audit trail at any time for compliance or internal governance reviews.",
+              },
+              {
+                q: "How long does onboarding take?",
+                a: "Most companies are fully set up within a day. Our Super Admin creates your company account, adds your team, and you can start uploading policies immediately. There's no lengthy implementation or professional services required for standard plans.",
+              },
+            ].map((faq, i) => (
               <div key={i} className="border-b border-gray-100 pb-4">
                 <button
                   className="w-full flex justify-between items-center py-4 text-left focus:outline-none"
                   onClick={() => toggleFaq(i)}
                 >
                   <span className="text-lg font-medium text-gray-900">
-                    0{i} Frequently Asked Question {i}
+                    0{i + 1} {faq.q}
                   </span>
                   {openFaqIndex === i ? (
-                    <Minus className="w-5 h-5 text-gray-400" />
+                    <Minus className="w-5 h-5 text-gray-400 shrink-0 ml-4" />
                   ) : (
-                    <Plus className="w-5 h-5 text-gray-400" />
+                    <Plus className="w-5 h-5 text-gray-400 shrink-0 ml-4" />
                   )}
                 </button>
                 {openFaqIndex === i && (
                   <div className="pb-4 text-gray-500 text-sm leading-relaxed">
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-                    Duis id luctus felis. Curabitur id venenatis augue. Praesent
-                    tincidunt massa vel aliquam fermentum. Vivamus ut gravida
-                    lacus. Nulla ut libero a urna placerat efficitur ut nec sem.
+                    {faq.a}
                   </div>
                 )}
               </div>
@@ -705,7 +811,7 @@ export default function Home() {
           </div>
 
           <div className="border-t border-gray-100 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-400">
-            <div>All rights reserved</div>
+            <div>© 2025 InsurRack. All rights reserved.</div>
             <div className="flex gap-6">
               <a href="#" className="hover:text-gray-600">
                 Cookies Policy

@@ -23,10 +23,15 @@ export function PoliciesProvider({ children }: { children: React.ReactNode }) {
       const payload: PolicyRequestCreate = {
         company_id: Number(formData.get("company_id")),
         unit_id: Number(formData.get("unit_id")),
-        broker_id: Number(formData.get("broker_id")),
+        broker_id: formData.get("broker_id") ? Number(formData.get("broker_id")) : null,
         line_of_business: String(formData.get("line_of_business")),
-        asset_description: String(formData.get("asset_description") || ""),
-        notes: String(formData.get("notes") || ""),
+        asset_description: String(formData.get("asset_description") || "") || null,
+        notes: String(formData.get("notes") || "") || null,
+        sum_insured: formData.get("sum_insured") ? Number(formData.get("sum_insured")) : null,
+        premium: formData.get("premium") ? Number(formData.get("premium")) : null,
+        policy_start_date: formData.get("policy_start_date") ? String(formData.get("policy_start_date")) : null,
+        policy_end_date: formData.get("policy_end_date") ? String(formData.get("policy_end_date")) : null,
+        renewal_of_policy_id: formData.get("renewal_of_policy_id") ? Number(formData.get("renewal_of_policy_id")) : null,
       };
 
       const newPolicy = await apiClient.createPolicyRequest(payload);

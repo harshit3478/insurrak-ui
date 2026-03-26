@@ -3,20 +3,43 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { apiClient } from "@/lib/apiClient";
-import { QuotationRead, InsurerRead } from "@/types/api";
-import { Check } from "lucide-react";
+import { QuotationRead, InsurerRead, DeviationRead } from "@/types/api";
+import {
+  GitCompare, Plus, Minus, ArrowRight, CheckCircle2,
+  AlertTriangle, Info, FileText,
+} from "lucide-react";
 import { Loading } from "@/components/ui/Loading";
 
-/**
- * PolicyDeviationsPage provides a side-by-side comparison (Deviation Analysis) 
- * of up to 3 selected quotations against a baseline policy (Expiring Policy).
- * It highlights differences in parameters like Premium, Deductibles, and Coverage inclusions.
- */
+const SEVERITY_CONFIG: Record<string, { label: string; className: string }> = {
+  HIGH: { label: "High", className: "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400" },
+  MEDIUM: { label: "Medium", className: "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" },
+  LOW: { label: "Low", className: "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400" },
+};
+
+const TYPE_CONFIG: Record<string, { icon: React.ReactNode; className: string }> = {
+  ADDED: {
+    icon: <Plus className="w-3 h-3" />,
+    className: "text-emerald-500 bg-emerald-50 dark:bg-emerald-900/30",
+  },
+  REMOVED: {
+    icon: <Minus className="w-3 h-3" />,
+    className: "text-red-500 bg-red-50 dark:bg-red-900/30",
+  },
+  CHANGED: {
+    icon: <ArrowRight className="w-3 h-3" />,
+    className: "text-amber-500 bg-amber-50 dark:bg-amber-900/30",
+  },
+};
+
 export default function PolicyDeviationsPage() {
   const { id } = useParams();
+  const prId = Number(id);
+
   const [quotations, setQuotations] = useState<QuotationRead[]>([]);
-  const [insurers, setInsurers] = useState<Record<number, InsurerRead>>({});
-  const [selectedQuoteIds, setSelectedQuoteIds] = useState<number[]>([]);
+  const [insurerMap, setInsurerMap] = useState<Record<number, InsurerRead>>({});
+  const [selectedQuotId, setSelectedQuotId] = useState<number | null>(null);
+  const [deviations, setDeviations] = useState<DeviationRead[] | null>(null);
+  const [loadingDeviations, setLoadingDeviations] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -24,19 +47,19 @@ export default function PolicyDeviationsPage() {
       try {
         setLoading(true);
         const [quots, allInsurers] = await Promise.all([
-          apiClient.getQuotations(Number(id)),
-          apiClient.getAllInsurers().catch(() => []),
+          apiClient.getQuotations(prId),
+          apiClient.getAllInsurers().catch(() => [] as InsurerRead[]),
         ]);
         setQuotations(quots);
-        
-        // Auto-select first 3
-        setSelectedQuoteIds(quots.slice(0, 3).map(q => q.id));
-
-        const insurerMap: Record<number, InsurerRead> = {};
-        allInsurers.forEach(ins => {
-          insurerMap[ins.id] = ins;
-        });
-        setInsurers(insurerMap);
+        const map: Record<number, InsurerRead> = {};
+        allInsurers.forEach(ins => { map[ins.id] = ins; });
+        setInsurerMap(map);
+        // Auto-select second quotation (first one has nothing to compare against)
+        if (quots.length >= 2) {
+          setSelectedQuotId(quots[1].id);
+        } else if (quots.length === 1) {
+          setSelectedQuotId(quots[0].id);
+        }
       } catch (err) {
         console.error("Failed to fetch deviations data", err);
       } finally {
@@ -46,127 +69,214 @@ export default function PolicyDeviationsPage() {
     if (id) fetchData();
   }, [id]);
 
+  // Fetch deviations when a quotation is selected
+  useEffect(() => {
+    if (!selectedQuotId) { setDeviations(null); return; }
+    let cancelled = false;
+    async function fetchDeviations() {
+      setLoadingDeviations(true);
+      try {
+        const devs = await apiClient.getQuotationDeviations(prId, selectedQuotId!);
+        if (!cancelled) setDeviations(devs);
+      } catch {
+        if (!cancelled) setDeviations([]);
+      } finally {
+        if (!cancelled) setLoadingDeviations(false);
+      }
+    }
+    fetchDeviations();
+    return () => { cancelled = true; };
+  }, [selectedQuotId, prId]);
+
   if (loading) return <Loading />;
 
-  const toggleSelection = (qid: number) => {
-    setSelectedQuoteIds(prev => 
-      prev.includes(qid) ? prev.filter(i => i !== qid) : [...prev, qid]
-    );
-  };
+  const selectedQuot = quotations.find(q => q.id === selectedQuotId);
 
-  const selectedQuotes = quotations.filter(q => selectedQuoteIds.includes(q.id));
-
-  return (
-    <div className="flex flex-col lg:flex-row min-h-[600px] divide-x divide-gray-100 dark:divide-dark-3">
-      {/* Sidebar: Quotations List */}
-      <div className="w-full lg:w-72 p-6 shrink-0 space-y-6">
-        <div>
-          <h3 className="text-sm font-bold text-gray-900 dark:text-white">Quotations</h3>
-          <p className="text-[11px] text-gray-400 mt-1 leading-relaxed">Select up to 3 Quotations to see Deviation Analysis</p>
+  const renderDeviationsContent = () => {
+    if (quotations.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center py-16 gap-3 text-gray-400">
+          <FileText className="w-8 h-8 opacity-30" />
+          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">No quotations added yet.</p>
+          <p className="text-xs">Add quotations from the Quotations tab to see deviation analysis.</p>
         </div>
+      );
+    }
 
-        <div className="space-y-3">
-          {quotations.map(quot => {
-            const isSelected = selectedQuoteIds.includes(quot.id);
-            const insName = insurers[quot.insurer_id]?.name || `Insurer ${quot.insurer_id}`;
-            return (
-              <button
-                key={quot.id}
-                onClick={() => toggleSelection(quot.id)}
-                className={`w-full p-4 rounded-xl border text-left transition-all ${
-                  isSelected 
-                    ? "border-emerald-500 bg-white dark:bg-dark-2 shadow-sm ring-1 ring-emerald-500/20" 
-                    : "border-gray-100 dark:border-dark-3 bg-white dark:bg-dark-2 hover:border-gray-300 dark:hover:border-dark-5"
-                }`}
-              >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h4 className="text-xs font-bold text-gray-900 dark:text-white">{insName}</h4>
-                    <p className="text-[10px] text-gray-400 mt-1">Total Premium: <span className="text-gray-900 dark:text-gray-200">₹{quot.total_premium.toLocaleString()}</span></p>
-                  </div>
-                  {isSelected && <div className="w-4 h-4 rounded-full bg-emerald-500 flex items-center justify-center"><Check className="w-2.5 h-2.5 text-white" /></div>}
-                </div>
-              </button>
-            );
-          })}
+    if (!selectedQuotId) {
+      return (
+        <div className="flex flex-col items-center justify-center py-16 gap-2 text-gray-400">
+          <GitCompare className="w-8 h-8 opacity-30" />
+          <p className="text-xs">Select a quotation to view deviations.</p>
         </div>
-      </div>
+      );
+    }
 
-      {/* Main Analysis Grid */}
-      <div className="flex-1 p-6 space-y-6 overflow-x-auto">
-        <div>
-          <h3 className="text-sm font-bold text-gray-900 dark:text-white">Deviation Analysis</h3>
-          <p className="text-[11px] text-gray-400 mt-1 leading-relaxed">Comprehensive Deviation Analysis for the selected Quotations</p>
+    if (loadingDeviations) {
+      return (
+        <div className="flex items-center justify-center py-16 text-gray-400 text-sm gap-2">
+          <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+          Loading deviations...
         </div>
+      );
+    }
 
-        <div className="bg-white dark:bg-dark-2 rounded-2xl border border-gray-100 dark:border-dark-3 shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-gray-50 dark:border-dark-3">
-             <p className="text-xs text-gray-500 dark:text-gray-400">
-               Comparing: <span className="font-bold text-gray-900 dark:text-white italic">Expiring Policy (2024) [Baseline]</span>
-               {selectedQuotes.map(q => <span key={q.id}> vs <span className="font-bold text-gray-900 dark:text-white">{insurers[q.insurer_id]?.name || 'Quote'}</span></span>)}
-             </p>
+    if (!deviations) return null;
+
+    // Check if selected quotation has terms
+    const hasTerms = !!selectedQuot?.terms;
+    if (!hasTerms) {
+      return (
+        <div className="flex flex-col items-center justify-center py-16 gap-2 text-gray-400">
+          <Info className="w-6 h-6 opacity-40" />
+          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Coverage terms not recorded.</p>
+          <p className="text-xs text-center max-w-xs">Edit the quotation on the Quotations tab to add coverage terms before running deviation analysis.</p>
+        </div>
+      );
+    }
+
+    if (deviations.length === 0) {
+      // Check if there's a prior quotation to compare against
+      const quotIdx = quotations.findIndex(q => q.id === selectedQuotId);
+      if (quotIdx <= 0) {
+        return (
+          <div className="flex flex-col items-center justify-center py-16 gap-2 text-gray-400">
+            <GitCompare className="w-6 h-6 opacity-40" />
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">No baseline to compare against.</p>
+            <p className="text-xs text-center max-w-xs">Deviations appear once a second quotation exists for the same insurer.</p>
           </div>
-          
+        );
+      }
+      return (
+        <div className="flex flex-col items-center justify-center py-16 gap-2 text-gray-400">
+          <CheckCircle2 className="w-6 h-6 opacity-40 text-emerald-400" />
+          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">No deviations found.</p>
+          <p className="text-xs">This quotation's terms match the prior version exactly.</p>
+        </div>
+      );
+    }
+
+    const highCount = deviations.filter(d => d.severity === "HIGH").length;
+    const medCount = deviations.filter(d => d.severity === "MEDIUM").length;
+
+    return (
+      <div className="space-y-4">
+        {/* Summary bar */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">{deviations.length} deviation{deviations.length !== 1 ? "s" : ""} found</span>
+          {highCount > 0 && (
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400">
+              <AlertTriangle className="w-2.5 h-2.5" />{highCount} High
+            </span>
+          )}
+          {medCount > 0 && (
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
+              {medCount} Medium
+            </span>
+          )}
+        </div>
+
+        {/* Deviations table */}
+        <div className="overflow-x-auto rounded-xl border border-gray-100 dark:border-dark-3">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="bg-gray-50/50 dark:bg-dark-3/50 text-[10px] font-bold text-gray-400 uppercase">
-                <th className="py-3 px-6 w-48">Parameter ↓</th>
-                <th className="py-3 px-6 bg-gray-100/30 dark:bg-dark-4/30 italic">Expiring (Baseline) ↓</th>
-                {selectedQuotes.map(q => (
-                  <th key={q.id} className="py-3 px-6">{insurers[q.insurer_id]?.name || 'Quote'} ↓</th>
-                ))}
+              <tr className="bg-gray-50 dark:bg-dark-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                <th className="py-3 px-5 w-48">Parameter</th>
+                <th className="py-3 px-5">Prior Value</th>
+                <th className="py-3 px-5">Current Value</th>
+                <th className="py-3 px-5 w-24">Change</th>
+                <th className="py-3 px-5 w-24">Severity</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50 dark:divide-dark-3">
-              <tr>
-                <td className="py-4 px-6 font-bold text-gray-900 dark:text-white">Total Premium</td>
-                <td className="py-4 px-6 text-gray-500 dark:text-gray-300">₹1,20,000</td>
-                {selectedQuotes.map(q => (
-                  <td key={q.id} className="py-4 px-6 font-medium text-gray-900 dark:text-white">
-                    ₹{q.total_premium.toLocaleString()} 
-                    <span className="ml-2 text-[10px] text-red-500">↑ 18%</span>
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="py-4 px-6 font-bold text-gray-900 dark:text-white">Deductibles</td>
-                <td className="py-4 px-6 text-gray-500 dark:text-gray-300">1% of claim amount</td>
-                {selectedQuotes.map(q => (
-                   <td key={q.id} className="py-4 px-6 text-gray-500 dark:text-gray-300 uppercase">
-                     {q.terms?.deductibles || '5% of claim amount'}
-                   </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="py-4 px-6 font-bold text-gray-900 dark:text-white">Terrorism Cover</td>
-                <td className="py-4 px-6 text-gray-500 dark:text-gray-300 italic">Included in baseline</td>
-                {selectedQuotes.map(q => (
-                   <td key={q.id} className="py-4 px-6 text-gray-500 dark:text-gray-300">
-                     {q.terms?.perils_included?.toLowerCase().includes('terrorism') ? 'Included' : 'Explicitly Excluded'}
-                   </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="py-4 px-6 font-bold text-gray-900 dark:text-white">STFI Cover</td>
-                <td className="py-4 px-6 text-gray-500 dark:text-gray-300">Not Included</td>
-                {selectedQuotes.map(q => (
-                   <td key={q.id} className="py-4 px-6 text-gray-500 dark:text-gray-300">
-                     {q.terms?.perils_included?.toLowerCase().includes('stfi') ? 'Included in baseline' : 'Not Included'}
-                   </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="py-4 px-6 font-bold text-gray-900 dark:text-white">Security Warranty</td>
-                <td className="py-4 px-6 text-gray-500 dark:text-gray-300">Guards at night only</td>
-                {selectedQuotes.map(q => (
-                   <td key={q.id} className="py-4 px-6 text-gray-500 dark:text-gray-300">
-                     {q.terms?.warranties || '24/7 Guards mandatory'}
-                   </td>
-                ))}
-              </tr>
+              {deviations.map(dev => {
+                const typeConf = TYPE_CONFIG[dev.deviation_type] ?? TYPE_CONFIG.CHANGED;
+                const sevConf = SEVERITY_CONFIG[dev.severity] ?? SEVERITY_CONFIG.LOW;
+                return (
+                  <tr key={dev.id} className="hover:bg-gray-50/50 dark:hover:bg-dark-2/50 transition-colors">
+                    <td className="py-3.5 px-5 font-semibold text-gray-700 dark:text-gray-300">
+                      {dev.field_name.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}
+                    </td>
+                    <td className="py-3.5 px-5 text-gray-400 dark:text-gray-500 max-w-[200px]">
+                      <span className="line-clamp-2">{dev.prior_value || "—"}</span>
+                    </td>
+                    <td className="py-3.5 px-5 text-gray-700 dark:text-gray-300 max-w-[200px]">
+                      <span className="line-clamp-2">{dev.current_value || "—"}</span>
+                    </td>
+                    <td className="py-3.5 px-5">
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${typeConf.className}`}>
+                        {typeConf.icon}
+                        {dev.deviation_type}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-5">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${sevConf.className}`}>
+                        {sevConf.label}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="flex flex-col lg:flex-row min-h-[500px] divide-y lg:divide-y-0 lg:divide-x divide-gray-100 dark:divide-dark-3">
+      {/* Sidebar */}
+      <div className="w-full lg:w-64 p-6 shrink-0 space-y-4">
+        <div>
+          <h3 className="text-sm font-bold text-gray-900 dark:text-white">Quotations</h3>
+          <p className="text-[11px] text-gray-400 mt-1 leading-relaxed">Select a quotation to view its deviations from the prior version.</p>
+        </div>
+
+        {quotations.length === 0 ? (
+          <p className="text-xs text-gray-400">No quotations yet.</p>
+        ) : (
+          <div className="space-y-2">
+            {quotations.map(quot => {
+              const isSelected = selectedQuotId === quot.id;
+              const insName = insurerMap[quot.insurer_id]?.name || `Insurer ${quot.insurer_id}`;
+              return (
+                <button
+                  key={quot.id}
+                  onClick={() => setSelectedQuotId(quot.id)}
+                  className={`w-full p-3.5 rounded-xl border text-left transition-all ${
+                    isSelected
+                      ? "border-[#0B1727] dark:border-white bg-[#0B1727]/5 dark:bg-white/5 shadow-sm"
+                      : "border-gray-100 dark:border-dark-3 bg-white dark:bg-dark-2 hover:border-gray-300 dark:hover:border-dark-5"
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-gray-900 dark:text-white truncate">{insName}</p>
+                      <p className="text-[10px] text-gray-400 mt-0.5">v{quot.version} · ₹{quot.total_premium.toLocaleString()}</p>
+                    </div>
+                    {quot.is_selected && (
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Main panel */}
+      <div className="flex-1 p-6">
+        <div className="mb-4">
+          <h3 className="text-sm font-bold text-gray-900 dark:text-white">Deviation Analysis</h3>
+          {selectedQuot && (
+            <p className="text-[11px] text-gray-400 mt-1">
+              {insurerMap[selectedQuot.insurer_id]?.name || "Quotation"} v{selectedQuot.version} — comparing against prior version
+            </p>
+          )}
+        </div>
+        {renderDeviationsContent()}
       </div>
     </div>
   );

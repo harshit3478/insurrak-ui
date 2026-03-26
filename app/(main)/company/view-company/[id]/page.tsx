@@ -66,12 +66,6 @@ export default function ViewCompanyPage() {
             </p>
           </div>
           <div>
-            <p className="text-xs text-gray-500">Company ID</p>
-            <p className="text-sm font-medium text-gray-900 dark:text-white">
-              {company.companyId || "-"}
-            </p>
-          </div>
-          <div>
             <p className="text-xs text-gray-500">Email</p>
             <p className="text-sm font-medium text-gray-900 dark:text-white">
               {company.email || "-"}

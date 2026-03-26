@@ -2,22 +2,21 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   async rewrites() {
+    // Strip trailing /api/v1 if present so we can append it ourselves
     const rawBackendUrl =
       process.env.NEXT_PUBLIC_API_URL ||
       "https://insurak-caaab14b31d7.herokuapp.com";
-    const normalizedBackendUrl = rawBackendUrl.endsWith("/api/v1")
-      ? rawBackendUrl
-      : `${rawBackendUrl.replace(/\/$/, "")}/api/v1`;
+    const backendBase = rawBackendUrl
+      .replace(/\/api\/v1\/?$/, "")
+      .replace(/\/$/, "");
     return [
       {
         source: "/api/v1/users",
-        destination: `${normalizedBackendUrl}/users/`,
+        destination: `${backendBase}/api/v1/users/`,
       },
       {
         source: "/api/v1/:path*",
-        // If not set, fallback to heroku app. This proxies the request from the NextJS server
-        // so the browser does not fail preflight CORS checks.
-        destination: `${normalizedBackendUrl}/:path*`,
+        destination: `${backendBase}/api/v1/:path*`,
       },
     ];
   },

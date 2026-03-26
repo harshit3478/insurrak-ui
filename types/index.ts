@@ -32,6 +32,7 @@ export interface User {
   permissionIds?: number[];
   active: boolean;
   companyId: string | null;
+  companyName?: string | null;
   designation?: string | null;
   reportsTo?: string | null;
 }
@@ -45,6 +46,7 @@ export interface Company {
   branches: string;
   activePolicies: string;
   status: "Active" | "Inactive";
+  is_active: boolean;
   email: string;
   mobile_number: string;
   address: string;
@@ -75,15 +77,10 @@ export const AUTH_STORAGE_KEY = "insurrack_auth";
 export interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
+  requestOtp: (email: string) => Promise<{ error?: string }>;
   login: (formData: FormData) => void;
   isLoginPending: boolean;
   loginState: {
-    success?: boolean;
-    error?: string;
-  };
-  signup: (formData: FormData) => void;
-  isSignupPending: boolean;
-  signupState: {
     success?: boolean;
     error?: string;
   };
@@ -113,14 +110,17 @@ export type UsersContextType = {
 };
 
 export type CompaniesContextType = {
-  createCompany: (formData: FormData) => Promise<void>;
-  updateCompany: (companyId: number) => (formData: FormData) => Promise<void>;
+  createCompany: (data: { name: string; adminEmail: string }) => Promise<void>;
+  updateCompany: (companyId: number) => (data: Partial<Company>) => Promise<void>;
 
   createState: ActionState;
   updateState: ActionState;
 
   isCreating: boolean;
   isUpdating: boolean;
+
+  resetCreateState: () => void;
+  resetUpdateState: () => void;
 };
 
 export type PoliciesContextType = {

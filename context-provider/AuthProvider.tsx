@@ -1,6 +1,6 @@
 "use client";
 
-import { api } from "@/lib/api";
+import { apiClient } from "@/lib/apiClient";
 import { adaptUser } from "@/lib/adapters";
 import { RootState, store } from "@/lib/store";
 import {
@@ -31,81 +31,66 @@ function getDashboardRoute(role: Role): string {
       return "/system";
     case "COMPANY_ADMIN":
     case "BRANCH_ADMIN":
-      return "/dashboard/manager";
+    case "COMPANY_USER":
+      return "/company/policies";
     default:
-      return "/dashboard/user";
+      return "/company/policies";
   }
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-/**
- * AuthProvider manages the global authentication state and user session.
- * It coordinates with Redux for persistence and provides utility methods for
- * role-based permission checks and secure navigation.
- */
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const user = useSelector((state: RootState) => state.auth.user);
   const isAuthenticated = useSelector(
     (state: RootState) => state.auth.isAuthenticated,
   );
 
-  // Login action
+  /** Step 1 — send OTP to the given email */
+  const requestOtp = async (email: string): Promise<{ error?: string }> => {
+    try {
+      await apiClient.requestOtp(email);
+      return {};
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "Failed to send OTP";
+      return { error: msg };
+    }
+  };
+
+  /** Step 2 — verify OTP and establish session (called via form action) */
   const loginAction = async (
-    prevState: AuthState,
+    _prevState: AuthState,
     formData: FormData,
   ): Promise<AuthState> => {
     try {
-      const username = formData.get("username") as string;
-      const password = formData.get("password") as string;
-      const isSystemLogin = formData.get("system_login") === "true";
+      const email = formData.get("email") as string;
+      const otp = formData.get("otp") as string;
 
-      const loginResponse = isSystemLogin
-        ? await api.systemLogin({ username, password })
-        : await api.login({ username, password });
+      const loginResponse = await apiClient.verifyOtp({ email, otp });
 
       const token = loginResponse.access_token;
       if (!token) {
         return { error: "Login failed: No token received." };
       }
 
-      localStorage.setItem("token", token);
-
       const apiUser = loginResponse.user;
       if (!apiUser) {
-        localStorage.removeItem("token");
         return { error: "Login failed: No user details received." };
       }
 
+      localStorage.setItem("token", token);
       const user = adaptUser(apiUser, apiUser.role_name);
 
-      if (isSystemLogin && user.role !== "SUPER_ADMIN") {
-        localStorage.removeItem("token");
-        await clearAuthCookie();
-        return { error: "Only SUPER_ADMIN can use system login." };
-      }
-
-      // Sync the cookie to the Next.js server securely for Server Component routing
       await setAuthCookie(token, user.role);
 
-      // Always persist so state survives the page navigation
-      store.dispatch(
-        loginSuccess({
-          user,
-          rememberMe: true,
-        }),
-      );
+      store.dispatch(loginSuccess({ user, rememberMe: true }));
 
-      // Redirect to the role-specific dashboard
-      window.location.href = isSystemLogin
-        ? "/system"
-        : getDashboardRoute(user.role as Role);
+      window.location.href = getDashboardRoute(user.role as Role);
 
       return { success: true };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Invalid credentials";
-      return { error: errorMessage };
+      const msg = error instanceof Error ? error.message : "Invalid OTP";
+      return { error: msg };
     }
   };
 
@@ -114,24 +99,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     initialState,
   );
 
-  const signupAction = async (
-    _prevState: AuthState,
-    _formData: FormData,
-  ): Promise<AuthState> => {
-    // Public user registration is restricted. All new users must be established by a system administrator to maintain organizational hierarchy.
-    return {
-      error: "Signup is not supported. Please contact your administrator.",
-    };
-  };
-
-  const [signupState, signup, isSignupPending] = useActionState(
-    signupAction,
-    initialState,
-  );
-
   const logout = async () => {
     try {
-      await api.logout();
+      await apiClient.logout();
       store.dispatch(logoutAction());
       await clearAuthCookie();
       localStorage.removeItem("token");
@@ -151,12 +121,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       value={{
         user,
         isAuthenticated,
+        requestOtp,
         login,
         loginState,
         isLoginPending,
-        signup,
-        signupState,
-        isSignupPending,
         logout,
         hasPermission,
         isBypassActive,

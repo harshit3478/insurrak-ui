@@ -41,7 +41,7 @@ export default function SystemLoginPage() {
 
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 bg-white dark:bg-gray-dark">
         <div className="w-full max-w-md">
-          <LogIn systemMode />
+          <LogIn />
         </div>
       </div>
     </div>

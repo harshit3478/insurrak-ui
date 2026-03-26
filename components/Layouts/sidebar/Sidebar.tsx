@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Menu, ArrowLeft, ChevronUp } from "lucide-react";
+import { PanelLeft, ArrowLeft, ChevronUp } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getNavData } from "./data";
@@ -58,6 +58,7 @@ export function Sidebar() {
       )}
 
       <aside
+        data-tour="sidebar-nav"
         className={cn(
           "overflow-hidden border-r border-gray-200 bg-white transition-all duration-300 ease-linear dark:border-gray-800 dark:bg-gray-dark",
           "fixed top-0 bottom-0 left-0 z-50 h-screen",
@@ -77,30 +78,36 @@ export function Sidebar() {
           "flex h-full flex-col py-10 pr-[7px]",
           !isOpen && !isMobile ? "items-center px-0" : "pl-[25px]",
         )}>
-          <div className="relative pr-4.5">
-            <div
-              onClick={() => !isMobile && toggleSidebar()}
-              className={cn(
-                "flex items-center gap-4 px-0 py-2.5 min-[850px]:py-0",
-                {
-                  "cursor-pointer": !isMobile,
-                  "justify-center": !isOpen && !isMobile,
-                },
-              )}
-            >
-              {/* <Logo /> */}
-              {!isOpen && !isMobile && <Menu className="size-7" />}
-              {(isOpen || isMobile) && <span>Insurrack</span>}
-            </div>
+          <div className={cn(
+            "flex items-center gap-3 pr-4.5",
+            !isOpen && !isMobile && "justify-center",
+          )}>
+            {/* Desktop sidebar toggle — only this button collapses/expands */}
+            {!isMobile && (
+              <button
+                data-tour="sidebar-toggle"
+                onClick={toggleSidebar}
+                aria-label={isOpen ? "Collapse sidebar" : "Expand sidebar"}
+                className="flex items-center justify-center w-8 h-8 rounded-lg text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-dark-2 transition-colors shrink-0"
+              >
+                <PanelLeft className="size-5" />
+              </button>
+            )}
 
+            {(isOpen || isMobile) && (
+              <span className="font-semibold text-gray-900 dark:text-white whitespace-nowrap">
+                Insurrack
+              </span>
+            )}
+
+            {/* Mobile close button */}
             {isMobile && (
               <button
                 onClick={toggleSidebar}
-                className="absolute left-3/4 right-4.5 top-1/2 -translate-y-1/2 text-right"
+                className="ml-auto p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
               >
                 <span className="sr-only">Close Menu</span>
-
-                <ArrowLeft className="ml-auto size-7" />
+                <ArrowLeft className="size-5" />
               </button>
             )}
           </div>

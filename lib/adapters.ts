@@ -18,6 +18,7 @@ const ROLE_MAP: Record<string, Role> = {
   SUPER_ADMIN: "SUPER_ADMIN",
   "Company Admin": "COMPANY_ADMIN",
   COMPANY_ADMIN: "COMPANY_ADMIN",
+  COMPANY_SUPER_ADMIN: "COMPANY_ADMIN",
   "Branch Admin": "BRANCH_ADMIN",
   BRANCH_ADMIN: "BRANCH_ADMIN",
   COMPANY_USER: "COMPANY_USER",
@@ -56,6 +57,7 @@ export function adaptUser(apiUser: UserRead, userRoleName?: string): User {
     permissionIds: apiUser.permission_ids || [],
     active: apiUser.is_active,
     companyId: apiUser.company_id ? String(apiUser.company_id) : null,
+    companyName: apiUser.company_name || null,
     designation: apiUser.designation,
     reportsTo: apiUser.reports_to ? String(apiUser.reports_to) : null,
   };
@@ -68,8 +70,9 @@ export function adaptCompany(apiCompany: CompanyRead): Company {
     companyId: String(apiCompany.id),
     admin: "", // placeholder for aggregated admin name
     adminEmail: apiCompany.email ?? "",
-    branches: "0", // placeholder for aggregated branch count
+    branches: String(apiCompany.unit_count ?? 0),
     activePolicies: "0", // placeholder for aggregated policy count
+    is_active: apiCompany.is_active,
     status: apiCompany.is_active ? "Active" : "Inactive",
     email: apiCompany.email ?? "",
     mobile_number: apiCompany.mobile_number ?? "",
