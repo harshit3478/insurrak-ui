@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useClaims } from "@/context-provider/ClaimProvider";
 import { ClaimForm } from "@/components/Claims/ClaimForm";
 import { FormHeader, SuccessHeader } from "@/components/ui/FormCommon";
@@ -12,6 +12,8 @@ export default function AddClaimPage() {
   const { createClaimAction } = useClaims();
   const [createState, createClaim, isCreating] = useActionState(createClaimAction, initialState);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const defaultPolicyRequestId = searchParams.get("policy_id") ? Number(searchParams.get("policy_id")) : undefined;
 
   if (createState.success) {
     const data = createState.data || {};
@@ -108,7 +110,7 @@ export default function AddClaimPage() {
           {createState.error}
         </div>
       )}
-      <ClaimForm action={createClaim} pending={isCreating} />
+      <ClaimForm action={createClaim} pending={isCreating} defaultPolicyRequestId={defaultPolicyRequestId} />
     </div>
   );
 }

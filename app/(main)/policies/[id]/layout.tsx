@@ -11,14 +11,17 @@ import { useAuth } from "@/context-provider/AuthProvider";
 
 /**
  * Policy lifecycle stages used for the horizontal progress stepper.
- * Each step corresponds to a potential policy status.
+ * alsoMatch lets intermediate statuses map to the correct step.
  */
-const STEPS = [
-  { label: "Draft", status: "DRAFT" },
-  { label: "Data Collection", status: "DATA_COLLECTION" },
-  { label: "Quoting", status: "QUOTING" },
-  { label: "Approval", status: "APPROVAL_PENDING" },
-  { label: "Active", status: "ACTIVE" },
+const STEPS: Array<{ label: string; status: string; alsoMatch?: string[] }> = [
+  { label: "Draft",          status: "DRAFT" },
+  { label: "Data Collection",status: "DATA_COLLECTION" },
+  { label: "Quoting",        status: "QUOTING" },
+  { label: "Approval",       status: "APPROVAL_PENDING", alsoMatch: ["APPROVED"] },
+  { label: "Payment",        status: "PAYMENT_PENDING" },
+  { label: "Risk Held",      status: "RISK_HELD" },
+  { label: "Policy Issued",  status: "POLICY_ISSUED_SOFT", alsoMatch: ["POLICY_ISSUED_HARD"] },
+  { label: "Active",         status: "ACTIVE", alsoMatch: ["EXPIRING", "ARCHIVED"] },
 ];
 
 /**
@@ -62,8 +65,7 @@ const STATUS_ACTIONS: Partial<Record<string, ActionConfig[]>> = {
   APPROVED: [{ label: "Mark Payment Pending", nextStatus: "PAYMENT_PENDING", variant: "primary" }],
 };
 
-const CLAIM_ELIGIBLE_STATUSES = ["RISK_HELD", "POLICY_ISSUED_SOFT", "POLICY_ISSUED_HARD", "ACTIVE"];
-const CLAIM_TYPES = ["FIRE", "FLOOD", "THEFT", "ACCIDENT", "LIABILITY", "OTHER"];
+const CLAIM_ELIGIBLE_STATUSES = ["RISK_HELD", "POLICY_ISSUED_SOFT", "POLICY_ISSUED_HARD", "ACTIVE", "EXPIRING"];
 
 /**
  * Navigation tabs for different aspects of a specific policy request.
@@ -100,14 +102,6 @@ export default function PolicyDetailsLayout({ children }: { children: React.Reac
   const [isSubmittingApproval, setIsSubmittingApproval] = useState(false);
   const [approvalError, setApprovalError] = useState("");
 
-  // Raise Claim modal state
-  const [showClaimModal, setShowClaimModal] = useState(false);
-  const [claimType, setClaimType] = useState("FIRE");
-  const [incidentDate, setIncidentDate] = useState("");
-  const [incidentDescription, setIncidentDescription] = useState("");
-  const [estimatedLoss, setEstimatedLoss] = useState("");
-  const [isSubmittingClaim, setIsSubmittingClaim] = useState(false);
-  const [claimError, setClaimError] = useState("");
 
   const fetchPolicy = useCallback(async () => {
     try {
@@ -194,32 +188,10 @@ export default function PolicyDetailsLayout({ children }: { children: React.Reac
     }
   };
 
-  const handleRaiseClaim = async () => {
-    if (!policy || !incidentDate || !incidentDescription.trim()) return;
-    setIsSubmittingClaim(true);
-    setClaimError("");
-    try {
-      await apiClient.claims.create({
-        policy_request_id: policy.id,
-        claim_type: claimType,
-        incident_date: incidentDate,
-        incident_description: incidentDescription.trim(),
-        estimated_loss: estimatedLoss ? parseFloat(estimatedLoss) : undefined,
-      });
-      setShowClaimModal(false);
-      router.push("/company/claims");
-    } catch (err) {
-      setClaimError("Failed to raise claim. Please try again.");
-      console.error(err);
-    } finally {
-      setIsSubmittingClaim(false);
-    }
-  };
-
   if (loading) return <Loading />;
   if (!policy) return <div className="p-8 text-center text-gray-500 font-medium">Policy not found.</div>;
 
-  const currentStepIndex = STEPS.findIndex(s => s.status === policy.status);
+  const currentStepIndex = STEPS.findIndex(s => s.status === policy.status || s.alsoMatch?.includes(policy.status));
   const activeTab = TABS.find(tab => pathname.includes(tab.href))?.href || "documents";
   const statusActions = STATUS_ACTIONS[policy.status] || [];
   const canRaiseClaim = CLAIM_ELIGIBLE_STATUSES.includes(policy.status);
@@ -248,7 +220,7 @@ export default function PolicyDetailsLayout({ children }: { children: React.Reac
             </span>
             {canRaiseClaim && (
               <button
-                onClick={() => setShowClaimModal(true)}
+                onClick={() => router.push(`/claims/add?policy_id=${policy.id}`)}
                 className="flex items-center gap-1.5 px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold rounded-lg transition-colors shadow-sm"
               >
                 <AlertCircle className="w-3.5 h-3.5" />
@@ -262,7 +234,7 @@ export default function PolicyDetailsLayout({ children }: { children: React.Reac
         <div className="relative pt-4 pb-12 overflow-x-hidden">
           <div className="flex items-center justify-between w-full relative">
             {STEPS.map((step, idx) => {
-              const isCompleted = idx < currentStepIndex || policy.status === "ACTIVE";
+              const isCompleted = idx < currentStepIndex;
               const isActive = idx === currentStepIndex;
 
               return (
@@ -513,102 +485,6 @@ export default function PolicyDetailsLayout({ children }: { children: React.Reac
         </div>
       )}
 
-      {/* Raise Claim Modal */}
-      {showClaimModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white dark:bg-gray-dark rounded-2xl border border-gray-200 dark:border-dark-3 shadow-2xl w-full max-w-lg">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-dark-3">
-              <div>
-                <h2 className="text-base font-bold text-gray-900 dark:text-white">Raise a Claim</h2>
-                <p className="text-xs text-gray-400 mt-0.5">Policy: {policy.policy_number || `PRQ-${policy.id}`}</p>
-              </div>
-              <button
-                onClick={() => { setShowClaimModal(false); setClaimError(""); }}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-dark-2 transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div className="px-6 py-5 space-y-4">
-              {claimError && (
-                <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-lg px-3 py-2">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  {claimError}
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">Claim Type *</label>
-                  <select
-                    value={claimType}
-                    onChange={e => setClaimType(e.target.value)}
-                    className="w-full rounded-lg border border-gray-200 dark:border-dark-3 bg-white dark:bg-dark-2 text-sm text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0B1727]/20"
-                  >
-                    {CLAIM_TYPES.map(t => (
-                      <option key={t} value={t}>{t}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">Incident Date *</label>
-                  <input
-                    type="date"
-                    value={incidentDate}
-                    onChange={e => setIncidentDate(e.target.value)}
-                    max={new Date().toISOString().split("T")[0]}
-                    className="w-full rounded-lg border border-gray-200 dark:border-dark-3 bg-white dark:bg-dark-2 text-sm text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0B1727]/20"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">Incident Description *</label>
-                <textarea
-                  value={incidentDescription}
-                  onChange={e => setIncidentDescription(e.target.value)}
-                  rows={3}
-                  placeholder="Describe what happened..."
-                  className="w-full rounded-lg border border-gray-200 dark:border-dark-3 bg-white dark:bg-dark-2 text-sm text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0B1727]/20 resize-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">Estimated Loss (₹)</label>
-                <input
-                  type="number"
-                  value={estimatedLoss}
-                  onChange={e => setEstimatedLoss(e.target.value)}
-                  placeholder="Optional"
-                  min="0"
-                  className="w-full rounded-lg border border-gray-200 dark:border-dark-3 bg-white dark:bg-dark-2 text-sm text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0B1727]/20"
-                />
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 dark:border-dark-3">
-              <button
-                onClick={() => { setShowClaimModal(false); setClaimError(""); }}
-                className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleRaiseClaim}
-                disabled={isSubmittingClaim || !incidentDate || !incidentDescription.trim()}
-                className="flex items-center gap-2 px-5 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50"
-              >
-                {isSubmittingClaim && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                Submit Claim
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

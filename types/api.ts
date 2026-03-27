@@ -166,6 +166,7 @@ export interface InvoiceRead {
   file_path: string | null;
   uploaded_by_id: number;
   created_at: string;
+  payment: PaymentRead | null;
 }
 
 export interface PaymentRead {

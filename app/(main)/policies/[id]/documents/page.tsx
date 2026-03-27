@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { apiClient } from "@/lib/apiClient";
 import { uploadToR2 } from "@/lib/uploadToR2";
 import { PolicyDocumentRead } from "@/types/api";
 import { User } from "@/types";
-import { Folder, Download, Upload, X, Loader2, FileText } from "lucide-react";
+import { Folder, Download, Upload, X, Loader2, FileText, ShieldCheck, ArrowRight } from "lucide-react";
 import { Loading } from "@/components/ui/Loading";
 
 type DocCategory = "client" | "insurer" | "financial";
@@ -39,9 +39,12 @@ function categorizeDocs(docs: PolicyDocumentRead[]) {
 
 export default function PolicyDocumentsPage() {
   const { id } = useParams();
+  const router = useRouter();
+  const prId = Number(id);
   const [documents, setDocuments] = useState<PolicyDocumentRead[]>([]);
   const [users, setUsers] = useState<Record<string, User>>({});
   const [loading, setLoading] = useState(true);
+  const [policyStatus, setPolicyStatus] = useState<string>("");
 
   // Upload modal state
   const [activeCategory, setActiveCategory] = useState<DocCategory | null>(null);
@@ -52,10 +55,21 @@ export default function PolicyDocumentsPage() {
   const [uploadError, setUploadError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Issuance action state
+  const [issuanceFile, setIssuanceFile] = useState<File | null>(null);
+  const [issuanceUploading, setIssuanceUploading] = useState(false);
+  const [issuanceError, setIssuanceError] = useState("");
+  const [isActivating, setIsActivating] = useState(false);
+  const issuanceFileRef = useRef<HTMLInputElement>(null);
+
   const fetchDocuments = async () => {
     try {
-      const docs = await apiClient.getPolicyDocuments(Number(id));
+      const [docs, policy] = await Promise.all([
+        apiClient.getPolicyDocuments(prId),
+        apiClient.getPolicyRequestById(prId).catch(() => null),
+      ]);
       setDocuments(docs);
+      if (policy) setPolicyStatus(policy.status);
       const uniqueUserIds = Array.from(new Set(docs.map(d => d.uploaded_by_id)));
       const userData = await Promise.all(uniqueUserIds.map(uid => apiClient.getById(uid).catch(() => null)));
       const userMap: Record<string, User> = {};
@@ -74,6 +88,41 @@ export default function PolicyDocumentsPage() {
     }
     if (id) loadData();
   }, [id]);
+
+  const handleIssuanceUpload = async (type: "soft" | "hard") => {
+    if (!issuanceFile) return;
+    setIssuanceUploading(true);
+    setIssuanceError("");
+    try {
+      const file_path = await uploadToR2(issuanceFile, "policies");
+      const data = { file_name: issuanceFile.name, file_path };
+      if (type === "soft") {
+        await apiClient.uploadSoftCopy(prId, data);
+      } else {
+        await apiClient.uploadHardCopy(prId, data);
+      }
+      setIssuanceFile(null);
+      await fetchDocuments();
+    } catch (err) {
+      setIssuanceError("Upload failed. Please try again.");
+      console.error(err);
+    } finally {
+      setIssuanceUploading(false);
+    }
+  };
+
+  const handleActivatePolicy = async () => {
+    setIsActivating(true);
+    try {
+      await apiClient.transitionPolicyRequest(prId, "ACTIVE");
+      router.refresh();
+      await fetchDocuments();
+    } catch (err) {
+      console.error("Failed to activate policy", err);
+    } finally {
+      setIsActivating(false);
+    }
+  };
 
   const openUploadModal = (category: DocCategory) => {
     setActiveCategory(category);
@@ -186,8 +235,71 @@ export default function PolicyDocumentsPage() {
     );
   };
 
+  const issuanceStep = policyStatus === "RISK_HELD" ? "soft"
+    : policyStatus === "POLICY_ISSUED_SOFT" ? "hard"
+    : policyStatus === "POLICY_ISSUED_HARD" ? "activate"
+    : null;
+
   return (
     <>
+      {/* Issuance action banner */}
+      {issuanceStep && (
+        <div className="mx-6 mt-6 rounded-2xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+            <span className="text-sm font-bold text-amber-800 dark:text-amber-300">
+              {issuanceStep === "soft" && "Next Step: Upload Policy Soft Copy"}
+              {issuanceStep === "hard" && "Next Step: Upload Policy Hard Copy"}
+              {issuanceStep === "activate" && "Next Step: Activate Policy"}
+            </span>
+          </div>
+          {issuanceStep === "activate" ? (
+            <div className="flex items-center gap-3">
+              <p className="text-xs text-amber-700 dark:text-amber-400 flex-1">
+                Hard copy has been uploaded. Click to mark this policy as Active.
+              </p>
+              <button
+                onClick={handleActivatePolicy}
+                disabled={isActivating}
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors disabled:opacity-50"
+              >
+                {isActivating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowRight className="w-3.5 h-3.5" />}
+                Activate Policy
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-xs text-amber-700 dark:text-amber-400">
+                {issuanceStep === "soft"
+                  ? "Upload the scanned soft copy of the policy document received from the insurer."
+                  : "Upload the physical hard copy scan to complete the issuance process."}
+              </p>
+              {issuanceError && <p className="text-xs text-red-600">{issuanceError}</p>}
+              <input ref={issuanceFileRef} type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden"
+                onChange={e => setIssuanceFile(e.target.files?.[0] || null)} />
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => issuanceFileRef.current?.click()}
+                  className="flex items-center gap-1.5 px-3 py-2 border border-amber-300 dark:border-amber-700 rounded-lg text-xs text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  {issuanceFile ? issuanceFile.name : "Select file"}
+                </button>
+                <button
+                  onClick={() => handleIssuanceUpload(issuanceStep as "soft" | "hard")}
+                  disabled={issuanceUploading || !issuanceFile}
+                  className="flex items-center gap-2 px-4 py-2 bg-[#0B1727] dark:bg-white text-white dark:text-[#0B1727] text-xs font-bold rounded-lg hover:bg-[#1a2639] dark:hover:bg-gray-100 transition-colors disabled:opacity-50"
+                >
+                  {issuanceUploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                  {issuanceUploading ? "Uploading..." : `Upload ${issuanceStep === "soft" ? "Soft" : "Hard"} Copy`}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="divide-y divide-gray-100 dark:divide-dark-3 pb-6">
         {renderSection("client", clientDocs)}
         {renderSection("insurer", insurerDocs)}

@@ -44,6 +44,17 @@ export default function PolicyFinancialsPage() {
   const fetchInvoices = async () => {
     const invs = await apiClient.getInvoices(prId).catch(() => [] as InvoiceRead[]);
     setInvoices(invs);
+    // Pre-populate payment state from persisted payment data
+    const successMap: Record<number, boolean> = {};
+    const utrMap: Record<number, string> = {};
+    for (const inv of invs) {
+      if (inv.payment) {
+        successMap[inv.id] = true;
+        utrMap[inv.id] = inv.payment.utr_number;
+      }
+    }
+    setPaymentSuccess(successMap);
+    setUtrValues(prev => ({ ...prev, ...utrMap }));
   };
 
   useEffect(() => {
@@ -265,7 +276,10 @@ export default function PolicyFinancialsPage() {
                         <Check className="w-4 h-4 text-emerald-500 shrink-0" />
                         <div>
                           <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">Payment recorded</p>
-                          <p className="text-xs text-emerald-600 dark:text-emerald-500">UTR: {utrValues[inv.id]}</p>
+                          <p className="text-xs text-emerald-600 dark:text-emerald-500">UTR: {utrValues[inv.id] || inv.payment?.utr_number}</p>
+                          {inv.payment?.payment_date && (
+                            <p className="text-xs text-emerald-600 dark:text-emerald-500">Date: {new Date(inv.payment.payment_date).toLocaleDateString("en-IN")}</p>
+                          )}
                         </div>
                       </div>
                     ) : (
