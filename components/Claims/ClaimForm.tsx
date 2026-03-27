@@ -1,40 +1,77 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FormSection, FormInput, FormTextarea } from "@/components/ui/FormCommon";
-import { Select } from "@/components/ui-elements/FormElements/select";
-import { ClaimRead } from "@/types/api";
+import { apiClient } from "@/lib/apiClient";
+import { ClaimRead, PolicyRequestRead } from "@/types/api";
 
 type ClaimFormProps = {
   action: (formData: FormData) => void;
   pending: boolean;
   defaultValues?: Partial<ClaimRead>;
   isEdit?: boolean;
+  defaultPolicyRequestId?: number;
 };
 
 const CLAIM_TYPES = [
-  { value: "Fire", label: "Fire" },
-  { value: "Marine", label: "Marine" },
-  { value: "Motor", label: "Motor" },
-  { value: "Health", label: "Health" },
-  { value: "Liability", label: "Liability" },
-  { value: "Engineering", label: "Engineering" },
-  { value: "Miscellaneous", label: "Miscellaneous" },
+  "Standard Fire & Special Perils Policy",
+  "Industrial All Risk Policy",
+  "Burglary / Theft Insurance",
+  "Machinery Breakdown Insurance",
+  "Boiler & Pressure Plant Insurance",
+  "Electronic Equipment Insurance",
+  "Marine Cargo (Transit) Insurance",
+  "Marine Open Policy / Annual Marine Policy",
+  "Erection All Risk (EAR) Insurance",
+  "Contractors All Risk (CAR) Insurance",
+  "Loss of Profit / Business Interruption Policy",
+  "Group Mediclaim / Group Health Insurance",
+  "Group Personal Accident Policy",
+  "Group Term Life Insurance",
+  "Workmen Compensation Policy",
+  "Public Liability Insurance",
+  "Product Liability Insurance",
+  "Commercial General Liability (CGL)",
+  "Directors & Officers (D&O) Liability Insurance",
+  "Professional Indemnity Insurance",
+  "Cyber Risk / Data Breach Insurance",
+  "Fidelity Guarantee Insurance",
+  "Money Insurance",
+  "Vehicle / Motor Insurance (Fleet Policy)",
+  "Keyman Insurance Policy",
+  "Trade Credit Insurance",
+  "Environmental Liability Insurance",
+  "Property All Risk Policy",
+  "Terrorism Insurance Cover",
+  "Stock Deterioration Insurance",
 ];
 
-/**
- * ClaimForm facilitates the registration and management of insurance claims.
- * It links claims to specific policy requests and records incident details, 
- * estimated losses, and professional notes.
- */
+const CLAIMABLE_STATUSES = new Set([
+  "RISK_HELD",
+  "POLICY_ISSUED_SOFT",
+  "POLICY_ISSUED_HARD",
+  "ACTIVE",
+  "EXPIRING",
+]);
+
 export function ClaimForm({
   action,
   pending,
   defaultValues,
   isEdit = false,
+  defaultPolicyRequestId,
 }: ClaimFormProps) {
   const router = useRouter();
+  const [policies, setPolicies] = useState<PolicyRequestRead[]>([]);
+
+  useEffect(() => {
+    if (!isEdit) {
+      apiClient.getPolicyRequests().then((all) => {
+        setPolicies(all.filter((p) => CLAIMABLE_STATUSES.has(p.status)));
+      }).catch(console.error);
+    }
+  }, [isEdit]);
 
   return (
     <form action={action}>
@@ -42,28 +79,46 @@ export function ClaimForm({
         {isEdit && defaultValues?.id && (
           <input type="hidden" name="id" value={defaultValues.id} />
         )}
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <FormSection title="Claim Information">
             {!isEdit && (
-              <FormInput
-                label="Policy Request ID*"
-                name="policy_request_id"
-                type="number"
-                defaultValue={defaultValues?.policy_request_id}
-                required
-                placeholder="e.g. 1042"
-              />
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Policy*
+                </label>
+                <select
+                  name="policy_request_id"
+                  defaultValue={defaultPolicyRequestId ? String(defaultPolicyRequestId) : ""}
+                  required
+                  className="w-full appearance-none rounded-lg border border-stroke bg-transparent px-5.5 py-3 outline-none transition focus:border-primary dark:border-dark-3 dark:bg-dark-2 dark:focus:border-primary text-dark dark:text-white"
+                >
+                  <option value="">Select Policy</option>
+                  {policies.map((p) => (
+                    <option key={p.id} value={String(p.id)}>
+                      PR-{p.id} — {p.line_of_business}{p.unit_name ? ` (${p.unit_name})` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
             )}
-            
-            <Select
-              label="Claim Type*"
-              name="claim_type"
-              items={CLAIM_TYPES}
-              defaultValue={defaultValues?.claim_type || ""}
-              placeholder="Select Type"
-              required
-            />
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Claim Type*
+              </label>
+              <select
+                name="claim_type"
+                defaultValue={defaultValues?.claim_type || ""}
+                required
+                className="w-full appearance-none rounded-lg border border-stroke bg-transparent px-5.5 py-3 outline-none transition focus:border-primary dark:border-dark-3 dark:bg-dark-2 dark:focus:border-primary text-dark dark:text-white"
+              >
+                <option value="">Select Claim Type</option>
+                {CLAIM_TYPES.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </div>
 
             <FormInput
               label="Date of Incident*"
@@ -74,7 +129,7 @@ export function ClaimForm({
             />
 
             <FormInput
-              label="Estimated Loss Amount (INR)"
+              label="Estimated Loss Amount (₹)"
               name="estimated_loss"
               type="number"
               defaultValue={defaultValues?.estimated_loss || ""}
@@ -91,7 +146,7 @@ export function ClaimForm({
               rows={4}
               placeholder="Describe what happened..."
             />
-            
+
             <FormTextarea
               label="Additional Notes"
               name="notes"

@@ -136,7 +136,7 @@ export default function ClaimsPage() {
                 filtered.map(c => (
                   <tr key={c.id} className="hover:bg-gray-50 dark:hover:bg-dark-2 transition-colors">
                   <td className="py-4 px-4 text-sm font-semibold text-blue-600 dark:text-blue-400">
-                    <Link href={`/claims/${c.id}`} className="hover:underline">{c.insurer_claim_number || `CLM-${c.id}`}</Link>
+                    <Link href={`/company/claims/${c.id}/overview`} className="hover:underline">{c.insurer_claim_number || `CLM-${c.id}`}</Link>
                   </td>
                   <td className="py-4 px-4 text-sm text-gray-500 dark:text-dark-6">PR-{c.policy_request_id}</td>
                   <td className="py-4 px-4 text-sm text-gray-700 dark:text-gray-300">CMP-{c.company_id}</td>

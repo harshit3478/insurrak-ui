@@ -49,6 +49,7 @@ export interface UnitRead {
 
 export interface BrokerRead {
   id: number;
+  company_id: number;
   name: string;
   contact_email: string | null;
   contact_phone: string | null;
@@ -61,6 +62,7 @@ export interface BrokerRead {
 
 export interface InsurerRead {
   id: number;
+  company_id: number;
   name: string;
   branch: string | null;
   contact_email: string | null;
@@ -487,4 +489,30 @@ export interface ClaimApprovalCreate {
 export interface ClaimSettlementCreate {
   settled_amount: number;
   notes?: string | null;
+}
+
+export interface ClaimCommunicationCreate {
+  direction: string; // INBOUND | OUTBOUND
+  sender_name: string;
+  sender_email?: string | null;
+  subject?: string | null;
+  message: string;
+  file_name?: string | null;
+  file_path?: string | null;
+  sent_at: string; // ISO datetime
+}
+
+export interface ClaimCommunicationRead {
+  id: number;
+  claim_id: number;
+  created_by_id: number | null;
+  direction: string;
+  sender_name: string;
+  sender_email: string | null;
+  subject: string | null;
+  message: string;
+  file_name: string | null;
+  file_path: string | null;
+  sent_at: string;
+  created_at: string;
 }

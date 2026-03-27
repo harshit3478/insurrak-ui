@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { usePolicies } from "@/context-provider/PolicyProvider";
 import { PolicyForm } from "@/components/Policies/PolicyForm";
 import { FormHeader, SuccessHeader } from "@/components/ui/FormCommon";
@@ -12,6 +12,8 @@ export default function AddPolicyPage() {
   const { createPolicyAction } = usePolicies();
   const [createState, createPolicy, isCreating] = useActionState(createPolicyAction, initialState);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const defaultUnitId = searchParams.get("unit_id") ? Number(searchParams.get("unit_id")) : undefined;
 
   if (createState.success) {
     const data = createState.data || {};
@@ -121,7 +123,7 @@ export default function AddPolicyPage() {
           {createState.error}
         </div>
       )}
-      <PolicyForm action={createPolicy} pending={isCreating} />
+      <PolicyForm action={createPolicy} pending={isCreating} defaultUnitId={defaultUnitId} />
     </div>
   );
 }

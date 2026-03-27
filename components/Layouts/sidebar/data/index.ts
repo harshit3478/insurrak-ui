@@ -6,6 +6,8 @@ import {
   UserRound,
   LogOut,
   GitBranch,
+  Briefcase,
+  Building,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { isBypassActive } from "@/types/permissions";
@@ -126,6 +128,18 @@ export function getNavData(
           title: "Units / Branches",
           icon: GitBranch,
           url: "/branches",
+          allowedRoles: ["COMPANY_ADMIN", "BRANCH_ADMIN", "COMPANY_USER"],
+        },
+        {
+          title: "Brokers",
+          icon: Briefcase,
+          url: "/brokers",
+          allowedRoles: ["COMPANY_ADMIN", "BRANCH_ADMIN", "COMPANY_USER"],
+        },
+        {
+          title: "Insurers",
+          icon: Building,
+          url: "/insurers",
           allowedRoles: ["COMPANY_ADMIN", "BRANCH_ADMIN", "COMPANY_USER"],
         },
         {

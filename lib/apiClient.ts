@@ -645,6 +645,15 @@ export const apiClient = {
     close: async (id: number): Promise<import("@/types/api").ClaimRead> => {
       return api.post(`${API_ENDPOINTS.CLAIMS}/${id}/close`, {});
     },
+    getCommunications: async (id: number): Promise<import("@/types/api").ClaimCommunicationRead[]> => {
+      return api.get(`${API_ENDPOINTS.CLAIMS}/${id}/communications`);
+    },
+    addCommunication: async (
+      id: number,
+      data: import("@/types/api").ClaimCommunicationCreate,
+    ): Promise<import("@/types/api").ClaimCommunicationRead> => {
+      return api.post(`${API_ENDPOINTS.CLAIMS}/${id}/communications`, data);
+    },
   },
 
   // ─── File Upload (Cloudflare R2) ─────────────────────────────────
