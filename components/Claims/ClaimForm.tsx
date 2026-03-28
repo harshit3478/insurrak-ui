@@ -64,6 +64,9 @@ export function ClaimForm({
 }: ClaimFormProps) {
   const router = useRouter();
   const [policies, setPolicies] = useState<PolicyRequestRead[]>([]);
+  const [selectedPolicyId, setSelectedPolicyId] = useState<string>(
+    defaultPolicyRequestId ? String(defaultPolicyRequestId) : ""
+  );
 
   useEffect(() => {
     if (!isEdit) {
@@ -89,7 +92,8 @@ export function ClaimForm({
                 </label>
                 <select
                   name="policy_request_id"
-                  defaultValue={defaultPolicyRequestId ? String(defaultPolicyRequestId) : ""}
+                  value={selectedPolicyId}
+                  onChange={e => setSelectedPolicyId(e.target.value)}
                   required
                   className="w-full appearance-none rounded-lg border border-stroke bg-transparent px-5.5 py-3 outline-none transition focus:border-primary dark:border-dark-3 dark:bg-dark-2 dark:focus:border-primary text-dark dark:text-white"
                 >

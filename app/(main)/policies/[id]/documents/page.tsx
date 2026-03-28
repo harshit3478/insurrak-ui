@@ -89,6 +89,13 @@ export default function PolicyDocumentsPage() {
     if (id) loadData();
   }, [id]);
 
+  // Re-sync issuance banner when layout modals complete (e.g. soft/hard copy uploaded from action bar)
+  useEffect(() => {
+    const handler = () => fetchDocuments();
+    window.addEventListener("policy:refresh", handler);
+    return () => window.removeEventListener("policy:refresh", handler);
+  }, []);
+
   const handleIssuanceUpload = async (type: "soft" | "hard") => {
     if (!issuanceFile) return;
     setIssuanceUploading(true);

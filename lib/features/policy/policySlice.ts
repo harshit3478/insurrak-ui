@@ -5,12 +5,14 @@ interface PolicyState {
   items: Policy[];
   total: number;
   selectedId: string | null;
+  lastFetched: number | null;
 }
 
 const initialState: PolicyState = {
   items: [],
   total: 0,
   selectedId: null,
+  lastFetched: null,
 };
 
 const policySlice = createSlice({
@@ -19,6 +21,11 @@ const policySlice = createSlice({
   reducers: {
     setPolicies(state, action: PayloadAction<Policy[]>) {
       state.items = action.payload;
+      state.total = action.payload.length;
+      state.lastFetched = Date.now();
+    },
+    invalidateCache(state) {
+      state.lastFetched = null;
     },
     addPolicy(state, action: PayloadAction<Policy>) {
       state.items.unshift(action.payload);
@@ -44,5 +51,6 @@ export const {
   updatePolicy,
   deletePolicy,
   selectPolicy,
+  invalidateCache: invalidatePolicyCache,
 } = policySlice.actions;
 export default policySlice.reducer;

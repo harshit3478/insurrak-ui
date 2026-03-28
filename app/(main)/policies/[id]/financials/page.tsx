@@ -140,6 +140,7 @@ export default function PolicyFinancialsPage() {
         amount: amount ? Number(amount) : inv.total,
       });
       setPaymentSuccess(prev => ({ ...prev, [inv.id]: true }));
+      window.dispatchEvent(new CustomEvent("policy:refresh"));
     } catch (err) {
       setPaymentErrors(prev => ({ ...prev, [inv.id]: "Failed to record payment. Please try again." }));
       console.error(err);
@@ -332,8 +333,8 @@ export default function PolicyFinancialsPage() {
 
       {/* Upload Invoice Modal */}
       {showUploadModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white dark:bg-gray-dark rounded-2xl border border-gray-200 dark:border-dark-3 shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 flex p-4">
+          <div className="bg-white dark:bg-gray-dark rounded-2xl border border-gray-200 dark:border-dark-3 shadow-2xl w-full max-w-lg flex flex-col m-auto">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-dark-3 shrink-0">
               <h2 className="text-base font-bold text-gray-900 dark:text-white">Upload Proforma Invoice</h2>
               <button onClick={() => setShowUploadModal(false)} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-2 transition-colors">

@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { apiClient } from "@/lib/apiClient";
+import { uploadToR2 } from "@/lib/uploadToR2";
 import { PolicyRequestRead, UnitRead, BrokerRead, QuotationRead, InsurerRead } from "@/types/api";
 import { User } from "@/types";
-import { ChevronLeft, Check, Loader2, X, ArrowRight, AlertCircle, CheckCircle2, XCircle } from "lucide-react";
+import { ChevronLeft, Check, Loader2, X, ArrowRight, AlertCircle, CheckCircle2, XCircle, Upload, CreditCard, FileUp } from "lucide-react";
 import { Loading } from "@/components/ui/Loading";
 import { useAuth } from "@/context-provider/AuthProvider";
 
@@ -53,7 +54,7 @@ const getStatusDotColor = (status: string) => {
 /**
  * Contextual actions available at each workflow stage.
  */
-type ActionConfig = { label: string; nextStatus: string; variant: "primary" | "success" | "danger" };
+type ActionConfig = { label: string; nextStatus: string; variant: "primary" | "success" | "danger" | "navigate" };
 const STATUS_ACTIONS: Partial<Record<string, ActionConfig[]>> = {
   DRAFT: [{ label: "Start Data Collection", nextStatus: "DATA_COLLECTION", variant: "primary" }],
   DATA_COLLECTION: [{ label: "Submit for Quoting", nextStatus: "QUOTING", variant: "primary" }],
@@ -63,6 +64,10 @@ const STATUS_ACTIONS: Partial<Record<string, ActionConfig[]>> = {
     { label: "Reject / Revise", nextStatus: "QUOTING", variant: "danger" },
   ],
   APPROVED: [{ label: "Mark Payment Pending", nextStatus: "PAYMENT_PENDING", variant: "primary" }],
+  PAYMENT_PENDING: [{ label: "Upload Invoice & Pay", nextStatus: "", variant: "primary" }],
+  RISK_HELD: [{ label: "Upload Soft Copy", nextStatus: "", variant: "primary" }],
+  POLICY_ISSUED_SOFT: [{ label: "Upload Hard Copy", nextStatus: "", variant: "primary" }],
+  POLICY_ISSUED_HARD: [{ label: "Activate Policy", nextStatus: "ACTIVE", variant: "success" }],
 };
 
 const CLAIM_ELIGIBLE_STATUSES = ["RISK_HELD", "POLICY_ISSUED_SOFT", "POLICY_ISSUED_HARD", "ACTIVE", "EXPIRING"];
@@ -102,6 +107,35 @@ export default function PolicyDetailsLayout({ children }: { children: React.Reac
   const [isSubmittingApproval, setIsSubmittingApproval] = useState(false);
   const [approvalError, setApprovalError] = useState("");
 
+  // Payment modal state (PAYMENT_PENDING)
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [pmAmount, setPmAmount] = useState("");
+  const [pmGstPct, setPmGstPct] = useState("18");
+  const [pmBankName, setPmBankName] = useState("");
+  const [pmAccountNo, setPmAccountNo] = useState("");
+  const [pmIfsc, setPmIfsc] = useState("");
+  const [pmPdfFile, setPmPdfFile] = useState<File | null>(null);
+  const [pmUtr, setPmUtr] = useState("");
+  const [pmDate, setPmDate] = useState("");
+  const [pmPayAmount, setPmPayAmount] = useState("");
+  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
+  const [paymentModalError, setPaymentModalError] = useState("");
+  const pmPdfRef = useRef<HTMLInputElement>(null);
+
+  // Soft copy modal state (RISK_HELD)
+  const [showSoftCopyModal, setShowSoftCopyModal] = useState(false);
+  const [softCopyFile, setSoftCopyFile] = useState<File | null>(null);
+  const [isUploadingSoftCopy, setIsUploadingSoftCopy] = useState(false);
+  const [softCopyError, setSoftCopyError] = useState("");
+  const softCopyRef = useRef<HTMLInputElement>(null);
+
+  // Hard copy modal state (POLICY_ISSUED_SOFT)
+  const [showHardCopyModal, setShowHardCopyModal] = useState(false);
+  const [hardCopyFile, setHardCopyFile] = useState<File | null>(null);
+  const [isUploadingHardCopy, setIsUploadingHardCopy] = useState(false);
+  const [hardCopyError, setHardCopyError] = useState("");
+  const hardCopyRef = useRef<HTMLInputElement>(null);
+
 
   const fetchPolicy = useCallback(async () => {
     try {
@@ -138,6 +172,12 @@ export default function PolicyDetailsLayout({ children }: { children: React.Reac
     }
     if (id) loadData();
   }, [id, fetchPolicy]);
+
+  useEffect(() => {
+    const handler = () => fetchPolicy();
+    window.addEventListener("policy:refresh", handler);
+    return () => window.removeEventListener("policy:refresh", handler);
+  }, [fetchPolicy]);
 
   const handleTransition = async (nextStatus: string) => {
     if (!policy) return;
@@ -185,6 +225,92 @@ export default function PolicyDetailsLayout({ children }: { children: React.Reac
       console.error(err);
     } finally {
       setIsSubmittingApproval(false);
+    }
+  };
+
+  const pmGstAmount = pmAmount && !isNaN(Number(pmAmount))
+    ? (Number(pmAmount) * Number(pmGstPct)) / 100 : 0;
+  const pmTotal = Number(pmAmount || 0) + pmGstAmount;
+
+  const openPaymentModal = () => {
+    setPmAmount(""); setPmGstPct("18"); setPmBankName(""); setPmAccountNo(""); setPmIfsc("");
+    setPmPdfFile(null); setPmUtr(""); setPmDate(""); setPmPayAmount(""); setPaymentModalError("");
+    setShowPaymentModal(true);
+  };
+
+  const handleSubmitPayment = async () => {
+    if (!pmAmount || !pmUtr || !pmDate) {
+      setPaymentModalError("Base premium, UTR number, and payment date are required.");
+      return;
+    }
+    setIsSubmittingPayment(true);
+    setPaymentModalError("");
+    try {
+      let file_name: string | undefined;
+      let file_path: string | undefined;
+      if (pmPdfFile) {
+        file_path = await uploadToR2(pmPdfFile, "invoices");
+        file_name = pmPdfFile.name;
+      }
+      const invoice = await apiClient.uploadInvoice(Number(id), {
+        invoice_type: "PROFORMA",
+        amount: Number(pmAmount),
+        gst: pmGstAmount,
+        total: pmTotal,
+        bank_name: pmBankName.trim() || null,
+        bank_account_number: pmAccountNo.trim() || null,
+        bank_ifsc: pmIfsc.trim() || null,
+        file_name,
+        file_path,
+      });
+      await apiClient.recordPayment(Number(id), invoice.id, {
+        utr_number: pmUtr.trim(),
+        payment_date: pmDate,
+        amount: pmPayAmount ? Number(pmPayAmount) : pmTotal,
+      });
+      setShowPaymentModal(false);
+      window.dispatchEvent(new CustomEvent("policy:refresh"));
+    } catch (err) {
+      setPaymentModalError("Submission failed. Please try again.");
+      console.error(err);
+    } finally {
+      setIsSubmittingPayment(false);
+    }
+  };
+
+  const handleSoftCopyUpload = async () => {
+    if (!softCopyFile) return;
+    setIsUploadingSoftCopy(true);
+    setSoftCopyError("");
+    try {
+      const file_path = await uploadToR2(softCopyFile, "policies");
+      await apiClient.uploadSoftCopy(Number(id), { file_name: softCopyFile.name, file_path });
+      setShowSoftCopyModal(false);
+      setSoftCopyFile(null);
+      window.dispatchEvent(new CustomEvent("policy:refresh"));
+    } catch (err) {
+      setSoftCopyError("Upload failed. Please try again.");
+      console.error(err);
+    } finally {
+      setIsUploadingSoftCopy(false);
+    }
+  };
+
+  const handleHardCopyUpload = async () => {
+    if (!hardCopyFile) return;
+    setIsUploadingHardCopy(true);
+    setHardCopyError("");
+    try {
+      const file_path = await uploadToR2(hardCopyFile, "policies");
+      await apiClient.uploadHardCopy(Number(id), { file_name: hardCopyFile.name, file_path });
+      setShowHardCopyModal(false);
+      setHardCopyFile(null);
+      window.dispatchEvent(new CustomEvent("policy:refresh"));
+    } catch (err) {
+      setHardCopyError("Upload failed. Please try again.");
+      console.error(err);
+    } finally {
+      setIsUploadingHardCopy(false);
     }
   };
 
@@ -314,6 +440,10 @@ export default function PolicyDetailsLayout({ children }: { children: React.Reac
               {policy.status === "QUOTING" && "Quotes collected. Send for management approval."}
               {policy.status === "APPROVAL_PENDING" && "Management review required. Approve or return for revision."}
               {policy.status === "APPROVED" && "Policy approved. Initiate payment process."}
+              {policy.status === "PAYMENT_PENDING" && "Upload the proforma invoice from the insurer, then record the UTR payment reference to advance."}
+              {policy.status === "RISK_HELD" && "Risk is confirmed. Upload the soft copy of the policy document received from the insurer."}
+              {policy.status === "POLICY_ISSUED_SOFT" && "Soft copy recorded. Upload the physical hard copy scan to complete the issuance process."}
+              {policy.status === "POLICY_ISSUED_HARD" && "Hard copy received. Activate this policy to mark it as live and eligible for claims."}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -321,6 +451,12 @@ export default function PolicyDetailsLayout({ children }: { children: React.Reac
               const isApprovalAction = policy.status === "APPROVAL_PENDING";
               const onClick = isApprovalAction
                 ? () => openApprovalModal(action.nextStatus === "APPROVED" ? "APPROVED" : "REJECTED")
+                : policy.status === "PAYMENT_PENDING"
+                ? openPaymentModal
+                : policy.status === "RISK_HELD"
+                ? () => setShowSoftCopyModal(true)
+                : policy.status === "POLICY_ISSUED_SOFT"
+                ? () => setShowHardCopyModal(true)
                 : () => handleTransition(action.nextStatus);
               return (
                 <button
@@ -479,6 +615,176 @@ export default function PolicyDetailsLayout({ children }: { children: React.Reac
               >
                 {isSubmittingApproval && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 {isSubmittingApproval ? "Submitting..." : approvalDecision === "APPROVED" ? "Confirm Approval" : "Confirm Rejection"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Payment Modal (PAYMENT_PENDING) */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 flex p-4">
+          <div className="bg-white dark:bg-gray-dark rounded-2xl border border-gray-200 dark:border-dark-3 shadow-2xl w-full max-w-lg m-auto flex flex-col">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-dark-3 shrink-0">
+              <div>
+                <h2 className="text-base font-bold text-gray-900 dark:text-white">Upload Invoice & Record Payment</h2>
+                <p className="text-xs text-gray-400 mt-0.5">Policy: {policy.policy_number || `PRQ-${policy.id}`}</p>
+              </div>
+              <button onClick={() => setShowPaymentModal(false)} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-2 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
+              {paymentModalError && (
+                <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-lg px-3 py-2">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {paymentModalError}
+                </div>
+              )}
+
+              <div>
+                <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Proforma Invoice</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">Base Premium (₹) *</label>
+                    <input type="number" value={pmAmount} onChange={e => setPmAmount(e.target.value)} placeholder="e.g. 85000"
+                      className="w-full rounded-lg border border-gray-200 dark:border-dark-3 bg-white dark:bg-dark-2 text-sm text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0B1727]/20" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">GST %</label>
+                    <select value={pmGstPct} onChange={e => setPmGstPct(e.target.value)}
+                      className="w-full rounded-lg border border-gray-200 dark:border-dark-3 bg-white dark:bg-dark-2 text-sm text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0B1727]/20">
+                      {["0", "5", "12", "18", "28"].map(p => <option key={p} value={p}>{p}%</option>)}
+                    </select>
+                  </div>
+                </div>
+                {pmAmount && Number(pmAmount) > 0 && (
+                  <div className="flex items-center justify-between bg-gray-50 dark:bg-dark-2 rounded-xl px-4 py-2.5 text-sm mt-3">
+                    <span className="text-gray-500 dark:text-gray-400 text-xs">Total Premium</span>
+                    <span className="font-bold text-gray-900 dark:text-white">₹{pmTotal.toLocaleString()}</span>
+                  </div>
+                )}
+                <div className="grid grid-cols-1 gap-3 mt-3">
+                  <input type="text" placeholder="Bank Name (optional)" value={pmBankName} onChange={e => setPmBankName(e.target.value)}
+                    className="w-full rounded-lg border border-gray-200 dark:border-dark-3 bg-white dark:bg-dark-2 text-sm text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0B1727]/20" />
+                  <div className="grid grid-cols-2 gap-3">
+                    <input type="text" placeholder="Account Number" value={pmAccountNo} onChange={e => setPmAccountNo(e.target.value)}
+                      className="w-full rounded-lg border border-gray-200 dark:border-dark-3 bg-white dark:bg-dark-2 text-sm text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0B1727]/20" />
+                    <input type="text" placeholder="IFSC Code" value={pmIfsc} onChange={e => setPmIfsc(e.target.value)}
+                      className="w-full rounded-lg border border-gray-200 dark:border-dark-3 bg-white dark:bg-dark-2 text-sm text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0B1727]/20" />
+                  </div>
+                </div>
+                <input ref={pmPdfRef} type="file" accept=".pdf" className="hidden" onChange={e => setPmPdfFile(e.target.files?.[0] || null)} />
+                <button type="button" onClick={() => pmPdfRef.current?.click()}
+                  className="mt-3 w-full flex items-center justify-center gap-2 border border-dashed border-gray-200 dark:border-dark-3 rounded-lg py-2.5 text-xs text-gray-400 hover:border-gray-400 hover:text-gray-600 dark:hover:border-dark-4 transition-colors">
+                  <Upload className="w-3.5 h-3.5" />
+                  {pmPdfFile ? <span className="font-medium text-gray-700 dark:text-gray-200">{pmPdfFile.name}</span> : "Attach Invoice PDF (optional)"}
+                </button>
+              </div>
+
+              <div className="border-t border-gray-100 dark:border-dark-3 pt-5">
+                <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">Payment Reference</p>
+                <div className="space-y-3">
+                  <input type="text" placeholder="UTR / Reference Number *" value={pmUtr} onChange={e => setPmUtr(e.target.value)}
+                    className="w-full rounded-lg border border-gray-200 dark:border-dark-3 bg-white dark:bg-dark-2 text-sm text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0B1727]/20" />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs text-gray-400 mb-1">Payment Date *</label>
+                      <input type="date" value={pmDate} onChange={e => setPmDate(e.target.value)} max={new Date().toISOString().split("T")[0]}
+                        className="w-full rounded-lg border border-gray-200 dark:border-dark-3 bg-white dark:bg-dark-2 text-sm text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0B1727]/20" />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-400 mb-1">Amount Paid (₹)</label>
+                      <input type="number" placeholder={`Default ₹${pmTotal.toLocaleString()}`} value={pmPayAmount} onChange={e => setPmPayAmount(e.target.value)}
+                        className="w-full rounded-lg border border-gray-200 dark:border-dark-3 bg-white dark:bg-dark-2 text-sm text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0B1727]/20" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 dark:border-dark-3 shrink-0">
+              <button onClick={() => setShowPaymentModal(false)} className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">Cancel</button>
+              <button onClick={handleSubmitPayment} disabled={isSubmittingPayment || !pmAmount || !pmUtr || !pmDate}
+                className="flex items-center gap-2 px-5 py-2 bg-[#0B1727] dark:bg-white text-white dark:text-[#0B1727] text-sm font-semibold rounded-lg hover:bg-[#1a2639] dark:hover:bg-gray-100 transition-colors disabled:opacity-50">
+                {isSubmittingPayment ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CreditCard className="w-3.5 h-3.5" />}
+                {isSubmittingPayment ? "Processing..." : "Submit Payment"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Soft Copy Modal (RISK_HELD) */}
+      {showSoftCopyModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 flex p-4">
+          <div className="bg-white dark:bg-gray-dark rounded-2xl border border-gray-200 dark:border-dark-3 shadow-2xl w-full max-w-md m-auto">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-dark-3">
+              <div>
+                <h2 className="text-base font-bold text-gray-900 dark:text-white">Upload Policy Soft Copy</h2>
+                <p className="text-xs text-gray-400 mt-0.5">Scanned copy received from the insurer</p>
+              </div>
+              <button onClick={() => { setShowSoftCopyModal(false); setSoftCopyFile(null); }} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-2 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              {softCopyError && (
+                <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-lg px-3 py-2">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {softCopyError}
+                </div>
+              )}
+              <input ref={softCopyRef} type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={e => setSoftCopyFile(e.target.files?.[0] || null)} />
+              <button type="button" onClick={() => softCopyRef.current?.click()}
+                className="w-full flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-200 dark:border-dark-3 rounded-xl py-8 text-sm text-gray-400 hover:border-gray-400 hover:text-gray-600 dark:hover:border-dark-4 transition-colors">
+                <FileUp className="w-6 h-6" />
+                {softCopyFile ? <span className="font-medium text-gray-700 dark:text-gray-200">{softCopyFile.name}</span> : <span>Click to select PDF or image</span>}
+              </button>
+            </div>
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 dark:border-dark-3">
+              <button onClick={() => { setShowSoftCopyModal(false); setSoftCopyFile(null); }} className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">Cancel</button>
+              <button onClick={handleSoftCopyUpload} disabled={isUploadingSoftCopy || !softCopyFile}
+                className="flex items-center gap-2 px-5 py-2 bg-[#0B1727] dark:bg-white text-white dark:text-[#0B1727] text-sm font-semibold rounded-lg hover:bg-[#1a2639] dark:hover:bg-gray-100 transition-colors disabled:opacity-50">
+                {isUploadingSoftCopy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                {isUploadingSoftCopy ? "Uploading..." : "Upload Soft Copy"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Hard Copy Modal (POLICY_ISSUED_SOFT) */}
+      {showHardCopyModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 flex p-4">
+          <div className="bg-white dark:bg-gray-dark rounded-2xl border border-gray-200 dark:border-dark-3 shadow-2xl w-full max-w-md m-auto">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-dark-3">
+              <div>
+                <h2 className="text-base font-bold text-gray-900 dark:text-white">Upload Policy Hard Copy</h2>
+                <p className="text-xs text-gray-400 mt-0.5">Physical copy scan to complete issuance</p>
+              </div>
+              <button onClick={() => { setShowHardCopyModal(false); setHardCopyFile(null); }} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-2 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              {hardCopyError && (
+                <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-lg px-3 py-2">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {hardCopyError}
+                </div>
+              )}
+              <input ref={hardCopyRef} type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={e => setHardCopyFile(e.target.files?.[0] || null)} />
+              <button type="button" onClick={() => hardCopyRef.current?.click()}
+                className="w-full flex flex-col items-center justify-center gap-2 border-2 border-dashed border-gray-200 dark:border-dark-3 rounded-xl py-8 text-sm text-gray-400 hover:border-gray-400 hover:text-gray-600 dark:hover:border-dark-4 transition-colors">
+                <FileUp className="w-6 h-6" />
+                {hardCopyFile ? <span className="font-medium text-gray-700 dark:text-gray-200">{hardCopyFile.name}</span> : <span>Click to select PDF or image</span>}
+              </button>
+            </div>
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 dark:border-dark-3">
+              <button onClick={() => { setShowHardCopyModal(false); setHardCopyFile(null); }} className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">Cancel</button>
+              <button onClick={handleHardCopyUpload} disabled={isUploadingHardCopy || !hardCopyFile}
+                className="flex items-center gap-2 px-5 py-2 bg-[#0B1727] dark:bg-white text-white dark:text-[#0B1727] text-sm font-semibold rounded-lg hover:bg-[#1a2639] dark:hover:bg-gray-100 transition-colors disabled:opacity-50">
+                {isUploadingHardCopy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                {isUploadingHardCopy ? "Uploading..." : "Upload Hard Copy"}
               </button>
             </div>
           </div>

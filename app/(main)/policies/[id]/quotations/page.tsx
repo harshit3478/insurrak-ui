@@ -326,8 +326,8 @@ export default function PolicyQuotationsPage() {
 
       {/* Add Quotation Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white dark:bg-gray-dark rounded-2xl border border-gray-200 dark:border-dark-3 shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 flex p-4">
+          <div className="bg-white dark:bg-gray-dark rounded-2xl border border-gray-200 dark:border-dark-3 shadow-2xl w-full max-w-2xl flex flex-col m-auto">
             {/* Modal header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-dark-3 shrink-0">
               <h2 className="text-base font-bold text-gray-900 dark:text-white">Add Quotation</h2>
@@ -360,7 +360,7 @@ export default function PolicyQuotationsPage() {
                 <div className="space-y-4">
                   <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 rounded-xl px-4 py-3">
                     <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">
-                      Upload an insurer's quotation PDF and Claude AI will automatically extract premium amounts and coverage terms for you.
+                      Upload an insurer's quotation PDF and GPT-4o will automatically extract premium amounts and coverage terms for you.
                     </p>
                   </div>
 
@@ -390,7 +390,7 @@ export default function PolicyQuotationsPage() {
                     className="w-full flex items-center justify-center gap-2 py-2.5 bg-amber-500 text-white text-sm font-semibold rounded-lg hover:bg-amber-600 transition-colors disabled:opacity-50"
                   >
                     {isExtracting && <Loader2 className="w-4 h-4 animate-spin" />}
-                    {isExtracting ? "Extracting with Claude AI..." : "Extract & Pre-fill Form"}
+                    {isExtracting ? "Extracting with GPT-4o..." : "Extract & Pre-fill Form"}
                   </button>
                 </div>
               ) : (

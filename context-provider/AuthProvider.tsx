@@ -85,6 +85,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       store.dispatch(loginSuccess({ user, rememberMe: true }));
 
+      // Request browser notification permission for SUPER_ADMIN (future push support)
+      if (
+        user.role === "SUPER_ADMIN" &&
+        typeof window !== "undefined" &&
+        "Notification" in window &&
+        Notification.permission === "default"
+      ) {
+        Notification.requestPermission().catch(() => {
+          // Permission denied or not supported — silently ignore
+        });
+      }
+
       window.location.href = getDashboardRoute(user.role as Role);
 
       return { success: true };

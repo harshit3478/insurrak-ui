@@ -36,6 +36,8 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8
 export const API_ENDPOINTS = {
   REQUEST_OTP: "/auth/request-otp",
   VERIFY_OTP: "/auth/verify-otp",
+  COMPANY_REQUEST: "/auth/company-request",
+  DEBUG_PEEK_OTP: "/auth/debug/peek-otp",
   LOGOUT: "/auth/logout",
   ME: "/users/me",
   ROLES_PERMISSIONS: "/users/roles-permissions",
@@ -48,6 +50,7 @@ export const API_ENDPOINTS = {
   POLICY_REQUESTS: "/policy-requests",
   COMPANY_SUPERADMIN: "/users/company-super-admin",
   CLAIMS: "/claims",
+  COMPANY_REGISTRATION_REQUESTS: "/companies/registration-requests",
 };
 
 const getHeaders = () => {
@@ -59,9 +62,13 @@ const getHeaders = () => {
   };
 };
 
-/** Clear auth and redirect to login on 401/403 responses. */
+/**
+ * Redirect to login ONLY on 401 (token missing/expired/invalid).
+ * 403 means "authenticated but not authorised for this resource" — that is a
+ * business-logic error, NOT an auth failure, so we must NOT clear the session.
+ */
 const handleAuthError = (response: Response) => {
-  if (response.status === 401 || response.status === 403) {
+  if (response.status === 401) {
     if (typeof window !== "undefined") {
       localStorage.removeItem("token");
       localStorage.removeItem("insurrack_auth");
@@ -176,6 +183,16 @@ export const apiClient = {
       otp: credentials.otp,
       keep_login: credentials.keep_login ?? true,
     });
+  },
+
+  peekOtp: async (email: string): Promise<{ otp: string | null }> => {
+    return api.post(API_ENDPOINTS.DEBUG_PEEK_OTP, { email });
+  },
+
+  submitRegistrationRequest: async (
+    data: import("@/types/api").CompanyRegistrationRequestCreate,
+  ): Promise<import("@/types/api").CompanyRegistrationRequestRead> => {
+    return api.post(API_ENDPOINTS.COMPANY_REQUEST, data);
   },
 
   logout: async () => {
@@ -363,6 +380,19 @@ export const apiClient = {
   deleteCompany: async (id: number): Promise<{ success: boolean }> => {
     await api.delete(`${API_ENDPOINTS.COMPANIES}/${id}`);
     return { success: true };
+  },
+
+  getRegistrationRequests: async (): Promise<
+    import("@/types/api").CompanyRegistrationRequestRead[]
+  > => {
+    return api.get(API_ENDPOINTS.COMPANY_REGISTRATION_REQUESTS);
+  },
+
+  updateRegistrationRequest: async (
+    id: number,
+    status: "approved" | "rejected",
+  ): Promise<import("@/types/api").CompanyRegistrationRequestRead> => {
+    return api.patch(`${API_ENDPOINTS.COMPANY_REGISTRATION_REQUESTS}/${id}`, { status });
   },
 
   // ─── System admin: company units + unit detail ────────────────────

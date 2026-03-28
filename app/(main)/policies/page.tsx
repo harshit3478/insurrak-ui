@@ -5,6 +5,7 @@ import { RootState } from "@/lib/store";
 import { useAppDispatch } from "@/lib/hooks";
 import { useEffect, useState, useMemo, useRef } from "react";
 import { setPolicies } from "@/lib/features/policy/policySlice";
+import { isStale } from "@/lib/cache";
 import { apiClient } from "@/lib/apiClient";
 import { PolicyRequestRead } from "@/types/api";
 import { Search, Filter, Download, Plus, MoreVertical, FileText, ChevronDown, X } from "lucide-react";
@@ -42,8 +43,9 @@ export default function PoliciesPage() {
   const dispatch = useAppDispatch();
   const authUser = useSelector((s: RootState) => s.auth.user);
 
-  const [policies, setLocalPolicies] = useState<PolicyRequestRead[]>([]);
-  const [loading, setLoading] = useState(true);
+  const policies = useSelector((s: RootState) => s.policy.items) as unknown as PolicyRequestRead[];
+  const lastFetched = useSelector((s: RootState) => s.policy.lastFetched);
+  const [loading, setLoading] = useState(() => isStale(lastFetched));
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
@@ -51,31 +53,24 @@ export default function PoliciesPage() {
   const filterRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    async function fetchData() {
-      try {
-        setLoading(true);
-        const currentUser = await apiClient.getCurrentUser();
-        if (!currentUser.companyId) {
-          if (isBypassActive()) {
-            currentUser.companyId = "1";
-          } else {
-            setError("No company associated with your account.");
-            setLoading(false);
-            return;
-          }
-        }
-        const companyId = Number(currentUser.companyId);
-        const pData = await apiClient.getPolicyRequests(companyId).catch(() => [] as PolicyRequestRead[]);
-        setLocalPolicies(pData);
-        dispatch(setPolicies(pData as any));
-      } catch {
-        setError("Failed to load data.");
-      } finally {
-        setLoading(false);
-      }
+    if (!isStale(lastFetched)) {
+      setLoading(false);
+      return;
     }
-    fetchData();
-  }, [dispatch]);
+    const companyId = authUser?.companyId
+      ? Number(authUser.companyId)
+      : isBypassActive() ? 1 : null;
+    if (!companyId) {
+      setError("No company associated with your account.");
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    apiClient.getPolicyRequests(companyId)
+      .then(data => dispatch(setPolicies(data as any)))
+      .catch(() => setError("Failed to load data."))
+      .finally(() => setLoading(false));
+  }, [lastFetched, authUser?.companyId, dispatch]);
 
   // Close filter dropdown on outside click
   useEffect(() => {

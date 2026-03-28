@@ -75,8 +75,8 @@ export function Sidebar() {
         inert={isMobile ? !isOpen : undefined}
       >
         <div className={cn(
-          "flex h-full flex-col py-10 pr-[7px]",
-          !isOpen && !isMobile ? "items-center px-0" : "pl-[25px]",
+          "flex h-full flex-col py-10 pr-1.75",
+          !isOpen && !isMobile ? "items-center px-0" : "pl-6.25",
         )}>
           <div className={cn(
             "flex items-center gap-3 pr-4.5",

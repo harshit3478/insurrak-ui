@@ -74,6 +74,11 @@ export function getNavData(
             icon: Building2,
             url: "/system",
           },
+          {
+            title: "Registration Requests",
+            icon: ClipboardList,
+            url: "/system/registration-requests",
+          },
         ],
       },
       {

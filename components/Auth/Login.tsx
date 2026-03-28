@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useAuth } from "@/context-provider/AuthProvider";
+import { apiClient } from "@/lib/apiClient";
 import { Mail, ArrowLeft, ShieldCheck } from "lucide-react";
 import InputGroup from "../ui-elements/FormElements/InputGroup";
 
@@ -12,8 +13,9 @@ export default function LogIn() {
 
   const [step, setStep] = useState<"email" | "otp">("email");
   const [email, setEmail] = useState(
-    process.env.NODE_ENV === "development" ? "superadmin@example.com" : "",
+    process.env.NODE_ENV === "development" ? "harshit@gmail.com" : "harshit@gmail.com",
   );
+  const [otp, setOtp] = useState("");
   const [otpError, setOtpError] = useState<string | undefined>();
   const [isSending, setIsSending] = useState(false);
 
@@ -27,6 +29,12 @@ export default function LogIn() {
       setOtpError(result.error);
     } else {
       setStep("otp");
+      // POC: autofill OTP in dev mode so testers don't need to check server logs
+      if (process.env.NODE_ENV === "development") {
+        apiClient.peekOtp(email).then((res) => {
+          if (res.otp) setOtp(res.otp);
+        }).catch(() => {/* ignore — dev only */});
+      }
     }
   };
 
@@ -120,6 +128,8 @@ export default function LogIn() {
           inputClassName={`${inputClasses} text-center text-2xl tracking-[0.5em] font-mono`}
           className="mt-0! mb-0!"
           autoFocus
+          value={otp}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setOtp(e.target.value)}
         />
 
         <button
@@ -150,8 +160,15 @@ export default function LogIn() {
             type="button"
             onClick={async () => {
               setOtpError(undefined);
+              setOtp("");
               const result = await requestOtp(email);
-              if (result.error) setOtpError(result.error);
+              if (result.error) {
+                setOtpError(result.error);
+              } else if (process.env.NODE_ENV === "development") {
+                apiClient.peekOtp(email).then((res) => {
+                  if (res.otp) setOtp(res.otp);
+                }).catch(() => {});
+              }
             }}
             className="text-gray-500 hover:text-gray-700"
           >

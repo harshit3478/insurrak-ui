@@ -1,18 +1,25 @@
 "use client";
 
 import { createContext, useContext, useActionState } from "react";
+import { useSelector } from "react-redux";
+import { useAppDispatch } from "@/lib/hooks";
+import { RootState } from "@/lib/store";
 import { ActionState, PoliciesContextType, initialState } from "@/types";
 import { apiClient } from "@/lib/apiClient";
 import { PolicyRequestCreate, PolicyRequestUpdate } from "@/types/api";
+import { invalidatePolicyCache } from "@/lib/features/policy/policySlice";
 
 const PoliciesContext = createContext<PoliciesContextType | undefined>(undefined);
 
 /**
  * PoliciesProvider facilitates the procurement workflow for insurance policies.
- * It manages the submission of new policy requests and coordinates 
+ * It manages the submission of new policy requests and coordinates
  * updates to existing procurement records.
  */
 export function PoliciesProvider({ children }: { children: React.ReactNode }) {
+  const user = useSelector((state: RootState) => state.auth.user);
+  const dispatch = useAppDispatch();
+
   const createPolicyAction = async (
     prevState: ActionState,
     formData: FormData
@@ -20,8 +27,12 @@ export function PoliciesProvider({ children }: { children: React.ReactNode }) {
     if (formData.has("_reset")) return initialState;
 
     try {
+      // company_id comes from the authenticated user's profile, not the form,
+      // because the form never exposes it and it must match the logged-in user's company.
+      const companyId = user?.companyId ? Number(user.companyId) : 0;
+
       const payload: PolicyRequestCreate = {
-        company_id: Number(formData.get("company_id")),
+        company_id: companyId,
         unit_id: Number(formData.get("unit_id")),
         broker_id: formData.get("broker_id") ? Number(formData.get("broker_id")) : null,
         line_of_business: String(formData.get("line_of_business")),
@@ -36,6 +47,7 @@ export function PoliciesProvider({ children }: { children: React.ReactNode }) {
 
       const newPolicy = await apiClient.createPolicyRequest(payload);
 
+      dispatch(invalidatePolicyCache());
       return {
         success: true,
         data: {
@@ -69,6 +81,7 @@ export function PoliciesProvider({ children }: { children: React.ReactNode }) {
 
       await apiClient.updatePolicyRequest(id, payload);
 
+      dispatch(invalidatePolicyCache());
       return { success: true };
     } catch (err: any) {
       return { error: err.message || "Failed to update policy" };

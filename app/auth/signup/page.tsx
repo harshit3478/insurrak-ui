@@ -1,66 +1,53 @@
-import SignUp from '@/components/Auth/Signup';
+import SignUp from "@/components/Auth/Signup";
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
+import { Square } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Sign up",
+  title: "Request Access | Insurrack",
+  description: "Request company access to the Insurrack platform.",
 };
 
-/**
- * Signup component provides the registration interface for new users.
- * It features a dual-column layout on large screens, with the registration 
- * form on the left and brand visual elements on the right.
- */
-export default function Signup() {
+export default function SignupPage() {
   return (
-    <>
+    <div className="flex flex-col lg:flex-row min-h-screen w-full font-sans bg-white dark:bg-black">
+      {/* Left Section - Hero/Brand */}
+      <div className="w-full lg:w-1/2 bg-black relative overflow-hidden flex flex-col justify-between p-8 lg:p-16 text-white h-auto lg:h-auto min-h-[300px] lg:min-h-0">
+        <div className="absolute inset-0 bg-black z-0">
+          <div className="absolute inset-0 bg-linear-to-br from-black via-gray-900 to-cyan-600 opacity-90" />
+          <div className="absolute right-0 top-0 bottom-0 w-2/3 bg-linear-to-l from-cyan-600/30 via-black to-transparent opacity-10" />
+        </div>
 
-      <div className="rounded-[10px] bg-white shadow-1 dark:bg-gray-dark dark:shadow-card">
-        <div className="flex flex-wrap items-center">
-          <div className="w-full xl:w-1/2">
-            <div className="w-full p-4 sm:p-12.5 xl:p-15">
-              <SignUp />
-            </div>
-          </div>
+        <Link href="/" className="relative z-20 flex items-center gap-3 mb-10 lg:mb-0">
+          <Square className="w-4 h-4 text-white fill-white" />
+          <span className="text-lg font-medium tracking-wide">Insurance</span>
+        </Link>
 
-          <div className="hidden w-full p-7.5 xl:block xl:w-1/2">
-            <div className="custom-gradient-1 overflow-hidden rounded-2xl px-12.5 pt-12.5 dark:bg-dark-2! dark:bg-none">
-              <Link className="mb-10 inline-block" href="/">
-                <Image
-                  className="hidden dark:block"
-                  src={"/images/logo/logo.svg"}
-                  alt="Logo"
-                  width={176}
-                  height={32}
-                />
-                <Image
-                  className="dark:hidden"
-                  src={"/images/logo/logo-dark.svg"}
-                  alt="Logo"
-                  width={176}
-                  height={32}
-                />
-              </Link>
-              <p className="mb-3 text-xl font-medium text-dark dark:text-white">
-                Register your account
-              </p>
-
-              <h1 className="mb-4 text-2xl font-bold text-dark dark:text-white sm:text-heading-3">
-                Welcome!
-              </h1>
-
-              <p className="w-full max-w-93.75 font-medium text-dark-4 dark:text-dark-6">
-                Please sign up to your account by completing the necessary
-                fields below
-              </p>
-
-              <div className="mt-31">
-              </div>
-            </div>
-          </div>
+        <div className="relative z-20 mt-auto mb-10 lg:mb-20 max-w-lg">
+          <h1 className="text-4xl lg:text-5xl font-medium leading-tight text-white mb-2">
+            Get Your
+          </h1>
+          <h1 className="text-4xl lg:text-5xl font-medium leading-tight text-white mb-2">
+            Company Onboard
+          </h1>
+          <h1 className="text-4xl lg:text-5xl font-medium leading-tight text-white">
+            with{" "}
+            <span className="text-[#C6F200] font-semibold">
+              InsurRack
+            </span>
+          </h1>
+          <p className="mt-6 text-gray-400 text-base max-w-sm">
+            Submit a request and our team will set up your account within 24 hours.
+          </p>
         </div>
       </div>
-    </>
+
+      {/* Right Section - Signup Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 bg-white dark:bg-gray-dark overflow-y-auto">
+        <div className="w-full max-w-md py-8">
+          <SignUp />
+        </div>
+      </div>
+    </div>
   );
 }

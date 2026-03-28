@@ -517,3 +517,28 @@ export interface ClaimCommunicationRead {
   sent_at: string;
   created_at: string;
 }
+
+// ─── Company Registration Requests ───────────────────────────────────────────
+
+export interface CompanyRegistrationRequestCreate {
+  company_name: string;
+  admin_name: string;
+  admin_email: string;
+  admin_phone?: string | null;
+  address?: string | null;
+  gst_number?: string | null;
+  message?: string | null;
+}
+
+export interface CompanyRegistrationRequestRead {
+  id: number;
+  company_name: string;
+  admin_name: string;
+  admin_email: string;
+  admin_phone: string | null;
+  address: string | null;
+  gst_number: string | null;
+  message: string | null;
+  status: "pending" | "approved" | "rejected";
+  created_at: string;
+}

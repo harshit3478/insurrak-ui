@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { apiClient } from "@/lib/apiClient";
 import type { InsurerRead } from "@/types/api";
 import { Building, Plus, X, Pencil } from "lucide-react";
+import { getClientCache, setClientCache, invalidateClientCache } from "@/lib/cache";
 import { SkeletonRows } from "@/components/ui/SkeletonRows";
 
 export default function InsurersPage() {
@@ -14,11 +15,15 @@ export default function InsurersPage() {
 
   const load = () =>
     apiClient.getAllInsurers()
-      .then(setInsurers)
+      .then(data => { setClientCache("insurers", data); setInsurers(data); })
       .catch(console.error)
       .finally(() => setLoading(false));
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    const cached = getClientCache<InsurerRead[]>("insurers");
+    if (cached) { setInsurers(cached); setLoading(false); return; }
+    load();
+  }, []);
 
   const openAdd = () => { setEditing(null); setShowModal(true); };
   const openEdit = (ins: InsurerRead) => { setEditing(ins); setShowModal(true); };
@@ -97,7 +102,7 @@ export default function InsurersPage() {
         <InsurerModal
           insurer={editing}
           onClose={() => setShowModal(false)}
-          onSuccess={() => { setShowModal(false); load(); }}
+          onSuccess={() => { setShowModal(false); invalidateClientCache("insurers"); load(); }}
         />
       )}
     </div>

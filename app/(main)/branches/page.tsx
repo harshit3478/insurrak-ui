@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { apiClient } from "@/lib/apiClient";
 import type { UnitRead } from "@/types/api";
 import { Building2, Search, Plus, MoreVertical, Pencil, ToggleLeft, ToggleRight } from "lucide-react";
+import { getClientCache, setClientCache, invalidateClientCache } from "@/lib/cache";
 import { SkeletonRows } from "@/components/ui/SkeletonRows";
 
 export default function BranchesPage() {
@@ -17,8 +18,14 @@ export default function BranchesPage() {
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    const cached = getClientCache<UnitRead[]>("units");
+    if (cached) {
+      setUnits(cached);
+      setLoading(false);
+      return;
+    }
     apiClient.getAllUnits()
-      .then(setUnits)
+      .then(data => { setClientCache("units", data); setUnits(data); })
       .catch((err) => console.error("Failed to load units:", err))
       .finally(() => setLoading(false));
   }, []);
@@ -39,9 +46,14 @@ export default function BranchesPage() {
     setOpenMenuId(null);
     try {
       const updated = await apiClient.updateUnit(u.id, { is_active: !u.is_active });
-      setUnits((prev) => prev.map((x) => (x.id === u.id ? updated : x)));
+      setUnits((prev) => {
+        const next = prev.map((x) => (x.id === u.id ? updated : x));
+        setClientCache("units", next);
+        return next;
+      });
     } catch (err) {
       console.error("Failed to update unit:", err);
+      invalidateClientCache("units");
     } finally {
       setTogglingId(null);
     }

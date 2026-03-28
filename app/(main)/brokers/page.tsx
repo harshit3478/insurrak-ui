@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { apiClient } from "@/lib/apiClient";
 import type { BrokerRead } from "@/types/api";
 import { Briefcase, Plus, X, Pencil } from "lucide-react";
+import { getClientCache, setClientCache, invalidateClientCache } from "@/lib/cache";
 import { SkeletonRows } from "@/components/ui/SkeletonRows";
 
 export default function BrokersPage() {
@@ -14,11 +15,15 @@ export default function BrokersPage() {
 
   const load = () =>
     apiClient.getAllBrokers()
-      .then(setBrokers)
+      .then(data => { setClientCache("brokers", data); setBrokers(data); })
       .catch(console.error)
       .finally(() => setLoading(false));
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    const cached = getClientCache<BrokerRead[]>("brokers");
+    if (cached) { setBrokers(cached); setLoading(false); return; }
+    load();
+  }, []);
 
   const openAdd = () => { setEditing(null); setShowModal(true); };
   const openEdit = (b: BrokerRead) => { setEditing(b); setShowModal(true); };
@@ -97,7 +102,7 @@ export default function BrokersPage() {
         <BrokerModal
           broker={editing}
           onClose={() => setShowModal(false)}
-          onSuccess={() => { setShowModal(false); load(); }}
+          onSuccess={() => { setShowModal(false); invalidateClientCache("brokers"); load(); }}
         />
       )}
     </div>

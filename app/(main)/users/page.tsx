@@ -15,6 +15,7 @@ import {
   setUsers,
   updateUser as updateUserInStore,
 } from "@/lib/features/user/userSlice";
+import { isStale } from "@/lib/cache";
 import { useAppDispatch } from "@/lib/hooks";
 import { useRouter } from "next/navigation";
 
@@ -29,24 +30,22 @@ import { useState } from "react";
  */
 export default function UsersPage() {
   const authUser = useSelector((state: any) => state.auth.user);
+  const lastFetched = useSelector((state: any) => state.user.lastFetched as number | null);
   const dispatch = useAppDispatch();
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => isStale(lastFetched));
 
   useEffect(() => {
-    const loadUsers = async () => {
-      try {
-        setLoading(true);
-        const data = await api.getAll();
-        dispatch(setUsers(data));
-      } catch (err) {
-        console.error("Failed to fetch users", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadUsers();
-  }, [dispatch]);
+    if (!isStale(lastFetched)) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    api.getAll()
+      .then(data => dispatch(setUsers(data)))
+      .catch(err => console.error("Failed to fetch users", err))
+      .finally(() => setLoading(false));
+  }, [lastFetched, dispatch]);
 
   // Retrieves users and pagination metadata from the global Redux state.
   const users = useSelector(selectUsers);

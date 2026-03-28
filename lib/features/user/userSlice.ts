@@ -6,6 +6,7 @@ interface UsersState {
   total: number;
   page: number;
   limit: number;
+  lastFetched: number | null;
 }
 
 const initialState: UsersState = {
@@ -13,6 +14,7 @@ const initialState: UsersState = {
   total: 0,
   page: 1,
   limit: 10,
+  lastFetched: null,
 };
 
 const userSlice = createSlice({
@@ -22,6 +24,10 @@ const userSlice = createSlice({
     setUsers(state, action: PayloadAction<User[]>) {
       state.items = action.payload;
       state.total = action.payload.length;
+      state.lastFetched = Date.now();
+    },
+    invalidateCache(state) {
+      state.lastFetched = null;
     },
 
     addUser(state, action: PayloadAction<User>) {
@@ -76,6 +82,6 @@ const userSlice = createSlice({
 //       });
 //   },
 // });
-export const { setUsers, addUser, updateUser, toggleUserActive, deleteUser } =
+export const { setUsers, addUser, updateUser, toggleUserActive, deleteUser, invalidateCache: invalidateUserCache } =
   userSlice.actions;
 export default userSlice.reducer;

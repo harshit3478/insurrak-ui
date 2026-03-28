@@ -3,15 +3,15 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { apiClient } from "@/lib/apiClient";
-import { ApprovalRead, PolicyDocumentRead, InvoiceRead } from "@/types/api";
+import { ApprovalRead, PolicyDocumentRead, InvoiceRead, QuotationRead } from "@/types/api";
 import { User } from "@/types";
 import {
   CheckCircle2, XCircle, FileText, Receipt,
-  PlusCircle, GitMerge, Clock,
+  PlusCircle, GitMerge, Clock, ScrollText,
 } from "lucide-react";
 import { Loading } from "@/components/ui/Loading";
 
-type EventType = "created" | "status" | "approval" | "document" | "invoice" | "payment";
+type EventType = "created" | "status" | "approval" | "document" | "invoice" | "payment" | "quotation";
 
 interface ActivityEvent {
   id: string;
@@ -51,6 +51,7 @@ const EVENT_ICON: Record<EventType, { icon: React.ElementType; bg: string; color
   document: { icon: FileText, bg: "bg-amber-100 dark:bg-amber-900/30", color: "text-amber-500" },
   invoice: { icon: Receipt, bg: "bg-indigo-100 dark:bg-indigo-900/30", color: "text-indigo-500" },
   payment: { icon: CheckCircle2, bg: "bg-green-100 dark:bg-green-900/30", color: "text-green-500" },
+  quotation: { icon: ScrollText, bg: "bg-cyan-100 dark:bg-cyan-900/30", color: "text-cyan-600" },
 };
 
 export default function PolicyActivityPage() {
@@ -65,11 +66,12 @@ export default function PolicyActivityPage() {
     async function load() {
       setLoading(true);
       try {
-        const [policy, approvals, documents, invoices] = await Promise.all([
+        const [policy, approvals, documents, invoices, quotations] = await Promise.all([
           apiClient.getPolicyRequestById(prId),
           apiClient.getApprovals(prId).catch(() => [] as ApprovalRead[]),
           apiClient.getPolicyDocuments(prId).catch(() => [] as PolicyDocumentRead[]),
           apiClient.getInvoices(prId).catch(() => [] as InvoiceRead[]),
+          apiClient.getQuotations(prId).catch(() => [] as QuotationRead[]),
         ]);
 
         const allEvents: ActivityEvent[] = [];
@@ -106,6 +108,18 @@ export default function PolicyActivityPage() {
             description: `${doc.document_type.replace(/_/g, " ")} — ${doc.file_name}`,
             actorId: doc.uploaded_by_id,
             timestamp: doc.created_at,
+          });
+        }
+
+        // Quotations
+        for (const quot of quotations) {
+          allEvents.push({
+            id: `quotation-${quot.id}`,
+            type: "quotation",
+            title: "Quotation received",
+            description: `₹${quot.total_premium.toLocaleString()} total premium (v${quot.version})${quot.file_name ? ` — ${quot.file_name}` : ""}`,
+            actorId: null,
+            timestamp: quot.created_at,
           });
         }
 

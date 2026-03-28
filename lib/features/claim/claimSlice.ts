@@ -5,12 +5,14 @@ interface ClaimState {
   items: Claim[];
   total: number;
   selectedId: string | null;
+  lastFetched: number | null;
 }
 
 const initialState: ClaimState = {
   items: [],
   total: 0,
   selectedId: null,
+  lastFetched: null,
 };
 
 const claimSlice = createSlice({
@@ -20,6 +22,10 @@ const claimSlice = createSlice({
     setClaims(state, action: PayloadAction<Claim[]>) {
       state.items = action.payload;
       state.total = action.payload.length;
+      state.lastFetched = Date.now();
+    },
+    invalidateCache(state) {
+      state.lastFetched = null;
     },
     updateClaimStatus(
       state,
@@ -34,5 +40,5 @@ const claimSlice = createSlice({
   },
 });
 
-export const { setClaims, updateClaimStatus, selectClaim } = claimSlice.actions;
+export const { setClaims, updateClaimStatus, selectClaim, invalidateCache: invalidateClaimCache } = claimSlice.actions;
 export default claimSlice.reducer;
