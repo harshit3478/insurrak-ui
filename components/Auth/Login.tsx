@@ -29,12 +29,10 @@ export default function LogIn() {
       setOtpError(result.error);
     } else {
       setStep("otp");
-      // POC: autofill OTP in dev mode so testers don't need to check server logs
-      if (process.env.NODE_ENV === "development") {
-        apiClient.peekOtp(email).then((res) => {
-          if (res.otp) setOtp(res.otp);
-        }).catch(() => {/* ignore — dev only */});
-      }
+      // POC: autofill OTP so testers don't need to check server logs
+      apiClient.peekOtp(email).then((res) => {
+        if (res.otp) setOtp(res.otp);
+      }).catch(() => {});
     }
   };
 
@@ -164,7 +162,7 @@ export default function LogIn() {
               const result = await requestOtp(email);
               if (result.error) {
                 setOtpError(result.error);
-              } else if (process.env.NODE_ENV === "development") {
+              } else {
                 apiClient.peekOtp(email).then((res) => {
                   if (res.otp) setOtp(res.otp);
                 }).catch(() => {});
