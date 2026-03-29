@@ -53,15 +53,19 @@ export default function PoliciesPage() {
   const filterRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!isStale(lastFetched)) {
-      setLoading(false);
-      return;
-    }
     const companyId = authUser?.companyId
       ? Number(authUser.companyId)
       : isBypassActive() ? 1 : null;
     if (!companyId) {
-      setError("No company associated with your account.");
+      // authUser is null during hydration — don't show error yet, just wait
+      if (authUser !== null) {
+        setError("No company associated with your account.");
+      }
+      setLoading(false);
+      return;
+    }
+    setError(null);
+    if (!isStale(lastFetched)) {
       setLoading(false);
       return;
     }
@@ -70,7 +74,7 @@ export default function PoliciesPage() {
       .then(data => dispatch(setPolicies(data as any)))
       .catch(() => setError("Failed to load data."))
       .finally(() => setLoading(false));
-  }, [lastFetched, authUser?.companyId, dispatch]);
+  }, [lastFetched, authUser, dispatch]);
 
   // Close filter dropdown on outside click
   useEffect(() => {
