@@ -7,7 +7,6 @@ import {
   DropdownTrigger,
 } from "@/components/ui/dropdown";
 import { cn } from "@/lib/utils";
-import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { LogOutIcon, UserIcon } from "./icons";
@@ -22,8 +21,25 @@ type UserDropdownProps = {
   onLogout?: () => void;
 };
 
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0][0]?.toUpperCase() ?? "?";
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function getAvatarColor(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const hue = Math.abs(hash) % 360;
+  return `hsl(${hue}, 55%, 42%)`;
+}
+
 export function UserDropdown({ user, onLogout }: UserDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const initials = getInitials(user.name);
+  const avatarColor = getAvatarColor(user.name);
 
   return (
     <Dropdown isOpen={isOpen} setIsOpen={setIsOpen}>
@@ -31,14 +47,12 @@ export function UserDropdown({ user, onLogout }: UserDropdownProps) {
         <span className="sr-only">My Account</span>
 
         <figure className="flex items-center gap-3">
-            {/* <Image
-            src={USER.img}
-            className="size-12"
-            alt={`Avatar of ${USER.name}`}
-            role="presentation"
-            width={200}
-            height={200}
-          /> */}
+          <div
+            style={{ backgroundColor: avatarColor }}
+            className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
+          >
+            {initials}
+          </div>
           <figcaption className="flex items-center gap-1 font-medium text-dark dark:text-dark-6 max-[1024px]:sr-only">
             <span>{user.name}</span>
 
@@ -61,14 +75,12 @@ export function UserDropdown({ user, onLogout }: UserDropdownProps) {
         <h2 className="sr-only">User information</h2>
 
         <figure className="flex items-center gap-2.5 px-5 py-3.5">
-            {/* <Image
-            src={USER.img}
-            className="size-12"
-            alt={`Avatar for ${USER.name}`}
-            role="presentation"
-            width={200}
-            height={200}
-          /> */}
+          <div
+            style={{ backgroundColor: avatarColor }}
+            className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold shrink-0"
+          >
+            {initials}
+          </div>
 
           <figcaption className="space-y-1 text-base font-medium">
             <div className="leading-none text-dark dark:text-white">

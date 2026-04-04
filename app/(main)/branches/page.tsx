@@ -7,9 +7,11 @@ import type { UnitRead } from "@/types/api";
 import { Building2, Search, Plus, MoreVertical, Pencil, ToggleLeft, ToggleRight } from "lucide-react";
 import { getClientCache, setClientCache, invalidateClientCache } from "@/lib/cache";
 import { SkeletonRows } from "@/components/ui/SkeletonRows";
+import { useAuth } from "@/context-provider/AuthProvider";
 
 export default function BranchesPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [units, setUnits] = useState<UnitRead[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -18,6 +20,10 @@ export default function BranchesPage() {
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    if (user && user.role !== "COMPANY_ADMIN") {
+      router.replace("/policies");
+      return;
+    }
     const cached = getClientCache<UnitRead[]>("units");
     if (cached) {
       setUnits(cached);
@@ -28,7 +34,7 @@ export default function BranchesPage() {
       .then(data => { setClientCache("units", data); setUnits(data); })
       .catch((err) => console.error("Failed to load units:", err))
       .finally(() => setLoading(false));
-  }, []);
+  }, [user, router]);
 
   // Close menu on outside click
   useEffect(() => {

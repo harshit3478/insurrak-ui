@@ -32,6 +32,7 @@ export interface User {
   permissionIds?: number[];
   active: boolean;
   companyId: string | null;
+  branchId?: string | null;
   companyName?: string | null;
   designation?: string | null;
   reportsTo?: string | null;

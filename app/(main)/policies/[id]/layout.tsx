@@ -321,6 +321,8 @@ export default function PolicyDetailsLayout({ children }: { children: React.Reac
   const activeTab = TABS.find(tab => pathname.includes(tab.href))?.href || "documents";
   const statusActions = STATUS_ACTIONS[policy.status] || [];
   const canRaiseClaim = CLAIM_ELIGIBLE_STATUSES.includes(policy.status);
+  const isRequester = !!user && String(policy.requested_by_id) === user.id;
+  const isCompanyAdmin = user?.role === "COMPANY_ADMIN";
 
   return (
     <div className="p-4 md:p-8  min-h-screen font-sans space-y-6">
@@ -447,7 +449,12 @@ export default function PolicyDetailsLayout({ children }: { children: React.Reac
             </p>
           </div>
           <div className="flex items-center gap-2">
-            {statusActions.map((action) => {
+            {policy.status === "APPROVAL_PENDING" && isRequester ? (
+              <span className="flex items-center gap-2 text-sm font-medium text-yellow-700 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg px-4 py-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                Pending Company Admin approval
+              </span>
+            ) : statusActions.map((action) => {
               const isApprovalAction = policy.status === "APPROVAL_PENDING";
               const onClick = isApprovalAction
                 ? () => openApprovalModal(action.nextStatus === "APPROVED" ? "APPROVED" : "REJECTED")
@@ -485,6 +492,24 @@ export default function PolicyDetailsLayout({ children }: { children: React.Reac
               );
             })}
           </div>
+        </div>
+      )}
+
+      {/* Amber approval banner for COMPANY_ADMIN */}
+      {policy.status === "APPROVAL_PENDING" && isCompanyAdmin && !isRequester && (
+        <div className="flex items-center gap-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl px-6 py-4">
+          <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">This policy is awaiting your approval.</p>
+            <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">Go to the Approvals tab to review quotations and submit your decision.</p>
+          </div>
+          <button
+            onClick={() => router.push(`/policies/${id}/approvals`)}
+            className="flex items-center gap-1.5 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-lg transition-colors"
+          >
+            <ArrowRight className="w-3.5 h-3.5" />
+            Review Now
+          </button>
         </div>
       )}
 

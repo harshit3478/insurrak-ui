@@ -326,8 +326,8 @@ export default function PolicyQuotationsPage() {
 
       {/* Add Quotation Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 flex p-4">
-          <div className="bg-white dark:bg-gray-dark rounded-2xl border border-gray-200 dark:border-dark-3 shadow-2xl w-full max-w-2xl flex flex-col m-auto">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 flex p-4 ">
+          <div className="bg-white dark:bg-gray-dark rounded-2xl border border-gray-200 dark:border-dark-3 shadow-2xl w-full max-w-2xl flex flex-col m-auto max-h-10/12 overflow-y-scroll">
             {/* Modal header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-dark-3 shrink-0">
               <h2 className="text-base font-bold text-gray-900 dark:text-white">Add Quotation</h2>
@@ -355,7 +355,7 @@ export default function PolicyQuotationsPage() {
             </div>
 
             {/* Body */}
-            <div className="overflow-y-auto flex-1 px-6 py-5">
+            <div className="overflow-y-auto flex-1 px-6 py-5 ">
               {modalTab === "extract" ? (
                 <div className="space-y-4">
                   <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 rounded-xl px-4 py-3">
@@ -394,7 +394,7 @@ export default function PolicyQuotationsPage() {
                   </button>
                 </div>
               ) : (
-                <div className="space-y-5">
+                <div className="space-y-5 ">
                   {submitError && (
                     <div className="flex items-start gap-2 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-lg px-3 py-2.5">
                       <AlertCircle className="w-3.5 h-3.5 text-red-500 mt-0.5 shrink-0" />
