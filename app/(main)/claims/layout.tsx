@@ -7,7 +7,10 @@ export default async function ClaimsLayout({ children }: { children: React.React
   const cookieStore = await cookies();
   const role = cookieStore.get("role")?.value;
 
-  if (!isBypassActive() && (!role || !["COMPANY_ADMIN", "COMPANY_USER"].includes(role))) {
+  if (
+    !isBypassActive() &&
+    (!role || !["COMPANY_ADMIN", "BRANCH_ADMIN", "COMPANY_USER"].includes(role))
+  ) {
     redirect("/");
   }
 

@@ -7,7 +7,10 @@ export default async function PoliciesLayout({ children }: { children: React.Rea
   const cookieStore = await cookies();
   const role = cookieStore.get("role")?.value;
 
-  if (!isBypassActive() && (!role || !["COMPANY_ADMIN", "COMPANY_USER"].includes(role))) {
+  if (
+    !isBypassActive() &&
+    (!role || !["COMPANY_ADMIN", "BRANCH_ADMIN", "COMPANY_USER"].includes(role))
+  ) {
     redirect("/");
   }
 
