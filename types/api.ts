@@ -13,6 +13,7 @@ export interface UserRead {
   is_active: boolean;
   company_id: number;
   branch_id?: number | null;
+  unit_id?: number | null;
   role_id: number;
   role_name?: string;
   permission_ids?: number[];

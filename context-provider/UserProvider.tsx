@@ -53,6 +53,7 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
         mobile_number: String(formData.get("mobile") || "") || null,
         designation: String(formData.get("designation") || "") || null,
         reports_to: Number(formData.get("reportsTo") || 0) || null,
+        unit_id: Number(formData.get("unit_id") || 0) || null,
         permission_ids: permissionIds,
       });
 

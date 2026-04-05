@@ -224,6 +224,7 @@ export const apiClient = {
     mobile_number?: string | null;
     designation?: string | null;
     reports_to?: number | null;
+    unit_id?: number | null;
     permission_ids?: number[];
   }): Promise<User> => {
     // Real API expects: { username, email, password, role_id, designation, reports_to }
@@ -242,6 +243,7 @@ export const apiClient = {
       mobile_number: data.mobile_number || null,
       designation: data.designation || null,
       reports_to: data.reports_to || null,
+      unit_id: data.unit_id || null,
       permission_ids: data.permission_ids || null,
     };
 

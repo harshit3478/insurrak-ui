@@ -58,6 +58,7 @@ export function adaptUser(apiUser: UserRead, userRoleName?: string): User {
     active: apiUser.is_active,
     companyId: apiUser.company_id ? String(apiUser.company_id) : null,
     branchId: apiUser.branch_id ? String(apiUser.branch_id) : null,
+    unitId: apiUser.unit_id ? String(apiUser.unit_id) : null,
     companyName: apiUser.company_name || null,
     designation: apiUser.designation,
     reportsTo: apiUser.reports_to ? String(apiUser.reports_to) : null,

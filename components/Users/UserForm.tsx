@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { FormSection, FormInput, Stepper } from "@/components/ui/FormCommon";
 import { User } from "@/types";
 import { apiClient } from "@/lib/apiClient";
-import { PermissionRead, RoleRead } from "@/types/api";
+import { PermissionRead, RoleRead, UnitRead } from "@/types/api";
 
 const ROLE_LABELS: Record<string, string> = {
   SUPER_ADMIN: "Super Admin",
@@ -194,6 +194,10 @@ export function UserForm({
     Record<number, number[]>
   >({});
   const [users, setUsers] = useState<User[]>([]);
+  const [units, setUnits] = useState<UnitRead[]>([]);
+  const [selectedUnitId, setSelectedUnitId] = useState<number | null>(
+    defaultValues?.unitId ? Number(defaultValues.unitId) : null,
+  );
   const [selectedRoleId, setSelectedRoleId] = useState<number | null>(
     defaultValues?.roleId ?? null,
   );
@@ -233,12 +237,16 @@ export function UserForm({
 
   const loadRolesAndPermissions = async () => {
     try {
-      const data = await apiClient.getRolesAndPermissions();
+      const [data, allUsers, allUnits] = await Promise.all([
+        apiClient.getRolesAndPermissions(),
+        apiClient.getAll(),
+        apiClient.getAllUnits(),
+      ]);
       setRoles(data.roles);
       setPermissions(data.permissions);
       setRolePermissions(data.role_permissions || {});
-      const allUsers = await apiClient.getAll();
       setUsers(allUsers);
+      setUnits(allUnits);
 
       if (!selectedRoleId && data.roles.length > 0) {
         setSelectedRoleId(defaultValues?.roleId ?? data.roles[0].id);
@@ -377,6 +385,9 @@ export function UserForm({
     finalFormData.append("role_id", String(selectedRoleId));
     finalFormData.append("designation", designation || "");
     finalFormData.append("reportsTo", reportsTo || "");
+    if (selectedUnitId) {
+      finalFormData.append("unit_id", String(selectedUnitId));
+    }
     if (!isEdit) {
       finalFormData.append("password", password);
     }
@@ -436,6 +447,26 @@ export function UserForm({
               ))}
             </select>
           </div>
+          {selectedRoleName === "BRANCH_ADMIN" && (
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-500 dark:text-gray-400">
+                Assigned Unit
+              </label>
+              <select
+                value={selectedUnitId ? String(selectedUnitId) : ""}
+                onChange={(e) => setSelectedUnitId(e.target.value ? Number(e.target.value) : null)}
+                className="w-full px-4 py-3 bg-white dark:bg-gray-dark border border-gray-200 dark:border-dark-3 rounded-lg text-gray-900 dark:text-white"
+              >
+                <option value="">No unit assigned</option>
+                {units.map((unit) => (
+                  <option key={unit.id} value={unit.id}>
+                    {unit.name}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-400">This user will only see policies and claims for this unit.</p>
+            </div>
+          )}
           {!isEdit && (
             <FormInput
               label="Password"

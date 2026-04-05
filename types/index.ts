@@ -33,6 +33,7 @@ export interface User {
   active: boolean;
   companyId: string | null;
   branchId?: string | null;
+  unitId?: string | null;
   companyName?: string | null;
   designation?: string | null;
   reportsTo?: string | null;
