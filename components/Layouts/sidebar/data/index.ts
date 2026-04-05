@@ -11,7 +11,6 @@ import {
   Building,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { isBypassActive } from "@/types/permissions";
 
 /**
  * Metadata defining the sidebar navigation structure, including hierarchy,
@@ -101,7 +100,6 @@ export function getNavData(
   }
 
   const canAccess = (allowedRoles?: string[]) =>
-    isBypassActive() || // Unified Dev Bypass: Show all navigation links during testing
     !allowedRoles ||
     (!!role && allowedRoles.includes(role));
 
@@ -175,13 +173,12 @@ export function getNavData(
           title: "Notifications",
           icon: Bell,
           url: "/notifications",
-          allowedRoles: ["COMPANY_ADMIN", "BRANCH_ADMIN", "COMPANY_USER"],
+          allowedRoles: ["COMPANY_ADMIN"],
         },
         {
           title: "Logout",
           icon: LogOut,
           url: "/auth/logout",
-          allowedRoles: ["COMPANY_ADMIN", "BRANCH_ADMIN", "COMPANY_USER"],
         },
       ],
     },
