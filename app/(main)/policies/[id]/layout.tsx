@@ -99,10 +99,15 @@ export default function PolicyDetailsLayout({ children }: { children: React.Reac
   const [loading, setLoading] = useState(true);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
-  // Approval modal state
+  // Request Approval modal state (requester picks which quotation to submit)
+  const [showRequestApprovalModal, setShowRequestApprovalModal] = useState(false);
+  const [requestApprovalQuotationId, setRequestApprovalQuotationId] = useState<number | "">("");
+  const [requestApprovalError, setRequestApprovalError] = useState("");
+  const [isSubmittingRequestApproval, setIsSubmittingRequestApproval] = useState(false);
+
+  // Approval modal state (company admin approves/rejects)
   const [showApprovalModal, setShowApprovalModal] = useState(false);
   const [approvalDecision, setApprovalDecision] = useState<"APPROVED" | "REJECTED">("APPROVED");
-  const [approvalQuotationId, setApprovalQuotationId] = useState<number | "">("");
   const [approvalComments, setApprovalComments] = useState("");
   const [isSubmittingApproval, setIsSubmittingApproval] = useState(false);
   const [approvalError, setApprovalError] = useState("");
@@ -181,16 +186,6 @@ export default function PolicyDetailsLayout({ children }: { children: React.Reac
 
   const handleTransition = async (nextStatus: string) => {
     if (!policy) return;
-
-    // Guard: a selected quotation is required before requesting approval
-    if (nextStatus === "APPROVAL_PENDING") {
-      const hasSelected = quotations.some(q => q.is_selected);
-      if (!hasSelected) {
-        alert("Please select a quotation before requesting approval. Go to the Quotations tab and mark one quotation as selected.");
-        return;
-      }
-    }
-
     setIsTransitioning(true);
     try {
       await apiClient.transitionPolicyRequest(policy.id, nextStatus);
@@ -202,9 +197,36 @@ export default function PolicyDetailsLayout({ children }: { children: React.Reac
     }
   };
 
+  const openRequestApprovalModal = () => {
+    const preSelected = quotations.find(q => q.is_selected);
+    setRequestApprovalQuotationId(preSelected?.id ?? (quotations[0]?.id ?? ""));
+    setRequestApprovalError("");
+    setShowRequestApprovalModal(true);
+  };
+
+  const handleRequestApproval = async () => {
+    if (!policy) return;
+    if (!requestApprovalQuotationId) {
+      setRequestApprovalError("Please select a quotation to submit for approval.");
+      return;
+    }
+    setIsSubmittingRequestApproval(true);
+    setRequestApprovalError("");
+    try {
+      await apiClient.selectQuotation(policy.id, Number(requestApprovalQuotationId));
+      await apiClient.transitionPolicyRequest(policy.id, "APPROVAL_PENDING");
+      setShowRequestApprovalModal(false);
+      await fetchPolicy();
+    } catch (err) {
+      setRequestApprovalError("Failed to submit for approval. Please try again.");
+      console.error(err);
+    } finally {
+      setIsSubmittingRequestApproval(false);
+    }
+  };
+
   const openApprovalModal = (decision: "APPROVED" | "REJECTED") => {
     setApprovalDecision(decision);
-    setApprovalQuotationId(quotations[0]?.id ?? "");
     setApprovalComments("");
     setApprovalError("");
     setShowApprovalModal(true);
@@ -216,16 +238,13 @@ export default function PolicyDetailsLayout({ children }: { children: React.Reac
       setApprovalError("Please provide a reason for rejection.");
       return;
     }
-    if (approvalDecision === "APPROVED" && !approvalQuotationId) {
-      setApprovalError("Please select the quotation being approved.");
-      return;
-    }
+    const selectedQuotation = quotations.find(q => q.is_selected);
     setIsSubmittingApproval(true);
     setApprovalError("");
     try {
       await apiClient.submitApproval(policy.id, {
         decision: approvalDecision,
-        quotation_id: approvalDecision === "APPROVED" ? Number(approvalQuotationId) : null,
+        quotation_id: selectedQuotation?.id ?? null,
         comments: approvalComments.trim() || null,
       });
       setShowApprovalModal(false);
@@ -466,8 +485,11 @@ export default function PolicyDetailsLayout({ children }: { children: React.Reac
               </span>
             ) : statusActions.map((action) => {
               const isApprovalAction = policy.status === "APPROVAL_PENDING";
+              const isRequestApprovalAction = action.nextStatus === "APPROVAL_PENDING";
               const onClick = isApprovalAction
                 ? () => openApprovalModal(action.nextStatus === "APPROVED" ? "APPROVED" : "REJECTED")
+                : isRequestApprovalAction
+                ? openRequestApprovalModal
                 : policy.status === "PAYMENT_PENDING"
                 ? openPaymentModal
                 : policy.status === "RISK_HELD"
@@ -506,7 +528,7 @@ export default function PolicyDetailsLayout({ children }: { children: React.Reac
       )}
 
       {/* Amber approval banner for COMPANY_ADMIN */}
-      {policy.status === "APPROVAL_PENDING" && isCompanyAdmin && !isRequester && (
+      {policy.status === "APPROVAL_PENDING" && isCompanyAdmin && (
         <div className="flex items-center gap-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl px-6 py-4">
           <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
           <div className="flex-1">
@@ -551,6 +573,66 @@ export default function PolicyDetailsLayout({ children }: { children: React.Reac
       <div className="bg-white dark:bg-gray-dark rounded-2xl border border-gray-200 dark:border-dark-3 shadow-sm min-h-[400px]">
         {children}
       </div>
+
+      {/* Request Approval Modal — requester selects which quotation to submit */}
+      {showRequestApprovalModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white dark:bg-gray-dark rounded-2xl border border-gray-200 dark:border-dark-3 shadow-2xl w-full max-w-md">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-dark-3">
+              <div>
+                <h2 className="text-base font-bold text-gray-900 dark:text-white">Request Approval</h2>
+                <p className="text-xs text-gray-400 mt-0.5">Select the quotation you want to send for approval</p>
+              </div>
+              <button onClick={() => setShowRequestApprovalModal(false)} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-2 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="px-6 py-5 space-y-4">
+              {requestApprovalError && (
+                <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-lg px-3 py-2">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  {requestApprovalError}
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">Select Quotation *</label>
+                <select
+                  value={requestApprovalQuotationId}
+                  onChange={e => setRequestApprovalQuotationId(Number(e.target.value))}
+                  className="w-full rounded-lg border border-gray-200 dark:border-dark-3 bg-white dark:bg-dark-2 text-sm text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0B1727]/20"
+                >
+                  <option value="">Select a quotation...</option>
+                  {quotations.map(q => (
+                    <option key={q.id} value={q.id}>
+                      {insurerMap[q.insurer_id]?.name || `Insurer ${q.insurer_id}`} — ₹{q.total_premium.toLocaleString()} (v{q.version})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <p className="text-xs text-gray-400">
+                The selected quotation will be sent to the Company Admin for review. You can still revise if it gets rejected.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100 dark:border-dark-3">
+              <button onClick={() => setShowRequestApprovalModal(false)} className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
+                Cancel
+              </button>
+              <button
+                onClick={handleRequestApproval}
+                disabled={isSubmittingRequestApproval}
+                className="flex items-center gap-2 px-5 py-2 text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 bg-[#0B1727] dark:bg-white text-white dark:text-[#0B1727] hover:bg-[#1a2639] dark:hover:bg-gray-100"
+              >
+                {isSubmittingRequestApproval && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                {isSubmittingRequestApproval ? "Submitting..." : "Send for Approval"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Approval Modal */}
       {showApprovalModal && (
@@ -601,24 +683,18 @@ export default function PolicyDetailsLayout({ children }: { children: React.Reac
                 </div>
               </div>
 
-              {/* Quotation selector — only for Approve */}
-              {approvalDecision === "APPROVED" && (
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">Select Approved Quotation *</label>
-                  <select
-                    value={approvalQuotationId}
-                    onChange={e => setApprovalQuotationId(Number(e.target.value))}
-                    className="w-full rounded-lg border border-gray-200 dark:border-dark-3 bg-white dark:bg-dark-2 text-sm text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                  >
-                    <option value="">Select a quotation...</option>
-                    {quotations.map(q => (
-                      <option key={q.id} value={q.id}>
-                        {insurerMap[q.insurer_id]?.name || `Insurer ${q.insurer_id}`} — ₹{q.total_premium.toLocaleString()} (v{q.version})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
+              {/* Selected quotation (read-only — chosen by requester) */}
+              {(() => {
+                const sel = quotations.find(q => q.is_selected);
+                return sel ? (
+                  <div className="bg-gray-50 dark:bg-dark-3 rounded-lg px-4 py-3 text-xs space-y-0.5">
+                    <p className="font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Quotation Under Review</p>
+                    <p className="text-sm font-bold text-gray-900 dark:text-white">{insurerMap[sel.insurer_id]?.name || `Insurer ${sel.insurer_id}`}</p>
+                    <p className="text-gray-500 dark:text-gray-400">Premium ₹{sel.premium.toLocaleString()} + GST ₹{sel.gst.toLocaleString()}</p>
+                    <p className="font-semibold text-emerald-600 dark:text-emerald-400">Total ₹{sel.total_premium.toLocaleString()}</p>
+                  </div>
+                ) : null;
+              })()}
 
               {/* Comments */}
               <div>

@@ -27,7 +27,6 @@ export default function PolicyApprovalsPage() {
   // Approval action state
   const [showApprovalModal, setShowApprovalModal] = useState(false);
   const [approvalDecision, setApprovalDecision] = useState<"APPROVED" | "REJECTED">("APPROVED");
-  const [approvalQuotationId, setApprovalQuotationId] = useState<number | "">("");
   const [approvalComments, setApprovalComments] = useState("");
   const [approvalError, setApprovalError] = useState("");
   const [isSubmittingApproval, setIsSubmittingApproval] = useState(false);
@@ -77,7 +76,6 @@ export default function PolicyApprovalsPage() {
 
   const openApprovalModal = (decision: "APPROVED" | "REJECTED") => {
     setApprovalDecision(decision);
-    setApprovalQuotationId(selectedQuotation?.id ?? "");
     setApprovalComments("");
     setApprovalError("");
     setShowApprovalModal(true);
@@ -89,16 +87,12 @@ export default function PolicyApprovalsPage() {
       setApprovalError("Please provide a reason for rejection.");
       return;
     }
-    if (approvalDecision === "APPROVED" && !approvalQuotationId) {
-      setApprovalError("Please select the quotation being approved.");
-      return;
-    }
     setIsSubmittingApproval(true);
     setApprovalError("");
     try {
       await apiClient.submitApproval(policy.id, {
         decision: approvalDecision,
-        quotation_id: approvalDecision === "APPROVED" ? Number(approvalQuotationId) : null,
+        quotation_id: selectedQuotation?.id ?? null,
         comments: approvalComments.trim() || null,
       });
       setShowApprovalModal(false);
@@ -342,22 +336,19 @@ export default function PolicyApprovalsPage() {
                 </div>
               </div>
 
-              {/* Quotation selector (approve only) */}
-              {approvalDecision === "APPROVED" && (
-                <div>
-                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">Quotation Being Approved *</label>
-                  <select
-                    value={approvalQuotationId}
-                    onChange={e => setApprovalQuotationId(Number(e.target.value))}
-                    className="w-full rounded-lg border border-gray-200 dark:border-dark-3 bg-white dark:bg-dark-2 text-sm text-gray-900 dark:text-white px-3 py-2 focus:outline-none"
-                  >
-                    <option value="">Select quotation...</option>
-                    {quotationsList.map(q => (
-                      <option key={q.id} value={q.id}>
-                        {insurers[q.insurer_id]?.name || `Insurer ${q.insurer_id}`} — ₹{q.total_premium.toLocaleString()} {q.is_selected ? "(Selected)" : ""}
-                      </option>
-                    ))}
-                  </select>
+              {/* Selected quotation summary (read-only) */}
+              {selectedQuotation && (
+                <div className="bg-gray-50 dark:bg-dark-3 rounded-lg px-4 py-3 text-xs space-y-0.5">
+                  <p className="font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Quotation Under Review</p>
+                  <p className="text-sm font-bold text-gray-900 dark:text-white">
+                    {insurers[selectedQuotation.insurer_id]?.name || `Insurer ${selectedQuotation.insurer_id}`}
+                  </p>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    Premium ₹{selectedQuotation.premium.toLocaleString()} + GST ₹{selectedQuotation.gst.toLocaleString()}
+                  </p>
+                  <p className="font-semibold text-emerald-600 dark:text-emerald-400">
+                    Total ₹{selectedQuotation.total_premium.toLocaleString()}
+                  </p>
                 </div>
               )}
 

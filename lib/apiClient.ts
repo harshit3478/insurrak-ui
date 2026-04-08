@@ -557,6 +557,9 @@ export const apiClient = {
       `${API_ENDPOINTS.POLICY_REQUESTS}/${prId}/quotations/${quotId}/deviations${qs}`,
     );
   },
+  selectQuotation: async (prId: number, quotId: number): Promise<QuotationRead> => {
+    return api.post(`${API_ENDPOINTS.POLICY_REQUESTS}/${prId}/quotations/${quotId}/select`, {});
+  },
   getApprovals: async (prId: number): Promise<ApprovalRead[]> => {
     return api.get(`${API_ENDPOINTS.POLICY_REQUESTS}/${prId}/approval`);
   },
