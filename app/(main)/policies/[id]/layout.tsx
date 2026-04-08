@@ -332,7 +332,7 @@ export default function PolicyDetailsLayout({ children }: { children: React.Reac
   const statusActions = STATUS_ACTIONS[policy.status] || [];
   const canRaiseClaim = CLAIM_ELIGIBLE_STATUSES.includes(policy.status);
   const isRequester = !!user && String(policy.requested_by_id) === user.id;
-  const isCompanyAdmin = user?.role === "COMPANY_SUPER_ADMIN" || user?.role === "MANAGER";
+  const isCompanyAdmin = user?.role === "COMPANY_ADMIN";
 
   return (
     <div className="p-4 md:p-8  min-h-screen font-sans space-y-6">
@@ -459,7 +459,7 @@ export default function PolicyDetailsLayout({ children }: { children: React.Reac
             </p>
           </div>
           <div className="flex items-center gap-2">
-            {policy.status === "APPROVAL_PENDING" && isRequester && !isCompanyAdmin ? (
+            {policy.status === "APPROVAL_PENDING" && !isCompanyAdmin ? (
               <span className="flex items-center gap-2 text-sm font-medium text-yellow-700 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg px-4 py-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 Pending Company Admin approval

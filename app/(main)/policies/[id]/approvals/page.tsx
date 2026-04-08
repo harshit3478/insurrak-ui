@@ -32,7 +32,7 @@ export default function PolicyApprovalsPage() {
   const [approvalError, setApprovalError] = useState("");
   const [isSubmittingApproval, setIsSubmittingApproval] = useState(false);
 
-  const canApprove = user?.role === "COMPANY_SUPER_ADMIN" || user?.role === "MANAGER";
+  const canApprove = user?.role === "COMPANY_ADMIN";
 
   useEffect(() => {
     async function fetchData() {
