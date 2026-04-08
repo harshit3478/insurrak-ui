@@ -701,6 +701,7 @@ export const apiClient = {
     premium: number | null;
     gst: number | null;
     total_premium: number | null;
+    total_sum_insured: number | null;
     perils_included: string | null;
     perils_excluded: string | null;
     deductibles: string | null;
@@ -710,5 +711,13 @@ export const apiClient = {
     special_conditions: string | null;
   }> => {
     return api.post("/files/extract-quotation", { file_url: fileUrl });
+  },
+
+  onboardExistingPolicy: async (data: import("@/types/api").OnboardPolicyCreate): Promise<import("@/types/api").PolicyRequestRead> => {
+    return api.post(`${API_ENDPOINTS.POLICY_REQUESTS}/onboard`, data);
+  },
+
+  extractExistingPolicyData: async (fileUrl: string): Promise<import("@/types/api").ExtractedPolicyData> => {
+    return api.post("/files/extract-existing-policy", { file_url: fileUrl });
   },
 };

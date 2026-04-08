@@ -117,6 +117,7 @@ export interface QuotationTermsRead {
   perils_included: string | null;
   perils_excluded: string | null;
   sum_insured_basis: string | null;
+  total_sum_insured: number | null;
   deductibles: string | null;
   excess: string | null;
   sub_limits: string | null;
@@ -275,6 +276,7 @@ export interface QuotationTermsCreate {
   perils_included?: string | null;
   perils_excluded?: string | null;
   sum_insured_basis?: string | null;
+  total_sum_insured?: number | null;
   deductibles?: string | null;
   excess?: string | null;
   sub_limits?: string | null;
@@ -417,6 +419,38 @@ export interface PolicyDocumentCreate {
   document_type: string;
   file_name: string;
   file_path: string;
+}
+
+export interface OnboardPolicyCreate {
+  company_id: number;
+  unit_id: number;
+  broker_id?: number | null;
+  line_of_business: string;
+  policy_number: string;
+  asset_description?: string | null;
+  notes?: string | null;
+  sum_insured?: number | null;
+  premium?: number | null;
+  policy_start_date?: string | null;
+  policy_end_date?: string | null;
+  document_file_name?: string | null;
+  document_file_path?: string | null;
+}
+
+export interface ExtractedPolicyData {
+  insurer_name: string | null;
+  policy_number: string | null;
+  line_of_business: string | null;
+  sum_insured: number | null;
+  total_sum_insured: number | null;
+  premium: number | null;
+  gst: number | null;
+  total_premium: number | null;
+  policy_start_date: string | null;
+  policy_end_date: string | null;
+  perils_included: string | null;
+  exclusions: string | null;
+  special_conditions: string | null;
 }
 
 export interface StatusTransitionRequest {

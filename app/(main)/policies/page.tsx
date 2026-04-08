@@ -8,7 +8,7 @@ import { setPolicies } from "@/lib/features/policy/policySlice";
 import { isStale } from "@/lib/cache";
 import { apiClient } from "@/lib/apiClient";
 import { PolicyRequestRead } from "@/types/api";
-import { Search, Filter, Download, Plus, MoreVertical, FileText, ChevronDown, X } from "lucide-react";
+import { Search, Filter, Download, Plus, MoreVertical, FileText, ChevronDown, X, Upload } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { SkeletonRows } from "@/components/ui/SkeletonRows";
@@ -256,6 +256,12 @@ export default function PoliciesPage() {
               <button className="flex items-center gap-2 px-4 py-1.5 border border-gray-200 dark:border-dark-3 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-2 transition-colors">
                 <Download className="w-4 h-4" /> Export
               </button>
+              <Link
+                href="/policies/onboard"
+                className="flex items-center gap-2 px-4 py-1.5 border border-[#0B1727] dark:border-white text-[#0B1727] dark:text-white rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-dark-2 transition-colors"
+              >
+                <Upload className="w-4 h-4" /> Onboard Existing
+              </Link>
               <Link
                 href="/policies/add"
                 className="flex items-center gap-2 px-4 py-1.5 bg-[#0B1727] text-white rounded-lg text-sm font-medium hover:bg-[#1a2639] transition-colors"

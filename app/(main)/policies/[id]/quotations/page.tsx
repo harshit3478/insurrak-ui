@@ -32,6 +32,12 @@ const TERMS_DISPLAY: { key: keyof QuotationTermsCreate; label: string }[] = [
   { key: "add_ons", label: "Add-ons" },
 ];
 
+// Total sum insured is tracked separately as a numeric field
+type QuotationFormState = {
+  terms: QuotationTermsCreate;
+  totalSumInsured: string;
+};
+
 const emptyTerms = (): QuotationTermsCreate =>
   Object.fromEntries(TERMS_FIELDS.map(f => [f.key, ""])) as QuotationTermsCreate;
 
@@ -54,6 +60,7 @@ export default function PolicyQuotationsPage() {
   const [premium, setPremium] = useState("");
   const [gstPct, setGstPct] = useState("18");
   const [terms, setTerms] = useState<QuotationTermsCreate>(emptyTerms());
+  const [totalSumInsured, setTotalSumInsured] = useState("");
 
   // PDF attachment
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -106,6 +113,7 @@ export default function PolicyQuotationsPage() {
     setPremium("");
     setGstPct("18");
     setTerms(emptyTerms());
+    setTotalSumInsured("");
     setPdfFile(null);
     setExtractFile(null);
     setExtractError("");
@@ -128,6 +136,7 @@ export default function PolicyQuotationsPage() {
         const pct = Math.round((data.gst / data.premium) * 100);
         setGstPct(String(pct));
       }
+      if (data.total_sum_insured != null) setTotalSumInsured(String(data.total_sum_insured));
       setTerms(prev => ({
         ...prev,
         perils_included: data.perils_included ?? prev.perils_included,
@@ -160,10 +169,13 @@ export default function PolicyQuotationsPage() {
       }
 
       // Build terms — only include non-empty fields
-      const termsPayload: QuotationTermsCreate = {};
+      const termsPayload: QuotationTermsCreate & { total_sum_insured?: number | null } = {};
       for (const f of TERMS_FIELDS) {
         const val = terms[f.key];
         if (val && String(val).trim()) termsPayload[f.key] = String(val).trim();
+      }
+      if (totalSumInsured && !isNaN(Number(totalSumInsured))) {
+        termsPayload.total_sum_insured = Number(totalSumInsured);
       }
       const hasTerms = Object.values(termsPayload).some(v => v);
 
@@ -299,13 +311,19 @@ export default function PolicyQuotationsPage() {
                             </h4>
                             {quot.terms ? (
                               <div className="grid grid-cols-1 gap-2.5 max-w-3xl">
+                                {(quot.terms as QuotationTermsRead & { total_sum_insured?: number | null }).total_sum_insured != null && (
+                                  <div className="flex gap-3">
+                                    <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 w-40 shrink-0">Total Sum Insured:</span>
+                                    <span className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">₹{Number((quot.terms as QuotationTermsRead & { total_sum_insured?: number | null }).total_sum_insured!).toLocaleString()}</span>
+                                  </div>
+                                )}
                                 {TERMS_DISPLAY.filter(f => quot.terms![f.key]).map(f => (
                                   <div key={f.key} className="flex gap-3">
                                     <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 w-40 shrink-0">{f.label}:</span>
                                     <span className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">{quot.terms![f.key]}</span>
                                   </div>
                                 ))}
-                                {!TERMS_DISPLAY.some(f => quot.terms![f.key]) && (
+                                {!(quot.terms as QuotationTermsRead & { total_sum_insured?: number | null }).total_sum_insured && !TERMS_DISPLAY.some(f => quot.terms![f.key]) && (
                                   <p className="text-xs text-gray-400">No coverage terms recorded.</p>
                                 )}
                               </div>
@@ -360,7 +378,7 @@ export default function PolicyQuotationsPage() {
                 <div className="space-y-4">
                   <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 rounded-xl px-4 py-3">
                     <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">
-                      Upload an insurer's quotation PDF and GPT-4o will automatically extract premium amounts and coverage terms for you.
+                      Upload an insurer's quotation (PDF or image) and GPT-4o will automatically extract premium amounts and coverage terms for you.
                     </p>
                   </div>
 
@@ -371,7 +389,7 @@ export default function PolicyQuotationsPage() {
                     </div>
                   )}
 
-                  <input ref={extractRef} type="file" accept=".pdf" className="hidden" onChange={e => setExtractFile(e.target.files?.[0] || null)} />
+                  <input ref={extractRef} type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" className="hidden" onChange={e => setExtractFile(e.target.files?.[0] || null)} />
                   <button
                     type="button"
                     onClick={() => extractRef.current?.click()}
@@ -380,7 +398,7 @@ export default function PolicyQuotationsPage() {
                     <Upload className="w-6 h-6" />
                     {extractFile
                       ? <span className="font-semibold text-gray-700 dark:text-gray-200">{extractFile.name}</span>
-                      : <span>Click to select a PDF quotation</span>
+                      : <span>Click to select a PDF or image quotation</span>
                     }
                   </button>
 
@@ -453,6 +471,18 @@ export default function PolicyQuotationsPage() {
                       <span className="font-bold text-gray-900 dark:text-white">₹{totalPremium.toLocaleString()}</span>
                     </div>
                   )}
+
+                  {/* Total Sum Insured */}
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">Total Sum Insured (₹)</label>
+                    <input
+                      type="number"
+                      value={totalSumInsured}
+                      onChange={e => setTotalSumInsured(e.target.value)}
+                      placeholder="e.g. 5000000"
+                      className="w-full rounded-lg border border-gray-200 dark:border-dark-3 bg-white dark:bg-dark-2 text-sm text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0B1727]/20"
+                    />
+                  </div>
 
                   {/* PDF Attachment */}
                   <div>

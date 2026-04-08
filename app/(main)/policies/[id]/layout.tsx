@@ -80,7 +80,7 @@ const TABS = [
   { label: "Quotations", href: "quotations" },
   { label: "Deviations", href: "deviations" },
   { label: "Approvals", href: "approvals" },
-  { label: "Activity", href: "activity" },
+  { label: "Audit Trail", href: "activity" },
   { label: "Financials", href: "financials" },
 ];
 
@@ -181,6 +181,16 @@ export default function PolicyDetailsLayout({ children }: { children: React.Reac
 
   const handleTransition = async (nextStatus: string) => {
     if (!policy) return;
+
+    // Guard: a selected quotation is required before requesting approval
+    if (nextStatus === "APPROVAL_PENDING") {
+      const hasSelected = quotations.some(q => q.is_selected);
+      if (!hasSelected) {
+        alert("Please select a quotation before requesting approval. Go to the Quotations tab and mark one quotation as selected.");
+        return;
+      }
+    }
+
     setIsTransitioning(true);
     try {
       await apiClient.transitionPolicyRequest(policy.id, nextStatus);
@@ -322,7 +332,7 @@ export default function PolicyDetailsLayout({ children }: { children: React.Reac
   const statusActions = STATUS_ACTIONS[policy.status] || [];
   const canRaiseClaim = CLAIM_ELIGIBLE_STATUSES.includes(policy.status);
   const isRequester = !!user && String(policy.requested_by_id) === user.id;
-  const isCompanyAdmin = user?.role === "COMPANY_ADMIN";
+  const isCompanyAdmin = user?.role === "COMPANY_SUPER_ADMIN" || user?.role === "MANAGER";
 
   return (
     <div className="p-4 md:p-8  min-h-screen font-sans space-y-6">
@@ -449,7 +459,7 @@ export default function PolicyDetailsLayout({ children }: { children: React.Reac
             </p>
           </div>
           <div className="flex items-center gap-2">
-            {policy.status === "APPROVAL_PENDING" && isRequester ? (
+            {policy.status === "APPROVAL_PENDING" && isRequester && !isCompanyAdmin ? (
               <span className="flex items-center gap-2 text-sm font-medium text-yellow-700 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg px-4 py-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 Pending Company Admin approval

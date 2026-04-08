@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FormSection, FormInput, FormTextarea } from "@/components/ui/FormCommon";
-import { Select } from "@/components/ui-elements/FormElements/select";
 import { apiClient } from "@/lib/apiClient";
 import { Policy } from "@/types";
 import { UnitRead, PolicyRequestRead, BrokerRead } from "@/types/api";
@@ -191,6 +190,13 @@ export function PolicyForm({
   );
   const [unitPolicies, setUnitPolicies] = useState<PolicyRequestRead[]>([]);
   const [isRenewal, setIsRenewal] = useState(false);
+  const [renewalPolicyId, setRenewalPolicyId] = useState<string>("");
+  const [renewalBrokerId, setRenewalBrokerId] = useState<string>("");
+  const [renewalSumInsured, setRenewalSumInsured] = useState<string>("");
+  const [renewalStartDate, setRenewalStartDate] = useState<string>("");
+  const [renewalEndDate, setRenewalEndDate] = useState<string>("");
+  const [renewalAssetDesc, setRenewalAssetDesc] = useState<string>("");
+  const [renewalAutoFillMsg, setRenewalAutoFillMsg] = useState<string>("");
 
   useEffect(() => {
     apiClient.getAllUnits().then(setUnits).catch(console.error);
@@ -202,6 +208,29 @@ export function PolicyForm({
     if (!uid || isEdit) return;
     apiClient.getUnitPolicies(uid).then(setUnitPolicies).catch(console.error);
   }, [selectedUnitId, defaultUnitId, isEdit]);
+
+  // Auto-fill form when renewal policy is selected
+  useEffect(() => {
+    if (!renewalPolicyId) return;
+    apiClient.getPolicyRequestById(Number(renewalPolicyId)).then(prior => {
+      if (prior.line_of_business) setSelectedCategory(prior.line_of_business);
+      if (prior.broker_id) setRenewalBrokerId(String(prior.broker_id));
+      if (prior.sum_insured != null) setRenewalSumInsured(String(prior.sum_insured));
+      if (prior.asset_description) setRenewalAssetDesc(prior.asset_description);
+      // Auto-compute renewal dates: start = prior end + 1 day, end = start + 1 year
+      if (prior.policy_end_date) {
+        const priorEnd = new Date(prior.policy_end_date);
+        const newStart = new Date(priorEnd);
+        newStart.setDate(newStart.getDate() + 1);
+        const newEnd = new Date(newStart);
+        newEnd.setFullYear(newEnd.getFullYear() + 1);
+        newEnd.setDate(newEnd.getDate() - 1);
+        setRenewalStartDate(newStart.toISOString().split("T")[0]);
+        setRenewalEndDate(newEnd.toISOString().split("T")[0]);
+      }
+      setRenewalAutoFillMsg(`Pre-filled from policy ${prior.policy_number || "#" + prior.id}. Review and adjust if needed.`);
+    }).catch(console.error);
+  }, [renewalPolicyId]);
 
   const categoryInfo = selectedCategory ? CATEGORY_INFO[selectedCategory] : null;
 
@@ -293,7 +322,18 @@ export function PolicyForm({
                   <input
                     type="checkbox"
                     checked={isRenewal}
-                    onChange={(e) => { setIsRenewal(e.target.checked); }}
+                    onChange={(e) => {
+                      setIsRenewal(e.target.checked);
+                      if (!e.target.checked) {
+                        setRenewalPolicyId("");
+                        setRenewalBrokerId("");
+                        setRenewalSumInsured("");
+                        setRenewalStartDate("");
+                        setRenewalEndDate("");
+                        setRenewalAssetDesc("");
+                        setRenewalAutoFillMsg("");
+                      }
+                    }}
                     className="w-4 h-4 rounded border-gray-300"
                   />
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -301,16 +341,30 @@ export function PolicyForm({
                   </span>
                 </label>
                 {isRenewal && (
-                  <Select
-                    label="Policy to renew"
-                    name="renewal_of_policy_id"
-                    items={unitPolicies.map(p => ({
-                      label: `${p.policy_number || "#" + p.id} — ${p.line_of_business} (${p.status.replace(/_/g, " ")})`,
-                      value: String(p.id),
-                    }))}
-                    defaultValue=""
-                    placeholder="Choose existing policy..."
-                  />
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Policy to renew</label>
+                      <select
+                        name="renewal_of_policy_id"
+                        value={renewalPolicyId}
+                        onChange={e => setRenewalPolicyId(e.target.value)}
+                        className="w-full appearance-none rounded-lg border border-stroke bg-transparent px-5.5 py-3 outline-none transition focus:border-primary dark:border-dark-3 dark:bg-dark-2 dark:focus:border-primary text-dark dark:text-white"
+                      >
+                        <option value="">Choose existing policy...</option>
+                        {unitPolicies.map(p => (
+                          <option key={p.id} value={String(p.id)}>
+                            {p.policy_number || "#" + p.id} — {p.line_of_business} ({p.status.replace(/_/g, " ")})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    {renewalAutoFillMsg && (
+                      <div className="flex items-center gap-2 p-2.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg text-xs text-blue-700 dark:text-blue-400">
+                        <Info className="w-3.5 h-3.5 shrink-0" />
+                        {renewalAutoFillMsg}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )}
@@ -324,12 +378,19 @@ export function PolicyForm({
               placeholder="TBD or Existing Number"
             />
 
+            {/* Broker override for renewals */}
+            {isRenewal && renewalBrokerId && (
+              <input type="hidden" name="broker_id" value={renewalBrokerId} />
+            )}
+
             <div className="grid grid-cols-2 gap-4">
               <FormInput
                 label="Sum Insured (₹)"
                 name="sum_insured"
                 type="number"
                 defaultValue={defaultValues?.sumInsured}
+                key={`sum-${renewalSumInsured}`}
+                {...(renewalSumInsured ? { defaultValue: renewalSumInsured } : {})}
               />
               <FormInput
                 label="Premium (₹)"
@@ -344,13 +405,15 @@ export function PolicyForm({
                 label="Start Date"
                 name="policy_start_date"
                 type="date"
-                defaultValue={defaultValues?.startDate?.split("T")[0]}
+                key={`start-${renewalStartDate}`}
+                defaultValue={renewalStartDate || defaultValues?.startDate?.split("T")[0]}
               />
               <FormInput
                 label="End Date"
                 name="policy_end_date"
                 type="date"
-                defaultValue={defaultValues?.endDate?.split("T")[0]}
+                key={`end-${renewalEndDate}`}
+                defaultValue={renewalEndDate || defaultValues?.endDate?.split("T")[0]}
               />
             </div>
 
@@ -359,6 +422,8 @@ export function PolicyForm({
               name="asset_description"
               placeholder="Describe the insured asset..."
               rows={3}
+              key={`asset-${renewalAssetDesc}`}
+              defaultValue={renewalAssetDesc || ""}
             />
           </FormSection>
         </div>
