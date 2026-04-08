@@ -388,9 +388,8 @@ export function PolicyForm({
                 label="Sum Insured (₹)"
                 name="sum_insured"
                 type="number"
-                defaultValue={defaultValues?.sumInsured}
                 key={`sum-${renewalSumInsured}`}
-                {...(renewalSumInsured ? { defaultValue: renewalSumInsured } : {})}
+                defaultValue={renewalSumInsured || defaultValues?.sumInsured}
               />
               <FormInput
                 label="Premium (₹)"

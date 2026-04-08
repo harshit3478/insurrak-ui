@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import { apiClient } from "@/lib/apiClient";
 import { uploadToR2 } from "@/lib/uploadToR2";
-import { QuotationRead, InsurerRead, QuotationTermsCreate } from "@/types/api";
+import { QuotationRead, QuotationTermsRead, InsurerRead, QuotationTermsCreate } from "@/types/api";
 import {
   Plus, Download, ChevronDown, ChevronUp, CheckCircle2,
   FileText, Upload, X, Loader2, Sparkles, AlertCircle,
@@ -169,7 +169,7 @@ export default function PolicyQuotationsPage() {
       }
 
       // Build terms — only include non-empty fields
-      const termsPayload: QuotationTermsCreate & { total_sum_insured?: number | null } = {};
+      const termsPayload: Record<string, string | number | null> = {};
       for (const f of TERMS_FIELDS) {
         const val = terms[f.key];
         if (val && String(val).trim()) termsPayload[f.key] = String(val).trim();
@@ -186,7 +186,7 @@ export default function PolicyQuotationsPage() {
         total_premium: totalPremium,
         file_name,
         file_path,
-        terms: hasTerms ? termsPayload : undefined,
+        terms: hasTerms ? (termsPayload as QuotationTermsCreate) : undefined,
       });
 
       closeModal();
