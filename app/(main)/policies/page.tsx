@@ -8,6 +8,7 @@ import { setPolicies } from "@/lib/features/policy/policySlice";
 import { isStale } from "@/lib/cache";
 import { apiClient } from "@/lib/apiClient";
 import { PolicyRequestRead } from "@/types/api";
+import { formatINRCompact } from "@/lib/format-number";
 import { Search, Filter, Download, Plus, Trash2, FileText, ChevronDown, X, Upload } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -187,8 +188,8 @@ export default function PoliciesPage() {
             </div>
             <div>
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Total Sum Insured (Active)</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white">
-                {loading ? "—" : `₹${totalSumInsured.toLocaleString("en-IN")}`}
+              <p className="text-2xl font-bold text-gray-900 dark:text-white" title={loading ? undefined : `₹${totalSumInsured.toLocaleString("en-IN")}`}>
+                {loading ? "—" : formatINRCompact(totalSumInsured)}
               </p>
               <p className="text-xs text-gray-400 mt-1">Across all active & issued policies</p>
             </div>
@@ -232,8 +233,8 @@ export default function PoliciesPage() {
             </div>
             <div>
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Net Premium (Annual)</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {loading ? "—" : `₹${totalNetPremium.toLocaleString("en-IN")}`}
+              <p className="text-2xl font-bold text-gray-900 dark:text-white" title={loading ? undefined : `₹${totalNetPremium.toLocaleString("en-IN")}`}>
+                {loading ? "—" : formatINRCompact(totalNetPremium)}
               </p>
               <p className="text-xs text-gray-400 mt-1">Across active policies</p>
             </div>
@@ -246,8 +247,8 @@ export default function PoliciesPage() {
             </div>
             <div>
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">GST (Annual)</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {loading ? "—" : `₹${totalGstAmount.toLocaleString("en-IN")}`}
+              <p className="text-2xl font-bold text-gray-900 dark:text-white" title={loading ? undefined : `₹${totalGstAmount.toLocaleString("en-IN")}`}>
+                {loading ? "—" : formatINRCompact(totalGstAmount)}
               </p>
               <p className="text-xs text-gray-400 mt-1">Across active policies</p>
             </div>
@@ -260,8 +261,8 @@ export default function PoliciesPage() {
             </div>
             <div>
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Total Premium (Annual)</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {loading ? "—" : `₹${totalAnnualPremium.toLocaleString("en-IN")}`}
+              <p className="text-2xl font-bold text-gray-900 dark:text-white" title={loading ? undefined : `₹${totalAnnualPremium.toLocaleString("en-IN")}`}>
+                {loading ? "—" : formatINRCompact(totalAnnualPremium)}
               </p>
               <p className="text-xs text-gray-400 mt-1">Net + GST, active policies</p>
             </div>

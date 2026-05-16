@@ -247,11 +247,10 @@ export default function CompanyManagementPage() {
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <Field label="Company Name" value={selectedCompany.name} />
-                    <Field label="Email" value={selectedCompany.email} />
+                    <Field label="Admin Login Email" value={selectedCompany.email} />
                     <Field label="Phone" value={selectedCompany.mobile_number} />
                     <Field label="GST Number" value={selectedCompany.gst_number} />
                     <Field label="Status" value={selectedCompany.is_active ? "Active" : "Inactive"} />
-                    <Field label="Admin Email" value={selectedCompany.adminEmail} span2 />
                     <Field label="Address" value={selectedCompany.address} span2 />
                   </div>
                   <div className="pt-2">

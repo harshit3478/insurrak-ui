@@ -124,8 +124,9 @@ export function EditCompanyForm({ defaultValues, onSubmit, pending, error }: Edi
           <input type="text" value={name} onChange={e => setName(e.target.value)} className={inputClass} placeholder="Acme Corp" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Email</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Admin Login Email</label>
           <input type="email" value={email} onChange={e => setEmail(e.target.value)} className={inputClass} placeholder="admin@acme.com" />
+          <p className="mt-1.5 text-xs text-gray-400 dark:text-gray-500">Updating this also changes the admin&apos;s login email.</p>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Phone</label>
