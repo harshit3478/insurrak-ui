@@ -25,12 +25,13 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
     useState<CompanyActionState>(initialState);
   const [isCreating, setIsCreating] = useState(false);
 
-  const createCompany = async (data: { name: string; adminEmail: string }) => {
+  const createCompany = async (data: { name: string; adminUsername: string; adminEmail: string }) => {
     setIsCreating(true);
     setCreateState({});
     try {
       const company = await apiClient.createCompany({
         name: data.name,
+        adminUsername: data.adminUsername,
         adminEmail: data.adminEmail,
       });
 
@@ -70,6 +71,7 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
           mobile_number: data.mobile_number,
           address: data.address,
           gst_number: data.gst_number,
+          admin: data.admin,
         });
 
         store.dispatch(updateCompanyInStore(updatedCompany));

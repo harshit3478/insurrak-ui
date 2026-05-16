@@ -29,6 +29,7 @@ export interface CompanyRead {
   address: string | null;
   gst_number: string | null;
   unit_count?: number;
+  admin_username: string | null;
 }
 
 export interface UnitRead {

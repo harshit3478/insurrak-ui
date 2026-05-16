@@ -70,7 +70,7 @@ export function adaptCompany(apiCompany: CompanyRead): Company {
     id: apiCompany.id,
     name: apiCompany.name,
     companyId: String(apiCompany.id),
-    admin: "", // placeholder for aggregated admin name
+    admin: apiCompany.admin_username ?? "",
     adminEmail: apiCompany.email ?? "",
     branches: String(apiCompany.unit_count ?? 0),
     activePolicies: "0", // placeholder for aggregated policy count

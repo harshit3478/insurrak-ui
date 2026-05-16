@@ -338,10 +338,10 @@ export const apiClient = {
   createCompany: async (
     data: {
       name: string;
+      adminUsername: string;
       adminEmail: string;
     },
   ): Promise<Company> => {
-    const username = data.adminEmail.split("@")[0] || "admin";
     const payload = {
       name: data.name,
       email: data.adminEmail,
@@ -349,7 +349,7 @@ export const apiClient = {
       address: null,
       gst_number: null,
       is_active: true,
-      superadmin_username: username,
+      superadmin_username: data.adminUsername,
       superadmin_email: data.adminEmail,
       superadmin_designation: null,
     };
@@ -372,6 +372,8 @@ export const apiClient = {
     if (data.address !== undefined) payload.address = data.address || null;
     if (data.gst_number !== undefined)
       payload.gst_number = data.gst_number || null;
+    if (data.admin !== undefined)
+      payload.admin_username = data.admin || null;
     const comp: CompanyRead = await api.patch(
       `${API_ENDPOINTS.COMPANIES}/${companyId}`,
       payload,

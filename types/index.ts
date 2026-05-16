@@ -112,7 +112,7 @@ export type UsersContextType = {
 };
 
 export type CompaniesContextType = {
-  createCompany: (data: { name: string; adminEmail: string }) => Promise<void>;
+  createCompany: (data: { name: string; adminUsername: string; adminEmail: string }) => Promise<void>;
   updateCompany: (companyId: number) => (data: Partial<Company>) => Promise<void>;
 
   createState: ActionState;
