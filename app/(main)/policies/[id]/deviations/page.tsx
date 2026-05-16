@@ -253,7 +253,7 @@ export default function PolicyDeviationsPage() {
                   <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0">
                       <p className="text-xs font-bold text-gray-900 dark:text-white truncate">{insName}</p>
-                      <p className="text-[10px] text-gray-400 mt-0.5">v{quot.version} · ₹{quot.total_premium.toLocaleString()}</p>
+                      <p className="text-[10px] text-gray-400 mt-0.5">v{quot.version} · ₹{quot.total_premium.toLocaleString("en-IN")}</p>
                     </div>
                     {quot.is_selected && (
                       <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />

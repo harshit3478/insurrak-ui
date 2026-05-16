@@ -71,7 +71,7 @@ const handleAuthError = (response: Response) => {
   if (response.status === 401) {
     if (typeof window !== "undefined") {
       localStorage.removeItem("token");
-      localStorage.removeItem("insurrack_auth");
+      localStorage.removeItem("insurack_auth");
       window.location.href = "/auth/login";
     }
   }
@@ -425,6 +425,19 @@ export const apiClient = {
     await api.delete(`${API_ENDPOINTS.UNITS}/${unitId}`);
     return { success: true };
   },
+  getUnitDeleteImpact: async (
+    unitId: number,
+  ): Promise<{
+    policies: number;
+    claims: number;
+    quotations: number;
+    invoices: number;
+    approvals: number;
+    policy_documents: number;
+    claim_documents: number;
+  }> => {
+    return api.get(`${API_ENDPOINTS.UNITS}/${unitId}/delete-impact`);
+  },
 
   // ─── Masters (Brokers/Insurers) ────────────────────────────────────
   getAllBrokers: async (): Promise<BrokerRead[]> => {
@@ -505,6 +518,9 @@ export const apiClient = {
     data: PolicyRequestUpdate,
   ): Promise<PolicyRequestRead> => {
     return api.patch(`${API_ENDPOINTS.POLICY_REQUESTS}/${prId}`, data);
+  },
+  deletePolicyRequest: async (prId: number): Promise<void> => {
+    await api.delete(`${API_ENDPOINTS.POLICY_REQUESTS}/${prId}`);
   },
   transitionPolicyRequest: async (
     prId: number,

@@ -392,10 +392,25 @@ export function PolicyForm({
                 defaultValue={renewalSumInsured || defaultValues?.sumInsured}
               />
               <FormInput
-                label="Premium (₹)"
-                name="premium"
+                label="Net Premium (₹)"
+                name="net_premium"
                 type="number"
-                defaultValue={defaultValues?.premium}
+                defaultValue={defaultValues?.net_premium ?? undefined}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <FormInput
+                label="GST (₹)"
+                name="gst_amount"
+                type="number"
+                defaultValue={defaultValues?.gst_amount ?? undefined}
+              />
+              <FormInput
+                label="Total Premium (₹)"
+                name="total_premium"
+                type="number"
+                defaultValue={defaultValues?.total_premium ?? undefined}
               />
             </div>
 

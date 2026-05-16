@@ -63,9 +63,21 @@ export default function AddPolicyPage() {
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-gray-400 mb-0.5">Estimated Premium</div>
+                  <div className="text-xs text-gray-400 mb-0.5">Net Premium</div>
                   <div className="text-sm font-medium text-gray-900 dark:text-white">
-                    {data.premium ? `₹${Number(data.premium).toLocaleString("en-IN")}` : "0"}
+                    {data.net_premium ? `₹${Number(data.net_premium).toLocaleString("en-IN")}` : "—"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400 mb-0.5">GST</div>
+                  <div className="text-sm font-medium text-gray-900 dark:text-white">
+                    {data.gst_amount ? `₹${Number(data.gst_amount).toLocaleString("en-IN")}` : "—"}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-400 mb-0.5">Total Premium</div>
+                  <div className="text-sm font-medium text-gray-900 dark:text-white">
+                    {data.total_premium ? `₹${Number(data.total_premium).toLocaleString("en-IN")}` : "—"}
                   </div>
                 </div>
               </div>

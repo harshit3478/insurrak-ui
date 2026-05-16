@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { Search, Plus, Scale, CheckCircle2 } from "lucide-react";
 import { SkeletonRows } from "@/components/ui/SkeletonRows";
 import type { ClaimRead } from "@/types/api";
+import { formatINR } from "@/lib/format-number";
 
 const STATUS_LABELS: Record<string, string> = {
   INITIATED: "Initiated",
@@ -53,10 +54,6 @@ type QuickFilter = "all" | "open" | "settled" | "action";
 const OPEN_STATUSES = new Set(["INITIATED", "AWAITING_DOCS", "SENT_TO_BROKER", "UNDER_REVIEW"]);
 const SETTLED_STATUSES = new Set(["CREDITED", "CLOSED"]);
 const ACTION_STATUSES = new Set(["QUERY_RAISED"]);
-
-function formatCurrency(n: number) {
-  return `₹${n.toLocaleString("en-IN")}`;
-}
 
 export default function ClaimsPage() {
   const dispatch = useAppDispatch();
@@ -128,7 +125,7 @@ export default function ClaimsPage() {
           <div className="flex-1 min-w-0">
             <p className="text-xs text-gray-400 font-medium">Pending Settlements</p>
             <p className="text-xs text-gray-400">Current Fiscal Year</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{formatCurrency(pendingTotal)}</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{formatINR(pendingTotal)}</p>
             <div className="flex items-center gap-1.5 mt-1">
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
@@ -144,7 +141,7 @@ export default function ClaimsPage() {
           <div className="flex-1 min-w-0">
             <p className="text-xs text-gray-400 font-medium">Settled (YTD)</p>
             <p className="text-xs text-gray-400">Current Fiscal Year</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{formatCurrency(settledTotal)}</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">{formatINR(settledTotal)}</p>
             <div className="flex items-center gap-1.5 mt-1">
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
@@ -215,7 +212,7 @@ export default function ClaimsPage() {
                       {c.incident_description}
                     </td>
                     <td className="py-3.5 px-6 text-sm font-medium text-gray-900 dark:text-white">
-                      {c.estimated_loss ? formatCurrency(c.estimated_loss) : "—"}
+                      {c.estimated_loss ? formatINR(c.estimated_loss) : "—"}
                     </td>
                     <td className="py-3.5 px-6 text-sm text-gray-500 dark:text-gray-400">
                       {new Date(c.incident_date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}

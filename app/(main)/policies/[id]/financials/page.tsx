@@ -212,15 +212,15 @@ export default function PolicyFinancialsPage() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-y-5 gap-x-8">
                   <div>
                     <p className="text-[10px] text-gray-400 uppercase tracking-wider font-bold mb-0.5">Base Premium</p>
-                    <p className="text-sm font-bold text-gray-900 dark:text-white">₹{inv.amount.toLocaleString()}</p>
+                    <p className="text-sm font-bold text-gray-900 dark:text-white">₹{inv.amount.toLocaleString("en-IN")}</p>
                   </div>
                   <div>
                     <p className="text-[10px] text-gray-400 uppercase tracking-wider font-bold mb-0.5">GST</p>
-                    <p className="text-sm font-bold text-gray-900 dark:text-white">₹{inv.gst.toLocaleString()}</p>
+                    <p className="text-sm font-bold text-gray-900 dark:text-white">₹{inv.gst.toLocaleString("en-IN")}</p>
                   </div>
                   <div className="col-span-2">
                     <p className="text-[10px] text-gray-400 uppercase tracking-wider font-bold mb-0.5">Total Premium Payable</p>
-                    <p className="text-xl font-bold text-gray-900 dark:text-white">₹{inv.total.toLocaleString()}</p>
+                    <p className="text-xl font-bold text-gray-900 dark:text-white">₹{inv.total.toLocaleString("en-IN")}</p>
                   </div>
                 </div>
               </div>
@@ -307,7 +307,7 @@ export default function PolicyFinancialsPage() {
                         />
                         <input
                           type="number"
-                          placeholder={`Amount (default ₹${inv.total.toLocaleString()})`}
+                          placeholder={`Amount (default ₹${inv.total.toLocaleString("en-IN")})`}
                           value={paymentAmounts[inv.id] || ""}
                           onChange={e => setPaymentAmounts(prev => ({ ...prev, [inv.id]: e.target.value }))}
                           className="w-full px-3 py-2.5 bg-gray-50 dark:bg-dark-3 border border-gray-100 dark:border-dark-5 rounded-xl text-xs focus:ring-1 focus:ring-[#0B1727]/20 focus:outline-none dark:text-white"
@@ -377,7 +377,7 @@ export default function PolicyFinancialsPage() {
               {invAmount && Number(invAmount) > 0 && (
                 <div className="flex items-center justify-between bg-gray-50 dark:bg-dark-2 rounded-xl px-4 py-3 text-sm">
                   <span className="text-gray-500 dark:text-gray-400 text-xs">Total Premium</span>
-                  <span className="font-bold text-gray-900 dark:text-white">₹{invTotal.toLocaleString()}</span>
+                  <span className="font-bold text-gray-900 dark:text-white">₹{invTotal.toLocaleString("en-IN")}</span>
                 </div>
               )}
 

@@ -85,7 +85,9 @@ export interface PolicyRequestRead {
   asset_description: string | null;
   policy_number: string | null;
   sum_insured: number | null;
-  premium: number | null;
+  net_premium: number | null;
+  gst_amount: number | null;
+  total_premium: number | null;
   policy_start_date: string | null;
   policy_end_date: string | null;
   notes: string | null;
@@ -238,7 +240,9 @@ export interface PolicyRequestCreate {
   asset_description?: string | null;
   notes?: string | null;
   sum_insured?: number | null;
-  premium?: number | null;
+  net_premium?: number | null;
+  gst_amount?: number | null;
+  total_premium?: number | null;
   policy_start_date?: string | null;
   policy_end_date?: string | null;
   renewal_of_policy_id?: number | null;
@@ -250,6 +254,9 @@ export interface PolicyRequestUpdate {
   notes?: string | null;
   policy_number?: string | null;
   sum_insured?: number | null;
+  net_premium?: number | null;
+  gst_amount?: number | null;
+  total_premium?: number | null;
   policy_start_date?: string | null;
   policy_end_date?: string | null;
 }
@@ -430,7 +437,9 @@ export interface OnboardPolicyCreate {
   asset_description?: string | null;
   notes?: string | null;
   sum_insured?: number | null;
-  premium?: number | null;
+  net_premium?: number | null;
+  gst_amount?: number | null;
+  total_premium?: number | null;
   policy_start_date?: string | null;
   policy_end_date?: string | null;
   document_file_name?: string | null;
@@ -443,8 +452,8 @@ export interface ExtractedPolicyData {
   line_of_business: string | null;
   sum_insured: number | null;
   total_sum_insured: number | null;
-  premium: number | null;
-  gst: number | null;
+  net_premium: number | null;
+  gst_amount: number | null;
   total_premium: number | null;
   policy_start_date: string | null;
   policy_end_date: string | null;

@@ -96,7 +96,7 @@ export function Sidebar() {
 
             {(isOpen || isMobile) && (
               <span className="font-semibold text-gray-900 dark:text-white whitespace-nowrap">
-                Insurrack
+                insurack
               </span>
             )}
 

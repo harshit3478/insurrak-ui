@@ -57,7 +57,9 @@ export default function OnboardPolicyPage() {
   const [lineOfBusiness, setLineOfBusiness] = useState("");
   const [policyNumber, setPolicyNumber] = useState("");
   const [sumInsured, setSumInsured] = useState("");
-  const [premium, setPremium] = useState("");
+  const [netPremium, setNetPremium] = useState("");
+  const [gstAmount, setGstAmount] = useState("");
+  const [totalPremium, setTotalPremium] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [assetDescription, setAssetDescription] = useState("");
@@ -80,6 +82,13 @@ export default function OnboardPolicyPage() {
     apiClient.getAllBrokers().then(setBrokers).catch(console.error);
   }, []);
 
+  useEffect(() => {
+    const net = parseFloat(netPremium) || 0;
+    const gst = parseFloat(gstAmount) || 0;
+    if (net || gst) setTotalPremium(String(net + gst));
+    else setTotalPremium("");
+  }, [netPremium, gstAmount]);
+
   const handleFileChange = async (file: File) => {
     setDocFile(file);
     setExtractError("");
@@ -92,7 +101,9 @@ export default function OnboardPolicyPage() {
       if (data.policy_number) setPolicyNumber(data.policy_number);
       if (data.line_of_business) setLineOfBusiness(data.line_of_business);
       if (data.sum_insured != null) setSumInsured(String(data.sum_insured));
-      if (data.premium != null) setPremium(String(data.premium));
+      if (data.net_premium != null) setNetPremium(String(data.net_premium));
+      if (data.gst_amount != null) setGstAmount(String(data.gst_amount));
+      if (data.total_premium != null) setTotalPremium(String(data.total_premium));
       if (data.policy_start_date) setStartDate(data.policy_start_date);
       if (data.policy_end_date) setEndDate(data.policy_end_date);
       if (data.special_conditions) setNotes(data.special_conditions);
@@ -132,7 +143,9 @@ export default function OnboardPolicyPage() {
         asset_description: assetDescription || null,
         notes: notes || null,
         sum_insured: sumInsured ? Number(sumInsured) : null,
-        premium: premium ? Number(premium) : null,
+        net_premium: netPremium ? Number(netPremium) : null,
+        gst_amount: gstAmount ? Number(gstAmount) : null,
+        total_premium: totalPremium ? Number(totalPremium) : null,
         policy_start_date: startDate || null,
         policy_end_date: endDate || null,
         document_file_name: docFileName || null,
@@ -153,7 +166,7 @@ export default function OnboardPolicyPage() {
       <div className="p-8 bg-[#F4F7FE] dark:bg-gray-dark min-h-screen font-sans">
         <SuccessHeader
           title="Policy Onboarded Successfully!"
-          subtitle="The existing policy has been added to Insurrack and is now active."
+          subtitle="The existing policy has been added to insurack and is now active."
         />
         <div className="bg-white dark:bg-gray-dark rounded-2xl border border-gray-200 dark:border-dark-3 shadow-sm p-8 mb-6">
           <div className="flex items-center gap-3 mb-6">
@@ -186,7 +199,7 @@ export default function OnboardPolicyPage() {
     <div className="p-8 bg-[#F4F7FE] dark:bg-gray-dark min-h-screen font-sans">
       <FormHeader
         title="Onboard Existing Policy"
-        subtitle="Register an already-active policy into Insurrack. The policy will be created in ACTIVE status immediately."
+        subtitle="Register an already-active policy into insurack. The policy will be created in ACTIVE status immediately."
       />
 
       {submitError && (
@@ -341,15 +354,41 @@ export default function OnboardPolicyPage() {
                 />
               </div>
 
-              {/* Premium */}
+              {/* Net Premium */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Annual Premium (₹)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Net Premium (₹)</label>
                 <input
                   type="number"
-                  value={premium}
-                  onChange={e => setPremium(e.target.value)}
-                  placeholder="e.g. 45000"
+                  value={netPremium}
+                  onChange={e => setNetPremium(e.target.value)}
+                  placeholder="e.g. 38200"
                   className="w-full px-4 py-3 bg-white dark:bg-dark-2 border border-gray-200 dark:border-dark-3 rounded-lg text-gray-900 dark:text-white placeholder-gray-300 focus:outline-none focus:ring-1 focus:ring-[#0E3B5E] transition-all"
+                />
+              </div>
+
+              {/* GST Amount */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">GST (₹)</label>
+                <input
+                  type="number"
+                  value={gstAmount}
+                  onChange={e => setGstAmount(e.target.value)}
+                  placeholder="e.g. 6876"
+                  className="w-full px-4 py-3 bg-white dark:bg-dark-2 border border-gray-200 dark:border-dark-3 rounded-lg text-gray-900 dark:text-white placeholder-gray-300 focus:outline-none focus:ring-1 focus:ring-[#0E3B5E] transition-all"
+                />
+              </div>
+
+              {/* Total Premium (auto-calculated) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Total Premium (₹) <span className="text-xs text-gray-400 font-normal">auto-calculated</span>
+                </label>
+                <input
+                  type="number"
+                  value={totalPremium}
+                  readOnly
+                  placeholder="Net + GST"
+                  className="w-full px-4 py-3 bg-gray-50 dark:bg-dark-3 border border-gray-200 dark:border-dark-3 rounded-lg text-gray-700 dark:text-gray-400 placeholder-gray-300 focus:outline-none cursor-not-allowed"
                 />
               </div>
 

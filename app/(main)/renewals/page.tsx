@@ -8,6 +8,7 @@ import { setRenewals } from "@/lib/features/renewal/renewalSlice";
 import { api } from "@/lib/api";
 import { Renewal, RenewalStatus } from "@/types";
 import { Bell } from "lucide-react";
+import { formatINR } from "@/lib/format-number";
 
 const STATUS_STYLES: Record<RenewalStatus, string> = {
   Due: "bg-red-50 text-red-700",
@@ -26,14 +27,6 @@ function DaysUntilBadge({ days }: { days: number }) {
       ? "text-amber-600 font-semibold"
       : "text-gray-500 dark:text-dark-6";
   return <span className={`text-sm ${color}`}>{days} days</span>;
-}
-
-function formatCurrency(n: number) {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(n);
 }
 
 export default function RenewalsPage() {
@@ -109,7 +102,7 @@ export default function RenewalsPage() {
                     </span>
                   </td>
                   <td className="py-4 px-4 text-sm text-gray-500 dark:text-dark-6">
-                    {formatCurrency(r.currentPremium)}
+                    {formatINR(r.currentPremium)}
                   </td>
                   <td className="py-4 px-4 text-sm text-gray-500 dark:text-dark-6">
                     {r.renewalDueDate}

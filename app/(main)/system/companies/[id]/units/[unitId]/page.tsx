@@ -143,7 +143,7 @@ export default function SystemUnitDetailPage() {
                         <StatusBadge status={p.status} />
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-500 dark:text-dark-6">
-                        {p.sum_insured != null ? `₹${p.sum_insured.toLocaleString()}` : "—"}
+                        {p.sum_insured != null ? `₹${p.sum_insured.toLocaleString("en-IN")}` : "—"}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-500 dark:text-dark-6">
                         {p.policy_start_date ? new Date(p.policy_start_date).toLocaleDateString("en-IN") : "—"}
@@ -186,10 +186,10 @@ export default function SystemUnitDetailPage() {
                         <StatusBadge status={c.status} />
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-500 dark:text-dark-6">
-                        {c.estimated_loss != null ? `₹${c.estimated_loss.toLocaleString()}` : "—"}
+                        {c.estimated_loss != null ? `₹${c.estimated_loss.toLocaleString("en-IN")}` : "—"}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-500 dark:text-dark-6">
-                        {c.approved_amount != null ? `₹${c.approved_amount.toLocaleString()}` : "—"}
+                        {c.approved_amount != null ? `₹${c.approved_amount.toLocaleString("en-IN")}` : "—"}
                       </td>
                     </tr>
                   ))}

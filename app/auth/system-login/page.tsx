@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Square } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "System Login | Insurrack",
+  title: "System Login | insurack",
   description: "Login with system administrator account.",
 };
 

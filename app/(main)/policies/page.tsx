@@ -8,10 +8,11 @@ import { setPolicies } from "@/lib/features/policy/policySlice";
 import { isStale } from "@/lib/cache";
 import { apiClient } from "@/lib/apiClient";
 import { PolicyRequestRead } from "@/types/api";
-import { Search, Filter, Download, Plus, MoreVertical, FileText, ChevronDown, X, Upload } from "lucide-react";
+import { Search, Filter, Download, Plus, Trash2, FileText, ChevronDown, X, Upload } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { SkeletonRows } from "@/components/ui/SkeletonRows";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { isBypassActive } from "@/types/permissions";
 
 const STATUS_STYLES: Record<string, string> = {
@@ -51,6 +52,9 @@ export default function PoliciesPage() {
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
+  const [pendingDelete, setPendingDelete] = useState<PolicyRequestRead | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     const companyId = authUser?.companyId
@@ -88,11 +92,25 @@ export default function PoliciesPage() {
   }, []);
 
   // Stats
-  const totalSumInsured = useMemo(() =>
-    policies
-      .filter(p => [...ACTIVE_STATUSES].includes(p.status))
-      .reduce((acc, p) => acc + (p.sum_insured || 0), 0),
+  const activePolicies = useMemo(() =>
+    policies.filter(p => [...ACTIVE_STATUSES].includes(p.status)),
     [policies]
+  );
+  const totalSumInsured = useMemo(() =>
+    activePolicies.reduce((acc, p) => acc + (p.sum_insured || 0), 0),
+    [activePolicies]
+  );
+  const totalNetPremium = useMemo(() =>
+    activePolicies.reduce((acc, p) => acc + (p.net_premium || 0), 0),
+    [activePolicies]
+  );
+  const totalGstAmount = useMemo(() =>
+    activePolicies.reduce((acc, p) => acc + (p.gst_amount || 0), 0),
+    [activePolicies]
+  );
+  const totalAnnualPremium = useMemo(() =>
+    activePolicies.reduce((acc, p) => acc + (p.total_premium || 0), 0),
+    [activePolicies]
   );
   const actionRequired = useMemo(() =>
     policies.filter(p => p.status === "APPROVAL_PENDING").length,
@@ -128,6 +146,29 @@ export default function PoliciesPage() {
     );
   };
 
+  const handleConfirmDelete = async () => {
+    if (!pendingDelete) return;
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      await apiClient.deletePolicyRequest(pendingDelete.id);
+      const companyId = authUser?.companyId
+        ? Number(authUser.companyId)
+        : isBypassActive() ? 1 : null;
+      if (companyId) {
+        const refreshed = await apiClient.getPolicyRequests(companyId);
+        dispatch(setPolicies(refreshed as any));
+      }
+      setPendingDelete(null);
+    } catch (err) {
+      setDeleteError(
+        err instanceof Error ? err.message : "Failed to delete policy."
+      );
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (error) return <div className="p-8 text-center text-gray-500">{error}</div>;
 
   return (
@@ -138,7 +179,7 @@ export default function PoliciesPage() {
         </div>
 
         {/* Summary Cards */}
-        <div data-tour="dashboard-stats" className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div data-tour="dashboard-stats" className="grid grid-cols-1 md:grid-cols-5 gap-4">
           {/* Card 1 — Total Sum Insured */}
           <div className="bg-white dark:bg-gray-dark rounded-2xl border border-gray-200 dark:border-dark-3 p-6 flex items-center gap-4">
             <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-dark-2 flex items-center justify-center text-gray-500 shrink-0">
@@ -181,6 +222,48 @@ export default function PoliciesPage() {
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-50 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400">
                 <span className="w-1.5 h-1.5 rounded-full bg-yellow-500"></span> Approval Pending
               </span>
+            </div>
+          </div>
+
+          {/* Card 3 — Net Premium */}
+          <div className="bg-white dark:bg-gray-dark rounded-2xl border border-gray-200 dark:border-dark-3 p-6 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-dark-2 flex items-center justify-center text-gray-500 shrink-0">
+              <FileText className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Net Premium (Annual)</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                {loading ? "—" : `₹${totalNetPremium.toLocaleString("en-IN")}`}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">Across active policies</p>
+            </div>
+          </div>
+
+          {/* Card 4 — GST */}
+          <div className="bg-white dark:bg-gray-dark rounded-2xl border border-gray-200 dark:border-dark-3 p-6 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-dark-2 flex items-center justify-center text-gray-500 shrink-0">
+              <FileText className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">GST (Annual)</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                {loading ? "—" : `₹${totalGstAmount.toLocaleString("en-IN")}`}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">Across active policies</p>
+            </div>
+          </div>
+
+          {/* Card 5 — Total Premium */}
+          <div className="bg-white dark:bg-gray-dark rounded-2xl border border-gray-200 dark:border-dark-3 p-6 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-dark-2 flex items-center justify-center text-gray-500 shrink-0">
+              <FileText className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Total Premium (Annual)</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                {loading ? "—" : `₹${totalAnnualPremium.toLocaleString("en-IN")}`}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">Net + GST, active policies</p>
             </div>
           </div>
         </div>
@@ -271,11 +354,17 @@ export default function PoliciesPage() {
             </div>
           </div>
 
+          {deleteError && (
+            <div className="px-6 py-2 text-sm text-red-600 dark:text-red-400">
+              {deleteError}
+            </div>
+          )}
+
           <div className="overflow-x-auto pb-8">
             <table className="w-full min-w-[900px]">
               <thead>
                 <tr className="border-b border-gray-100 dark:border-dark-3">
-                  {["Policy No.", "Unit", "Line of Business", "Asset Description", "Policy Period", "Premium", "Status"].map(h => (
+                  {["Policy No.", "Unit", "Line of Business", "Asset Description", "Policy Period", "Total Premium", "Status"].map(h => (
                     <th key={h} className="py-4 px-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400">{h}</th>
                   ))}
                   <th className="w-10"></th>
@@ -315,7 +404,7 @@ export default function PoliciesPage() {
                           : "—"}
                       </td>
                       <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-300">
-                        {item.premium != null ? `₹${item.premium.toLocaleString("en-IN")}` : "—"}
+                        {item.total_premium != null ? `₹${item.total_premium.toLocaleString("en-IN")}` : "—"}
                       </td>
                       <td className="py-4 px-4">
                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border transition-colors ${STATUS_STYLES[item.status] || "bg-gray-50 text-gray-500 border-gray-100"}`}>
@@ -324,10 +413,16 @@ export default function PoliciesPage() {
                       </td>
                       <td className="py-4 px-4 text-right">
                         <button
-                          className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={(e) => e.stopPropagation()}
+                          className="text-gray-400 hover:text-red-600 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteError(null);
+                            setPendingDelete(item);
+                          }}
+                          title="Delete policy"
+                          aria-label="Delete policy"
                         >
-                          <MoreVertical className="w-4 h-4" />
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </td>
                     </tr>
@@ -338,6 +433,25 @@ export default function PoliciesPage() {
           </div>
         </div>
       </div>
+
+      <ConfirmModal
+        open={pendingDelete !== null}
+        title="Delete policy?"
+        message={
+          pendingDelete
+            ? `This will remove policy ${
+                pendingDelete.policy_number || `#${pendingDelete.id}`
+              } from your list. Any related claims, invoices, or quotations will also be hidden. This can be reversed by a system administrator.`
+            : ""
+        }
+        confirmLabel={isDeleting ? "Deleting…" : "Delete"}
+        cancelLabel="Cancel"
+        variant="danger"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => {
+          if (!isDeleting) setPendingDelete(null);
+        }}
+      />
     </div>
   );
 }

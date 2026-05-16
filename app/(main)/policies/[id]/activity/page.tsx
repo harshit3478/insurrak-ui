@@ -117,7 +117,7 @@ export default function PolicyActivityPage() {
             id: `quotation-${quot.id}`,
             type: "quotation",
             title: "Quotation received",
-            description: `₹${quot.total_premium.toLocaleString()} total premium (v${quot.version})${quot.file_name ? ` — ${quot.file_name}` : ""}`,
+            description: `₹${quot.total_premium.toLocaleString("en-IN")} total premium (v${quot.version})${quot.file_name ? ` — ${quot.file_name}` : ""}`,
             actorId: null,
             timestamp: quot.created_at,
           });
@@ -129,7 +129,7 @@ export default function PolicyActivityPage() {
             id: `invoice-${inv.id}`,
             type: "invoice",
             title: "Proforma invoice uploaded",
-            description: `₹${inv.total.toLocaleString()} total premium — ${inv.file_name || "PI-" + inv.id}`,
+            description: `₹${inv.total.toLocaleString("en-IN")} total premium — ${inv.file_name || "PI-" + inv.id}`,
             actorId: inv.uploaded_by_id,
             timestamp: inv.created_at,
           });

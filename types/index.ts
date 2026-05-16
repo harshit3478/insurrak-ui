@@ -74,7 +74,7 @@ export interface AuthState {
   rememberMe: boolean;
 }
 
-export const AUTH_STORAGE_KEY = "insurrack_auth";
+export const AUTH_STORAGE_KEY = "insurack_auth";
 
 export interface AuthContextType {
   user: User | null;
@@ -183,7 +183,9 @@ export interface Policy {
   insurer: string;
   type: PolicyType;
   sumInsured: number;
-  premium: number;
+  net_premium?: number | null;
+  gst_amount?: number | null;
+  total_premium?: number | null;
   startDate: string; // ISO date string
   endDate: string; // ISO date string
   status: PolicyStatus;

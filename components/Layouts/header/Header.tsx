@@ -47,7 +47,7 @@ export function Header() {
               src={"/images/logo/logo-icon.svg"}
               width={28}
               height={28}
-              alt="Insurrack"
+              alt="insurack"
             />
           </Link>
         )}

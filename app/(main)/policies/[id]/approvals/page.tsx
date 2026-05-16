@@ -160,14 +160,14 @@ export default function PolicyApprovalsPage() {
                       {insurers[selectedQuotation.insurer_id]?.name || `Insurer ${selectedQuotation.insurer_id}`}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Premium: ₹{selectedQuotation.premium.toLocaleString()} + GST ₹{selectedQuotation.gst.toLocaleString()}
+                      Premium: ₹{selectedQuotation.premium.toLocaleString("en-IN")} + GST ₹{selectedQuotation.gst.toLocaleString("en-IN")}
                     </p>
                     <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
-                      Total: ₹{selectedQuotation.total_premium.toLocaleString()}
+                      Total: ₹{selectedQuotation.total_premium.toLocaleString("en-IN")}
                     </p>
                     {(selectedQuotation.terms as (typeof selectedQuotation.terms & { total_sum_insured?: number | null }))?.total_sum_insured != null && (
                       <p className="text-xs text-gray-500 dark:text-gray-400">
-                        Sum Insured: ₹{Number((selectedQuotation.terms as (typeof selectedQuotation.terms & { total_sum_insured?: number | null }))!.total_sum_insured).toLocaleString()}
+                        Sum Insured: ₹{Number((selectedQuotation.terms as (typeof selectedQuotation.terms & { total_sum_insured?: number | null }))!.total_sum_insured).toLocaleString("en-IN")}
                       </p>
                     )}
                   </div>
@@ -273,7 +273,7 @@ export default function PolicyApprovalsPage() {
                         {quot && (
                           <div>
                              <p className="text-gray-400 mb-0.5">Quote Selected: <span className="text-gray-900 dark:text-gray-200 font-bold">{insurer?.name || 'Insurer'}</span></p>
-                             <p className="text-gray-400 italic">(Premium: ₹{quot.total_premium.toLocaleString()})</p>
+                             <p className="text-gray-400 italic">(Premium: ₹{quot.total_premium.toLocaleString("en-IN")})</p>
                           </div>
                         )}
                      </div>
@@ -344,10 +344,10 @@ export default function PolicyApprovalsPage() {
                     {insurers[selectedQuotation.insurer_id]?.name || `Insurer ${selectedQuotation.insurer_id}`}
                   </p>
                   <p className="text-gray-500 dark:text-gray-400">
-                    Premium ₹{selectedQuotation.premium.toLocaleString()} + GST ₹{selectedQuotation.gst.toLocaleString()}
+                    Premium ₹{selectedQuotation.premium.toLocaleString("en-IN")} + GST ₹{selectedQuotation.gst.toLocaleString("en-IN")}
                   </p>
                   <p className="font-semibold text-emerald-600 dark:text-emerald-400">
-                    Total ₹{selectedQuotation.total_premium.toLocaleString()}
+                    Total ₹{selectedQuotation.total_premium.toLocaleString("en-IN")}
                   </p>
                 </div>
               )}

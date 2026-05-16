@@ -399,7 +399,7 @@ export default function Home() {
                 role: "Head of Risk & Insurance",
                 verified: true,
                 quote:
-                  "We manage policies across 14 properties. Before InsurRack, renewals would slip through the cracks every quarter. Now we get alerts 90 days out and the whole team is on the same page.",
+                  "We manage policies across 14 properties. Before insurack, renewals would slip through the cracks every quarter. Now we get alerts 90 days out and the whole team is on the same page.",
               },
               {
                 name: "Priya Sharma",
@@ -415,7 +415,7 @@ export default function Home() {
                 role: "VP Corporate Affairs",
                 verified: true,
                 quote:
-                  "Our insurance portfolio spans fleet, cargo, and liability across 6 states. InsurRack gives us a single view of all of it. Claims tracking has become completely transparent.",
+                  "Our insurance portfolio spans fleet, cargo, and liability across 6 states. insurack gives us a single view of all of it. Claims tracking has become completely transparent.",
               },
               {
                 name: "Neha Kapoor",
@@ -642,8 +642,8 @@ export default function Home() {
           <div className="space-y-4">
             {[
               {
-                q: "How does InsurRack handle multi-branch or group companies?",
-                a: "InsurRack supports a hierarchical structure — your Super Admin sets up companies and branches, assigns Company Admins per entity, and each branch manages its own policies and users independently. Cross-entity reports are available at the top level, giving you a consolidated view without mixing up data.",
+                q: "How does insurack handle multi-branch or group companies?",
+                a: "insurack supports a hierarchical structure — your Super Admin sets up companies and branches, assigns Company Admins per entity, and each branch manages its own policies and users independently. Cross-entity reports are available at the top level, giving you a consolidated view without mixing up data.",
               },
               {
                 q: "Can we give our insurance broker access to the platform?",
@@ -651,7 +651,7 @@ export default function Home() {
               },
               {
                 q: "What happens if a policy renewal is missed?",
-                a: "InsurRack sends automated alerts at 90, 60, and 30 days before expiry to the assigned policy owner and Company Admin. Overdue renewals are flagged prominently on your dashboard so nothing slips through.",
+                a: "insurack sends automated alerts at 90, 60, and 30 days before expiry to the assigned policy owner and Company Admin. Overdue renewals are flagged prominently on your dashboard so nothing slips through.",
               },
               {
                 q: "Is our data secure and audit-ready?",
@@ -811,7 +811,7 @@ export default function Home() {
           </div>
 
           <div className="border-t border-gray-100 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-400">
-            <div>© 2025 InsurRack. All rights reserved.</div>
+            <div>© 2025 insurack. All rights reserved.</div>
             <div className="flex gap-6">
               <a href="#" className="hover:text-gray-600">
                 Cookies Policy

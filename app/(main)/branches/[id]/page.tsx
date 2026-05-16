@@ -119,7 +119,7 @@ export default function BranchDetailPage() {
                       <StatusBadge status={p.status} />
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-500 dark:text-dark-6">
-                      {p.sum_insured != null ? `₹${p.sum_insured.toLocaleString()}` : "—"}
+                      {p.sum_insured != null ? `₹${p.sum_insured.toLocaleString("en-IN")}` : "—"}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-500 dark:text-dark-6">
                       {p.policy_start_date ? new Date(p.policy_start_date).toLocaleDateString("en-IN") : "—"}

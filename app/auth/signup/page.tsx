@@ -4,8 +4,8 @@ import Link from "next/link";
 import { Square } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Request Access | Insurrack",
-  description: "Request company access to the Insurrack platform.",
+  title: "Request Access | insurack",
+  description: "Request company access to the insurack platform.",
 };
 
 export default function SignupPage() {
@@ -33,7 +33,7 @@ export default function SignupPage() {
           <h1 className="text-4xl lg:text-5xl font-medium leading-tight text-white">
             with{" "}
             <span className="text-[#C6F200] font-semibold">
-              InsurRack
+              insurack
             </span>
           </h1>
           <p className="mt-6 text-gray-400 text-base max-w-sm">

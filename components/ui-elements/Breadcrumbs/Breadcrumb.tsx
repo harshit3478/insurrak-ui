@@ -65,7 +65,7 @@ const Breadcrumb = () => {
         <ol className="flex items-center gap-2">
           <li>
             <Link className="font-medium text-gray-500 hover:text-primary transition-colors" href="/">
-              Insurrack
+              insurack
             </Link>
           </li>
           {breadcrumbs.map((crumb, idx) => (

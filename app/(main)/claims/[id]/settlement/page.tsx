@@ -6,10 +6,7 @@ import { apiClient } from "@/lib/apiClient";
 import type { ClaimRead } from "@/types/api";
 import { IndianRupee, CheckCircle2, Clock } from "lucide-react";
 import { Loading } from "@/components/ui/Loading";
-
-function formatCurrency(n: number) {
-  return `₹${n.toLocaleString("en-IN")}`;
-}
+import { formatINR } from "@/lib/format-number";
 
 export default function ClaimSettlementPage() {
   const { id } = useParams();
@@ -58,7 +55,7 @@ export default function ClaimSettlementPage() {
             <p className="text-[10px] text-gray-400 uppercase tracking-wider font-bold">Estimated Loss</p>
           </div>
           <p className="text-xl font-bold text-gray-900 dark:text-white">
-            {claim.estimated_loss ? formatCurrency(claim.estimated_loss) : "—"}
+            {claim.estimated_loss ? formatINR(claim.estimated_loss) : "—"}
           </p>
         </div>
         <div className="bg-white dark:bg-dark-2 rounded-xl border border-gray-100 dark:border-dark-3 shadow-sm p-5">
@@ -67,7 +64,7 @@ export default function ClaimSettlementPage() {
             <p className="text-[10px] text-gray-400 uppercase tracking-wider font-bold">Approved Amount</p>
           </div>
           <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
-            {claim.approved_amount ? formatCurrency(claim.approved_amount) : "—"}
+            {claim.approved_amount ? formatINR(claim.approved_amount) : "—"}
           </p>
         </div>
         <div className="rounded-xl border-none shadow-sm p-5 bg-gradient-to-br from-[#0B1727] to-[#1a2b44]">
@@ -76,7 +73,7 @@ export default function ClaimSettlementPage() {
             <p className="text-[10px] text-gray-400 uppercase tracking-wider font-bold">Net Settled</p>
           </div>
           <p className="text-xl font-bold text-[#C6F200]">
-            {claim.settled_amount ? formatCurrency(claim.settled_amount) : "—"}
+            {claim.settled_amount ? formatINR(claim.settled_amount) : "—"}
           </p>
         </div>
       </div>
@@ -92,21 +89,21 @@ export default function ClaimSettlementPage() {
             <div className="flex items-center justify-between py-2 border-b border-gray-50 dark:border-dark-3">
               <p className="text-sm text-gray-700 dark:text-gray-300">Total Claimed Amount (Estimated Loss)</p>
               <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                {claim.estimated_loss ? formatCurrency(claim.estimated_loss) : "—"}
+                {claim.estimated_loss ? formatINR(claim.estimated_loss) : "—"}
               </p>
             </div>
             {claim.estimated_loss && claim.approved_amount && claim.estimated_loss !== claim.approved_amount && (
               <div className="flex items-center justify-between py-2 border-b border-gray-50 dark:border-dark-3">
                 <p className="text-sm text-gray-500 dark:text-gray-400">Adjustments / Deductions</p>
                 <p className="text-sm font-semibold text-red-500">
-                  - {formatCurrency(claim.estimated_loss - claim.approved_amount)}
+                  - {formatINR(claim.estimated_loss - claim.approved_amount)}
                 </p>
               </div>
             )}
             <div className="flex items-center justify-between pt-2">
               <p className="text-sm font-bold text-gray-900 dark:text-white">NET APPROVED PAYOUT</p>
               <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
-                {formatCurrency(claim.approved_amount)}
+                {formatINR(claim.approved_amount)}
               </p>
             </div>
           </div>
@@ -137,7 +134,7 @@ export default function ClaimSettlementPage() {
                 </div>
                 <div>
                   <p className="text-xs text-gray-400">Settled Amount</p>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{formatCurrency(claim.settled_amount)}</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{formatINR(claim.settled_amount)}</p>
                 </div>
                 {claim.insurer_claim_number && (
                   <div>

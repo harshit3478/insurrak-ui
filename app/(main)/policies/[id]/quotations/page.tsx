@@ -276,9 +276,9 @@ export default function PolicyQuotationsPage() {
                             v{quot.version}
                           </span>
                         </td>
-                        <td className="py-3.5 px-6 text-sm text-gray-500 dark:text-gray-300">₹{quot.premium.toLocaleString()}</td>
-                        <td className="py-3.5 px-6 text-sm text-gray-500 dark:text-gray-300">₹{quot.gst.toLocaleString()}</td>
-                        <td className="py-3.5 px-6 text-sm font-bold text-gray-900 dark:text-white">₹{quot.total_premium.toLocaleString()}</td>
+                        <td className="py-3.5 px-6 text-sm text-gray-500 dark:text-gray-300">₹{quot.premium.toLocaleString("en-IN")}</td>
+                        <td className="py-3.5 px-6 text-sm text-gray-500 dark:text-gray-300">₹{quot.gst.toLocaleString("en-IN")}</td>
+                        <td className="py-3.5 px-6 text-sm font-bold text-gray-900 dark:text-white">₹{quot.total_premium.toLocaleString("en-IN")}</td>
                         <td className="py-3.5 px-6">
                           {quot.file_path ? (
                             <a
@@ -314,7 +314,7 @@ export default function PolicyQuotationsPage() {
                                 {(quot.terms as QuotationTermsRead & { total_sum_insured?: number | null }).total_sum_insured != null && (
                                   <div className="flex gap-3">
                                     <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 w-40 shrink-0">Total Sum Insured:</span>
-                                    <span className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">₹{Number((quot.terms as QuotationTermsRead & { total_sum_insured?: number | null }).total_sum_insured!).toLocaleString()}</span>
+                                    <span className="text-xs text-gray-600 dark:text-gray-300 leading-relaxed">₹{Number((quot.terms as QuotationTermsRead & { total_sum_insured?: number | null }).total_sum_insured!).toLocaleString("en-IN")}</span>
                                   </div>
                                 )}
                                 {TERMS_DISPLAY.filter(f => quot.terms![f.key]).map(f => (
@@ -465,10 +465,10 @@ export default function PolicyQuotationsPage() {
                   {premium && Number(premium) > 0 && (
                     <div className="flex items-center justify-between bg-gray-50 dark:bg-dark-2 rounded-xl px-4 py-3 text-sm">
                       <span className="text-gray-500 dark:text-gray-400">GST ({gstPct}%)</span>
-                      <span className="font-medium text-gray-700 dark:text-gray-300">₹{gstAmount.toLocaleString()}</span>
+                      <span className="font-medium text-gray-700 dark:text-gray-300">₹{gstAmount.toLocaleString("en-IN")}</span>
                       <span className="text-gray-300 dark:text-gray-600">|</span>
                       <span className="text-gray-500 dark:text-gray-400">Total Premium</span>
-                      <span className="font-bold text-gray-900 dark:text-white">₹{totalPremium.toLocaleString()}</span>
+                      <span className="font-bold text-gray-900 dark:text-white">₹{totalPremium.toLocaleString("en-IN")}</span>
                     </div>
                   )}
 

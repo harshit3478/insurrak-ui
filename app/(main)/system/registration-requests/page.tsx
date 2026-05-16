@@ -7,7 +7,7 @@ import { apiClient } from "@/lib/apiClient";
 import { ClipboardList } from "lucide-react";
 import type { CompanyRegistrationRequestRead } from "@/types/api";
 
-const SEEN_KEY = "insurrack_reg_req_seen";
+const SEEN_KEY = "insurack_reg_req_seen";
 
 function StatusBadge({ status }: { status: "pending" | "approved" | "rejected" }) {
   const map = {

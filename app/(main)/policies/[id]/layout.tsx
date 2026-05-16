@@ -435,7 +435,7 @@ export default function PolicyDetailsLayout({ children }: { children: React.Reac
             <div>
               <p className="text-xs text-gray-400 mb-1">Sum Insured</p>
               <p className="text-sm font-medium text-gray-900 dark:text-white">
-                {policy.sum_insured ? `₹${policy.sum_insured.toLocaleString()}` : '—'}
+                {policy.sum_insured ? `₹${policy.sum_insured.toLocaleString("en-IN")}` : '—'}
               </p>
             </div>
             <div>
@@ -606,7 +606,7 @@ export default function PolicyDetailsLayout({ children }: { children: React.Reac
                   <option value="">Select a quotation...</option>
                   {quotations.map(q => (
                     <option key={q.id} value={q.id}>
-                      {insurerMap[q.insurer_id]?.name || `Insurer ${q.insurer_id}`} — ₹{q.total_premium.toLocaleString()} (v{q.version})
+                      {insurerMap[q.insurer_id]?.name || `Insurer ${q.insurer_id}`} — ₹{q.total_premium.toLocaleString("en-IN")} (v{q.version})
                     </option>
                   ))}
                 </select>
@@ -690,8 +690,8 @@ export default function PolicyDetailsLayout({ children }: { children: React.Reac
                   <div className="bg-gray-50 dark:bg-dark-3 rounded-lg px-4 py-3 text-xs space-y-0.5">
                     <p className="font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Quotation Under Review</p>
                     <p className="text-sm font-bold text-gray-900 dark:text-white">{insurerMap[sel.insurer_id]?.name || `Insurer ${sel.insurer_id}`}</p>
-                    <p className="text-gray-500 dark:text-gray-400">Premium ₹{sel.premium.toLocaleString()} + GST ₹{sel.gst.toLocaleString()}</p>
-                    <p className="font-semibold text-emerald-600 dark:text-emerald-400">Total ₹{sel.total_premium.toLocaleString()}</p>
+                    <p className="text-gray-500 dark:text-gray-400">Premium ₹{sel.premium.toLocaleString("en-IN")} + GST ₹{sel.gst.toLocaleString("en-IN")}</p>
+                    <p className="font-semibold text-emerald-600 dark:text-emerald-400">Total ₹{sel.total_premium.toLocaleString("en-IN")}</p>
                   </div>
                 ) : null;
               })()}
@@ -772,7 +772,7 @@ export default function PolicyDetailsLayout({ children }: { children: React.Reac
                 {pmAmount && Number(pmAmount) > 0 && (
                   <div className="flex items-center justify-between bg-gray-50 dark:bg-dark-2 rounded-xl px-4 py-2.5 text-sm mt-3">
                     <span className="text-gray-500 dark:text-gray-400 text-xs">Total Premium</span>
-                    <span className="font-bold text-gray-900 dark:text-white">₹{pmTotal.toLocaleString()}</span>
+                    <span className="font-bold text-gray-900 dark:text-white">₹{pmTotal.toLocaleString("en-IN")}</span>
                   </div>
                 )}
                 <div className="grid grid-cols-1 gap-3 mt-3">
@@ -806,7 +806,7 @@ export default function PolicyDetailsLayout({ children }: { children: React.Reac
                     </div>
                     <div>
                       <label className="block text-xs text-gray-400 mb-1">Amount Paid (₹)</label>
-                      <input type="number" placeholder={`Default ₹${pmTotal.toLocaleString()}`} value={pmPayAmount} onChange={e => setPmPayAmount(e.target.value)}
+                      <input type="number" placeholder={`Default ₹${pmTotal.toLocaleString("en-IN")}`} value={pmPayAmount} onChange={e => setPmPayAmount(e.target.value)}
                         className="w-full rounded-lg border border-gray-200 dark:border-dark-3 bg-white dark:bg-dark-2 text-sm text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0B1727]/20" />
                     </div>
                   </div>

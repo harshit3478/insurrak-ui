@@ -96,7 +96,6 @@ export function adaptPolicy(
       (apiPolicy.line_of_business as import("@/types").PolicyType) ||
       "Miscellaneous",
     sumInsured: 0,
-    premium: 0,
     startDate: apiPolicy.created_at || new Date().toISOString(),
     endDate: apiPolicy.created_at || new Date().toISOString(),
     status:

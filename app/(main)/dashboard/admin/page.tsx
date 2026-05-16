@@ -41,7 +41,7 @@ function StatCard({
   );
 }
 
-const SEEN_KEY = "insurrack_reg_req_seen";
+const SEEN_KEY = "insurack_reg_req_seen";
 
 /**
  * AdminDashboard provides a high-level overview of the entire platform

@@ -291,7 +291,7 @@ export default function ClaimDetailLayout({ children }: { children: React.ReactN
             <div>
               <p className="text-xs text-gray-400 mb-1">Estimated Loss</p>
               <p className="text-sm font-medium text-gray-900 dark:text-white">
-                {claim.estimated_loss ? `₹${claim.estimated_loss.toLocaleString()}` : "—"}
+                {claim.estimated_loss ? `₹${claim.estimated_loss.toLocaleString("en-IN")}` : "—"}
               </p>
             </div>
             <div>
@@ -448,7 +448,7 @@ export default function ClaimDetailLayout({ children }: { children: React.ReactN
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-dark-3">
               <div>
                 <h2 className="text-base font-bold text-gray-900 dark:text-white">Record Settlement</h2>
-                <p className="text-xs text-gray-400 mt-0.5">Approved: {claim.approved_amount ? `₹${claim.approved_amount.toLocaleString()}` : "—"}</p>
+                <p className="text-xs text-gray-400 mt-0.5">Approved: {claim.approved_amount ? `₹${claim.approved_amount.toLocaleString("en-IN")}` : "—"}</p>
               </div>
               <button onClick={() => setShowSettlementModal(false)} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-dark-2 transition-colors">
                 <X className="w-4 h-4" />

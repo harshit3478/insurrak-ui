@@ -4,10 +4,22 @@ import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { apiClient } from "@/lib/apiClient";
 import type { UnitRead } from "@/types/api";
-import { Building2, Search, Plus, MoreVertical, Pencil, ToggleLeft, ToggleRight } from "lucide-react";
+import { Building2, Search, Plus, MoreVertical, Pencil, ToggleLeft, ToggleRight, Trash2 } from "lucide-react";
 import { getClientCache, setClientCache, invalidateClientCache } from "@/lib/cache";
 import { SkeletonRows } from "@/components/ui/SkeletonRows";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { useAuth } from "@/context-provider/AuthProvider";
+import { Portal } from "@/components/ui/portal";
+
+type UnitDeleteImpact = {
+  policies: number;
+  claims: number;
+  quotations: number;
+  invoices: number;
+  approvals: number;
+  policy_documents: number;
+  claim_documents: number;
+};
 
 export default function BranchesPage() {
   const router = useRouter();
@@ -16,8 +28,14 @@ export default function BranchesPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+  const [menuRect, setMenuRect] = useState<DOMRect | null>(null);
   const [togglingId, setTogglingId] = useState<number | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<UnitRead | null>(null);
+  const [deleteImpact, setDeleteImpact] = useState<UnitDeleteImpact | null>(null);
+  const [impactLoading, setImpactLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     if (user && user.role !== "COMPANY_ADMIN") {
@@ -63,6 +81,64 @@ export default function BranchesPage() {
     } finally {
       setTogglingId(null);
     }
+  };
+
+  const openDeleteConfirm = async (u: UnitRead) => {
+    setOpenMenuId(null);
+    setDeleteError(null);
+    setDeleteImpact(null);
+    setPendingDelete(u);
+    setImpactLoading(true);
+    try {
+      const impact = await apiClient.getUnitDeleteImpact(u.id);
+      setDeleteImpact(impact);
+    } catch (err) {
+      console.error("Failed to fetch unit delete impact:", err);
+      // Soft-fail: still let the user delete, just without precise counts.
+      setDeleteImpact(null);
+    } finally {
+      setImpactLoading(false);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!pendingDelete) return;
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      await apiClient.deleteUnit(pendingDelete.id);
+      setUnits((prev) => {
+        const next = prev.filter((x) => x.id !== pendingDelete.id);
+        setClientCache("units", next);
+        return next;
+      });
+      setPendingDelete(null);
+      setDeleteImpact(null);
+    } catch (err) {
+      setDeleteError(
+        err instanceof Error ? err.message : "Failed to delete unit.",
+      );
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const formatImpact = (impact: UnitDeleteImpact | null): string => {
+    if (!impact) {
+      return "All policies, claims, quotations, invoices, and documents linked to this unit will be permanently deleted. This cannot be undone.";
+    }
+    const parts: string[] = [];
+    if (impact.policies) parts.push(`${impact.policies} ${impact.policies === 1 ? "policy" : "policies"}`);
+    if (impact.claims) parts.push(`${impact.claims} ${impact.claims === 1 ? "claim" : "claims"}`);
+    if (impact.quotations) parts.push(`${impact.quotations} ${impact.quotations === 1 ? "quotation" : "quotations"}`);
+    if (impact.invoices) parts.push(`${impact.invoices} ${impact.invoices === 1 ? "invoice" : "invoices"}`);
+    if (impact.approvals) parts.push(`${impact.approvals} ${impact.approvals === 1 ? "approval" : "approvals"}`);
+    const documentCount = impact.policy_documents + impact.claim_documents;
+    if (documentCount) parts.push(`${documentCount} ${documentCount === 1 ? "document" : "documents"}`);
+    if (parts.length === 0) {
+      return "This unit has no related records. It will be permanently deleted. This cannot be undone.";
+    }
+    return `This will permanently delete the unit along with ${parts.join(", ")}. This cannot be undone.`;
   };
 
   const activeCount = React.useMemo(() => units.filter((u) => u.is_active).length, [units]);
@@ -178,33 +254,58 @@ export default function BranchesPage() {
                         </span>
                       )}
                     </td>
-                    <td className="py-4 text-right relative">
+                    <td className="py-4 text-right">
                       <button
-                        onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === u.id ? null : u.id); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (openMenuId === u.id) {
+                            setOpenMenuId(null);
+                          } else {
+                            setMenuRect((e.currentTarget as HTMLButtonElement).getBoundingClientRect());
+                            setOpenMenuId(u.id);
+                          }
+                        }}
                         className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-dark-2 transition-colors"
                       >
                         <MoreVertical className="w-4 h-4" />
                       </button>
-                      {openMenuId === u.id && (
-                        <div className="absolute right-0 top-full mt-1 z-50 w-44 bg-white dark:bg-dark-2 rounded-lg border border-gray-200 dark:border-dark-3 shadow-lg py-1">
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); router.push(`/branches/edit/${u.id}`); }}
-                            className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-3 transition-colors"
+                      {openMenuId === u.id && menuRect && (
+                        <Portal>
+                          <div
+                            onMouseDown={(e) => e.stopPropagation()}
+                            style={{
+                              position: "fixed",
+                              top: menuRect.bottom + 120 > window.innerHeight ? menuRect.top - 112 : menuRect.bottom + 4,
+                              left: menuRect.right - 176,
+                              zIndex: 9999,
+                            }}
+                            className="w-44 bg-white dark:bg-dark-2 rounded-lg border border-gray-200 dark:border-dark-3 shadow-lg py-1"
                           >
-                            <Pencil className="w-3.5 h-3.5" /> Edit
-                          </button>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleToggleActive(u); }}
-                            className={`flex items-center gap-2 w-full px-3 py-2 text-sm transition-colors ${
-                              u.is_active
-                                ? "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
-                                : "text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20"
-                            }`}
-                          >
-                            {u.is_active ? <ToggleLeft className="w-3.5 h-3.5" /> : <ToggleRight className="w-3.5 h-3.5" />}
-                            {u.is_active ? "Deactivate" : "Activate"}
-                          </button>
-                        </div>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setOpenMenuId(null); router.push(`/branches/edit/${u.id}`); }}
+                              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-3 transition-colors"
+                            >
+                              <Pencil className="w-3.5 h-3.5" /> Edit
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleToggleActive(u); }}
+                              className={`flex items-center gap-2 w-full px-3 py-2 text-sm transition-colors ${
+                                u.is_active
+                                  ? "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                  : "text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20"
+                              }`}
+                            >
+                              {u.is_active ? <ToggleLeft className="w-3.5 h-3.5" /> : <ToggleRight className="w-3.5 h-3.5" />}
+                              {u.is_active ? "Deactivate" : "Activate"}
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); openDeleteConfirm(u); }}
+                              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" /> Delete
+                            </button>
+                          </div>
+                        </Portal>
                       )}
                     </td>
                   </tr>
@@ -215,6 +316,33 @@ export default function BranchesPage() {
         </div>
 
       </div>
+
+      <ConfirmModal
+        open={pendingDelete !== null}
+        title={
+          pendingDelete
+            ? `Delete unit "${pendingDelete.name}"?`
+            : "Delete unit?"
+        }
+        message={
+          impactLoading
+            ? "Calculating impact…"
+            : deleteError
+              ? deleteError
+              : formatImpact(deleteImpact)
+        }
+        confirmLabel={isDeleting ? "Deleting…" : "Delete unit"}
+        cancelLabel="Cancel"
+        variant="danger"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => {
+          if (!isDeleting) {
+            setPendingDelete(null);
+            setDeleteImpact(null);
+            setDeleteError(null);
+          }
+        }}
+      />
     </div>
   );
 }

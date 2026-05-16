@@ -12,8 +12,9 @@ export default function LogIn() {
   const { requestOtp, login, loginState, isLoginPending } = useAuth();
 
   const [step, setStep] = useState<"email" | "otp">("email");
+  // TODO(demo, remove after one-month trial): default email is only filled in development
   const [email, setEmail] = useState(
-    process.env.NODE_ENV === "development" ? "harshit@gmail.com" : "harshit@gmail.com",
+    process.env.NODE_ENV !== "production" ? "harshit@gmail.com" : "",
   );
   const [otp, setOtp] = useState("");
   const [otpError, setOtpError] = useState<string | undefined>();
@@ -29,10 +30,13 @@ export default function LogIn() {
       setOtpError(result.error);
     } else {
       setStep("otp");
-      // POC: autofill OTP so testers don't need to check server logs
-      apiClient.peekOtp(email).then((res) => {
-        if (res.otp) setOtp(res.otp);
-      }).catch(() => {});
+      // TODO(demo, remove after one-month trial): log OTP to browser console for tester convenience
+      apiClient
+        .peekOtp(email)
+        .then((res) => {
+          if (res.otp) console.log(`[insurack] OTP for ${email}: ${res.otp}`);
+        })
+        .catch(() => {});
     }
   };
 
@@ -163,9 +167,14 @@ export default function LogIn() {
               if (result.error) {
                 setOtpError(result.error);
               } else {
-                apiClient.peekOtp(email).then((res) => {
-                  if (res.otp) setOtp(res.otp);
-                }).catch(() => {});
+                // TODO(demo, remove after one-month trial): log OTP to browser console for tester convenience
+                apiClient
+                  .peekOtp(email)
+                  .then((res) => {
+                    if (res.otp)
+                      console.log(`[insurack] OTP for ${email}: ${res.otp}`);
+                  })
+                  .catch(() => {});
               }
             }}
             className="text-gray-500 hover:text-gray-700"

@@ -4,8 +4,8 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { X, ArrowRight, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/context-provider/AuthProvider";
 
-const TOUR_KEY_COMPANY = "insurrack_tour_done_company";
-const TOUR_KEY_SUPERADMIN = "insurrack_tour_done_superadmin";
+const TOUR_KEY_COMPANY = "insurack_tour_done_company";
+const TOUR_KEY_SUPERADMIN = "insurack_tour_done_superadmin";
 
 type Step = {
   target: string; // data-tour attribute value

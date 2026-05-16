@@ -6,10 +6,7 @@ import { Info, IndianRupee, CornerDownRight } from "lucide-react";
 import { apiClient } from "@/lib/apiClient";
 import type { ClaimRead } from "@/types/api";
 import { Loading } from "@/components/ui/Loading";
-
-function formatCurrency(n: number) {
-  return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n);
-}
+import { formatINR } from "@/lib/format-number";
 
 const CLAIMABLE_TRANSITIONS: Record<string, string[]> = {
   AWAITING_DOCS: ["SENT_TO_BROKER"],
@@ -127,19 +124,19 @@ export default function ClaimOverviewPage() {
             <div className="bg-gray-50 dark:bg-dark-2 p-5 rounded-xl border border-gray-100 dark:border-dark-3">
               <p className="text-sm text-gray-500 mb-1">Estimated Loss</p>
               <p className="text-xl font-bold text-gray-900 dark:text-white">
-                {claim.estimated_loss ? formatCurrency(claim.estimated_loss) : "—"}
+                {claim.estimated_loss ? formatINR(claim.estimated_loss) : "—"}
               </p>
             </div>
             <div className="bg-gray-50 dark:bg-dark-2 p-5 rounded-xl border border-gray-100 dark:border-dark-3">
               <p className="text-sm text-gray-500 mb-1">Approved Amount</p>
               <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
-                {claim.approved_amount ? formatCurrency(claim.approved_amount) : "—"}
+                {claim.approved_amount ? formatINR(claim.approved_amount) : "—"}
               </p>
             </div>
             <div className="bg-gradient-to-br from-[#0B1727] to-[#1a2b44] p-5 rounded-xl">
               <p className="text-sm text-gray-400 mb-1">Settled Amount</p>
               <p className="text-2xl font-bold text-[#C6F200]">
-                {claim.settled_amount ? formatCurrency(claim.settled_amount) : "—"}
+                {claim.settled_amount ? formatINR(claim.settled_amount) : "—"}
               </p>
             </div>
           </div>

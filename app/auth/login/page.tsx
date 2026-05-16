@@ -4,8 +4,8 @@ import Link from "next/link";
 import { Square } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Login | Insurrack",
-  description: "Login to your Insurrack account.",
+  title: "Login | insurack",
+  description: "Login to your insurack account.",
 };
 
 /**
