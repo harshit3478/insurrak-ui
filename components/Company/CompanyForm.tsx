@@ -118,7 +118,7 @@ type EditCompanyFormProps = {
 export function EditCompanyForm({ defaultValues, onSubmit, pending, error }: EditCompanyFormProps) {
   const [name, setName] = useState(defaultValues.name || "");
   const [adminUsername, setAdminUsername] = useState(defaultValues.admin || "");
-  const [email, setEmail] = useState(defaultValues.email || "");
+  const [email, setEmail] = useState(defaultValues.adminEmail || defaultValues.email || "");
   const [mobile, setMobile] = useState(defaultValues.mobile_number || "");
   const [address, setAddress] = useState(defaultValues.address || "");
   const [gst, setGst] = useState(defaultValues.gst_number || "");

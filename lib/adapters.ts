@@ -71,7 +71,7 @@ export function adaptCompany(apiCompany: CompanyRead): Company {
     name: apiCompany.name,
     companyId: String(apiCompany.id),
     admin: apiCompany.admin_username ?? "",
-    adminEmail: apiCompany.email ?? "",
+    adminEmail: apiCompany.admin_email ?? apiCompany.email ?? "",
     branches: String(apiCompany.unit_count ?? 0),
     activePolicies: "0", // placeholder for aggregated policy count
     is_active: apiCompany.is_active,

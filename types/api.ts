@@ -30,6 +30,7 @@ export interface CompanyRead {
   gst_number: string | null;
   unit_count?: number;
   admin_username: string | null;
+  admin_email: string | null;
 }
 
 export interface UnitRead {
