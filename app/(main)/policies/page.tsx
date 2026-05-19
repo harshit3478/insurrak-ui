@@ -180,22 +180,64 @@ export default function PoliciesPage() {
         </div>
 
         {/* Summary Cards */}
-        <div data-tour="dashboard-stats" className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          {/* Card 1 — Total Sum Insured */}
-          <div className="bg-white dark:bg-gray-dark rounded-2xl border border-gray-200 dark:border-dark-3 p-6 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-dark-2 flex items-center justify-center text-gray-500 shrink-0">
-              <FileText className="w-5 h-5" />
+        <div data-tour="dashboard-stats" className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Col 1 — Net Premium + Total Premium */}
+          <div className="flex flex-col gap-4">
+            <div className="bg-white dark:bg-gray-dark rounded-2xl border border-gray-200 dark:border-dark-3 p-6 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-dark-2 flex items-center justify-center text-gray-500 shrink-0">
+                <FileText className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Net Premium (Annual)</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white" title={loading ? undefined : `₹${totalNetPremium.toLocaleString("en-IN")}`}>
+                  {loading ? "—" : formatINRCompact(totalNetPremium)}
+                </p>
+                <p className="text-xs text-gray-400 mt-1">Across active policies</p>
+              </div>
             </div>
-            <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Total Sum Insured (Active)</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white" title={loading ? undefined : `₹${totalSumInsured.toLocaleString("en-IN")}`}>
-                {loading ? "—" : formatINRCompact(totalSumInsured)}
-              </p>
-              <p className="text-xs text-gray-400 mt-1">Across all active & issued policies</p>
+            <div className="bg-white dark:bg-gray-dark rounded-2xl border border-gray-200 dark:border-dark-3 p-6 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-dark-2 flex items-center justify-center text-gray-500 shrink-0">
+                <FileText className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Total Premium (Annual)</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white" title={loading ? undefined : `₹${totalAnnualPremium.toLocaleString("en-IN")}`}>
+                  {loading ? "—" : formatINRCompact(totalAnnualPremium)}
+                </p>
+                <p className="text-xs text-gray-400 mt-1">Net + GST, active policies</p>
+              </div>
             </div>
           </div>
 
-          {/* Card 2 — Action Required */}
+          {/* Col 2 — GST + Total Sum Insured */}
+          <div className="flex flex-col gap-4">
+            <div className="bg-white dark:bg-gray-dark rounded-2xl border border-gray-200 dark:border-dark-3 p-6 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-dark-2 flex items-center justify-center text-gray-500 shrink-0">
+                <FileText className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">GST (Annual)</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white" title={loading ? undefined : `₹${totalGstAmount.toLocaleString("en-IN")}`}>
+                  {loading ? "—" : formatINRCompact(totalGstAmount)}
+                </p>
+                <p className="text-xs text-gray-400 mt-1">Across active policies</p>
+              </div>
+            </div>
+            <div className="bg-white dark:bg-gray-dark rounded-2xl border border-gray-200 dark:border-dark-3 p-6 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-dark-2 flex items-center justify-center text-gray-500 shrink-0">
+                <FileText className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Total Sum Insured (Active)</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white" title={loading ? undefined : `₹${totalSumInsured.toLocaleString("en-IN")}`}>
+                  {loading ? "—" : formatINRCompact(totalSumInsured)}
+                </p>
+                <p className="text-xs text-gray-400 mt-1">Across all active & issued policies</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Col 3 — Action Required (full height) */}
           <div className="bg-white dark:bg-gray-dark rounded-2xl border border-gray-200 dark:border-dark-3 p-6 flex flex-col justify-between">
             <div className="flex items-start justify-between">
               <div className="flex gap-4">
@@ -223,48 +265,6 @@ export default function PoliciesPage() {
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-yellow-50 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400">
                 <span className="w-1.5 h-1.5 rounded-full bg-yellow-500"></span> Approval Pending
               </span>
-            </div>
-          </div>
-
-          {/* Card 3 — Net Premium */}
-          <div className="bg-white dark:bg-gray-dark rounded-2xl border border-gray-200 dark:border-dark-3 p-6 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-dark-2 flex items-center justify-center text-gray-500 shrink-0">
-              <FileText className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Net Premium (Annual)</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white" title={loading ? undefined : `₹${totalNetPremium.toLocaleString("en-IN")}`}>
-                {loading ? "—" : formatINRCompact(totalNetPremium)}
-              </p>
-              <p className="text-xs text-gray-400 mt-1">Across active policies</p>
-            </div>
-          </div>
-
-          {/* Card 4 — GST */}
-          <div className="bg-white dark:bg-gray-dark rounded-2xl border border-gray-200 dark:border-dark-3 p-6 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-dark-2 flex items-center justify-center text-gray-500 shrink-0">
-              <FileText className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">GST (Annual)</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white" title={loading ? undefined : `₹${totalGstAmount.toLocaleString("en-IN")}`}>
-                {loading ? "—" : formatINRCompact(totalGstAmount)}
-              </p>
-              <p className="text-xs text-gray-400 mt-1">Across active policies</p>
-            </div>
-          </div>
-
-          {/* Card 5 — Total Premium */}
-          <div className="bg-white dark:bg-gray-dark rounded-2xl border border-gray-200 dark:border-dark-3 p-6 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-dark-2 flex items-center justify-center text-gray-500 shrink-0">
-              <FileText className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Total Premium (Annual)</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white" title={loading ? undefined : `₹${totalAnnualPremium.toLocaleString("en-IN")}`}>
-                {loading ? "—" : formatINRCompact(totalAnnualPremium)}
-              </p>
-              <p className="text-xs text-gray-400 mt-1">Net + GST, active policies</p>
             </div>
           </div>
         </div>
